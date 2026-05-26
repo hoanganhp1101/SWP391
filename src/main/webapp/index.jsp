@@ -9,5 +9,8 @@
 </h1>
 <br/>
 <a href="hello-servlet">Hello Servlet</a>
+<div>
+    <a href="admin-dashboard" class="btn btn-dark btn-lg px-5 mt-3">Vào Trang Quản Trị (Admin Dashboard)</a>
+</div>
 </body>
 </html>
