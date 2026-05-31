@@ -15,5 +15,8 @@
 <div>
     <a href="patient-dashboard" class="btn btn-dark btn-lg px-5 mt-3">Vào Trang Bệnh Nhân (Patient Dashboard)</a>
 </div>
+<div>
+    <a href="doctor-dashboard" class="btn btn-dark btn-lg px-5 mt-3">Vào Trang Bác Sĩ (Doctor Dashboard)</a>
+</div>
 </body>
 </html>
