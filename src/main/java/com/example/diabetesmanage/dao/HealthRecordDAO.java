@@ -79,6 +79,68 @@ public class HealthRecordDAO {
         return null;
     }
 
+    public HealthRecord getLatestComprehensiveRecord(String patientId) {
+        String sql = "SELECT " +
+                     "(SELECT duong_huyet_mgdl FROM health_records WHERE patient_id = p.id AND duong_huyet_mgdl IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as duong_huyet_mgdl, " +
+                     "(SELECT huyet_ap_tam_thu FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_thu IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_thu, " +
+                     "(SELECT huyet_ap_tam_truong FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_truong IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_truong, " +
+                     "(SELECT nhip_tim FROM health_records WHERE patient_id = p.id AND nhip_tim IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as nhip_tim, " +
+                     "(SELECT can_nang_kg FROM health_records WHERE patient_id = p.id AND can_nang_kg IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as can_nang_kg, " +
+                     "(SELECT bmi FROM health_records WHERE patient_id = p.id AND bmi IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as bmi, " +
+                     "(SELECT thoi_gian_do FROM health_records WHERE patient_id = p.id ORDER BY thoi_gian_do DESC LIMIT 1) as thoi_gian_do, " +
+                     "NULL as hba1c_percent, NULL as cholesterol_mmol, NULL as triglyceride_mmol " +
+                     "FROM (SELECT ? as id) p";
+        HealthRecord hr = null;
+        try (Connection conn = DBContext.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                hr = new HealthRecord();
+                // hr.setId(rs.getString("id")); -- Not selecting ID since it's an aggregate of records
+                hr.setDuongHuyetMgdl(rs.getDouble("duong_huyet_mgdl"));
+                if (rs.wasNull()) hr.setDuongHuyetMgdl(null);
+                hr.setHba1cPercent(rs.getDouble("hba1c_percent"));
+                if (rs.wasNull()) hr.setHba1cPercent(null);
+                hr.setCanNangKg(rs.getDouble("can_nang_kg"));
+                if (rs.wasNull()) hr.setCanNangKg(null);
+                hr.setBmi(rs.getDouble("bmi"));
+                if (rs.wasNull()) hr.setBmi(null);
+                hr.setCholesterolMmol(rs.getDouble("cholesterol_mmol"));
+                if (rs.wasNull()) hr.setCholesterolMmol(null);
+                hr.setTriglycerideMmol(rs.getDouble("triglyceride_mmol"));
+                if (rs.wasNull()) hr.setTriglycerideMmol(null);
+                hr.setNhipTim(rs.getInt("nhip_tim"));
+                if (rs.wasNull()) hr.setNhipTim(null);
+                hr.setHuyetApTamThu(rs.getInt("huyet_ap_tam_thu"));
+                if (rs.wasNull()) hr.setHuyetApTamThu(null);
+                hr.setHuyetApTamTruong(rs.getInt("huyet_ap_tam_truong"));
+                if (rs.wasNull()) hr.setHuyetApTamTruong(null);
+                hr.setThoiGianDo(rs.getTimestamp("thoi_gian_do"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // Enrich with data from lab_results if hr is found
+        if (hr != null) {
+            String labSql = "SELECT hba1c, cholesterol_tp, triglyceride FROM lab_results WHERE patient_id = ? ORDER BY ngay_xet_nghiem DESC LIMIT 1";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(labSql)) {
+                ps.setString(1, patientId);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    if (rs.getObject("hba1c") != null) hr.setHba1cPercent(rs.getDouble("hba1c"));
+                    if (rs.getObject("cholesterol_tp") != null) hr.setCholesterolMmol(rs.getDouble("cholesterol_tp"));
+                    if (rs.getObject("triglyceride") != null) hr.setTriglycerideMmol(rs.getDouble("triglyceride"));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return hr;
+    }
+
     public HealthRecord getLatestHeartRateRecord(String patientId) {
         String sql = "SELECT * FROM health_records WHERE patient_id = ? AND nhip_tim IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1";
         try (Connection conn = DBContext.getConnection();

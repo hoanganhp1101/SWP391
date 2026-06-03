@@ -23,7 +23,13 @@ public class PatientDAO {
                 p.setNgaySinh(rs.getDate("ngay_sinh"));
                 p.setGioiTinh(rs.getString("gioi_tinh"));
                 p.setChieuCaoCm(rs.getDouble("chieu_cao_cm"));
+                p.setDiaChi(rs.getString("dia_chi"));
+                p.setBaoHiemYTe(rs.getString("bao_hiem_y_te"));
                 p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
+                p.setTienSuBenh(rs.getString("tien_su_benh"));
+                p.setDiUng(rs.getString("di_ung"));
+                p.setNhomMau(rs.getString("nhom_mau"));
+                p.setNgayChanDoanTieuDuong(rs.getDate("ngay_chan_doan_tieu_duong"));
                 p.setHoTen(rs.getString("ho_ten"));
                 return p;
             }

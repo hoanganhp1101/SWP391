@@ -2,6 +2,7 @@ package com.example.diabetesmanage.model;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class Prescription {
     private String id;
@@ -9,10 +10,16 @@ public class Prescription {
     private String bacSiId;
     private Date ngayKeDon;
     private String chanDoan;
+    private String huongDieuTri;
+    private String cheDoAn;
+    private String luyenTap;
     private Timestamp ngayTaiKham;
     
     // For joining with doctor User table
     private String bacSiName;
+    
+    // List of medications
+    private List<Medication> medications;
 
     public Prescription() {}
 
@@ -31,4 +38,12 @@ public class Prescription {
 
     public String getBacSiName() { return bacSiName; }
     public void setBacSiName(String bacSiName) { this.bacSiName = bacSiName; }
+    public String getHuongDieuTri() { return huongDieuTri; }
+    public void setHuongDieuTri(String huongDieuTri) { this.huongDieuTri = huongDieuTri; }
+    public String getCheDoAn() { return cheDoAn; }
+    public void setCheDoAn(String cheDoAn) { this.cheDoAn = cheDoAn; }
+    public String getLuyenTap() { return luyenTap; }
+    public void setLuyenTap(String luyenTap) { this.luyenTap = luyenTap; }
+    public List<Medication> getMedications() { return medications; }
+    public void setMedications(List<Medication> medications) { this.medications = medications; }
 }

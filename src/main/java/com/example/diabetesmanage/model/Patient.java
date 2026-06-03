@@ -13,6 +13,10 @@ public class Patient {
     private String diaChi;
     private String baoHiemYTe;
     private String loaiTieuDuong;
+    private String tienSuBenh;
+    private String diUng;
+    private String nhomMau;
+    private Date ngayChanDoanTieuDuong;
     private Timestamp ngayTao;
     
     // Thuộc tính bổ sung từ bảng users
@@ -42,4 +46,12 @@ public class Patient {
     public void setNgayTao(Timestamp ngayTao) { this.ngayTao = ngayTao; }
     public String getHoTen() { return hoTen; }
     public void setHoTen(String hoTen) { this.hoTen = hoTen; }
+    public String getTienSuBenh() { return tienSuBenh; }
+    public void setTienSuBenh(String tienSuBenh) { this.tienSuBenh = tienSuBenh; }
+    public String getDiUng() { return diUng; }
+    public void setDiUng(String diUng) { this.diUng = diUng; }
+    public String getNhomMau() { return nhomMau; }
+    public void setNhomMau(String nhomMau) { this.nhomMau = nhomMau; }
+    public Date getNgayChanDoanTieuDuong() { return ngayChanDoanTieuDuong; }
+    public void setNgayChanDoanTieuDuong(Date ngayChanDoanTieuDuong) { this.ngayChanDoanTieuDuong = ngayChanDoanTieuDuong; }
 }

@@ -15,6 +15,10 @@ public class HealthRecord {
     private Integer nhipTim;
     private Integer huyetApTamThu;
     private Integer huyetApTamTruong;
+    private Double canNangKg;
+    private Double bmi;
+    private Double cholesterolMmol;
+    private Double triglycerideMmol;
     private String ghiChu;
     private Timestamp thoiGianDo;
     private Timestamp ngayTao;
@@ -51,4 +55,12 @@ public class HealthRecord {
     public void setHuyetApTamThu(Integer huyetApTamThu) { this.huyetApTamThu = huyetApTamThu; }
     public Integer getHuyetApTamTruong() { return huyetApTamTruong; }
     public void setHuyetApTamTruong(Integer huyetApTamTruong) { this.huyetApTamTruong = huyetApTamTruong; }
+    public Double getCanNangKg() { return canNangKg; }
+    public void setCanNangKg(Double canNangKg) { this.canNangKg = canNangKg; }
+    public Double getBmi() { return bmi; }
+    public void setBmi(Double bmi) { this.bmi = bmi; }
+    public Double getCholesterolMmol() { return cholesterolMmol; }
+    public void setCholesterolMmol(Double cholesterolMmol) { this.cholesterolMmol = cholesterolMmol; }
+    public Double getTriglycerideMmol() { return triglycerideMmol; }
+    public void setTriglycerideMmol(Double triglycerideMmol) { this.triglycerideMmol = triglycerideMmol; }
 }

@@ -756,8 +756,8 @@
         <div class="nav-left">
             <div class="logo">HealthAlert</div>
             <div class="nav-links">
-                <a href="#" class="active">Tổng quan</a>
-                <a href="#">Hồ sơ sức khỏe</a>
+                <a href="patient-dashboard" class="active">Tổng quan</a>
+                <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
                 <a href="#">Lịch hẹn</a>
                 <a href="#">Báo cáo</a>
             </div>
@@ -779,7 +779,8 @@
             </div>
 
             <nav class="sidebar-menu">
-                <a href="#" class="menu-btn active"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
+                <a href="patient-dashboard" class="menu-btn active"><i class="fas fa-chart-pie"></i> Tổng quan</a>
+                <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
                 <a href="#" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
                 <a href="#" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
                 <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
@@ -1157,27 +1158,67 @@
             trendsChart.update();
         }
 
+        function filterByDays(data, days) {
+            if (!data || data.length === 0) return [];
+            
+            // Tìm ngày mới nhất trong data làm mốc
+            let maxDate = new Date(0);
+            data.forEach(item => {
+                if (item.time) {
+                    const tDate = new Date(item.time.replace(' ', 'T'));
+                    if (tDate > maxDate) maxDate = tDate;
+                }
+            });
+            
+            if (maxDate.getTime() === 0) maxDate = new Date();
+            
+            const pastDate = new Date(maxDate);
+            pastDate.setDate(maxDate.getDate() - days + 1);
+            pastDate.setHours(0, 0, 0, 0);
+            
+            return data.filter(item => {
+                if (!item.time) return false;
+                const tDate = new Date(item.time.replace(' ', 'T'));
+                return tDate >= pastDate;
+            });
+        }
+
         btn7.addEventListener('click', () => {
             btn7.classList.add('active');
             btn30.classList.remove('active');
             datePicker.value = '';
-            // updateChart(realChartData); // For now realChartData has all points
+            const filteredData = filterByDays(dbData, 7);
+            updateChart(processData(filteredData.length > 0 ? filteredData : dbData));
         });
 
         btn30.addEventListener('click', () => {
             btn30.classList.add('active');
             btn7.classList.remove('active');
             datePicker.value = '';
-            // updateChart(realChartData);
+            const filteredData = filterByDays(dbData, 30);
+            updateChart(processData(filteredData.length > 0 ? filteredData : dbData));
         });
 
         datePicker.addEventListener('change', (e) => {
             if(e.target.value) {
                 btn7.classList.remove('active');
                 btn30.classList.remove('active');
-                // Lọc dữ liệu theo ngày trong tương lai nếu muốn
+                
+                const selectedDate = e.target.value; // format: YYYY-MM-DD
+                const filteredData = dbData.filter(item => {
+                    if (!item.time) return false;
+                    return item.time.startsWith(selectedDate);
+                });
+                updateChart(processData(filteredData));
+            } else {
+                btn7.click();
             }
         });
+
+        // Kích hoạt mặc định xem 7 ngày gần nhất
+        setTimeout(() => {
+            btn7.click();
+        }, 100);
 
         // Modal Logic
         const recordModal = document.getElementById('recordModal');
