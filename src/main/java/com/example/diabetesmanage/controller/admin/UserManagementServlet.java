@@ -20,9 +20,38 @@ public class UserManagementServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<User> list = userDAO.getAllUsers();
+        String role = request.getParameter("role");
+        String status = request.getParameter("status");
+        String keyword = request.getParameter("keyword");
+
+        int page = 1;
+        int recordsPerPage = 10;
+
+        if (request.getParameter("page") != null) {
+            try {
+                page = Integer.parseInt(request.getParameter("page"));
+            } catch (NumberFormatException e) {
+                page = 1;
+            }
+        }
+
+        int offset = (page - 1) * recordsPerPage;
+
+        int totalRecords = userDAO.getTotalUsersCount(role, status, keyword);
+        int totalPages = (int) Math.ceil(totalRecords * 1.0 / recordsPerPage);
+
+        List<User> list = userDAO.getFilteredUsers(role, status, keyword, offset, recordsPerPage);
 
         request.setAttribute("userList", list);
+
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecords", totalRecords);
+        request.setAttribute("recordsPerPage", recordsPerPage);
+
+        request.setAttribute("selectedRole", role);
+        request.setAttribute("selectedStatus", status);
+        request.setAttribute("searchKeyword", keyword);
 
         request.getRequestDispatcher("/WEB-INF/views/admin/user-management.jsp").forward(request, response);
     }

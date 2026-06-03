@@ -1,10 +1,3 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: nguye
-  Date: 31/05/2026
-  Time: 1:13 CH
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <!DOCTYPE html>
@@ -76,26 +69,30 @@
         </div>
 
         <div class="custom-card flex-grow-1">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <form id="searchFilterForm" action="${pageContext.request.contextPath}/admin/users" method="GET" class="d-flex justify-content-between align-items-center mb-4">
                 <div class="d-flex gap-3">
-                    <select class="form-select form-select-sm shadow-none" style="width: 150px;">
+                    <select id="roleSelect" name="role" class="form-select form-select-sm shadow-none" style="width: 150px;">
                         <option value="">Tất cả vai trò</option>
-                        <option value="benh_nhan">Bệnh nhân</option>
-                        <option value="bac_si">Bác sĩ</option>
-                        <option value="y_ta">Y tá</option>
-                        <option value="quan_tri_vien">Admin</option>
+                        <option value="benh_nhan" ${selectedRole == 'benh_nhan' ? 'selected' : ''}>Bệnh nhân</option>
+                        <option value="bac_si" ${selectedRole == 'bac_si' ? 'selected' : ''}>Bác sĩ</option>
+                        <option value="y_ta" ${selectedRole == 'y_ta' ? 'selected' : ''}>Y tá</option>
+                        <option value="quan_tri_vien" ${selectedRole == 'quan_tri_vien' ? 'selected' : ''}>Admin</option>
                     </select>
-                    <select class="form-select form-select-sm shadow-none" style="width: 150px;">
-                        <option value="">Trạng thái</option>
-                        <option value="1">Đang hoạt động</option>
-                        <option value="0">Đã khóa</option>
+                    <select id="statusSelect" name="status" class="form-select form-select-sm shadow-none" style="width: 150px;">
+                        <option value="">Trạng thái (Tất cả)</option>
+                        <option value="1" ${selectedStatus == '1' ? 'selected' : ''}>Đang hoạt động</option>
+                        <option value="0" ${selectedStatus == '0' ? 'selected' : ''}>Đã khóa</option>
                     </select>
                 </div>
-                <div class="input-group input-group-sm" style="width: 250px;">
-                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0 shadow-none" placeholder="Tìm tên, email hoặc SĐT...">
+                <div class="d-flex gap-2">
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                        <input id="keywordInput" type="text" name="keyword" value="${searchKeyword}" class="form-control border-start-0 ps-0 shadow-none" placeholder="Tìm tên, email hoặc SĐT...">
+                    </div>
+                    <a href="${pageContext.request.contextPath}/admin/users" class="btn btn-sm btn-light border">Reset</a>
                 </div>
-            </div>
+            </form>
 
             <div class="table-responsive">
                 <table class="table custom-table mb-0 align-middle">
@@ -109,7 +106,7 @@
                         <th class="text-end">Hành động</th>
                     </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="userTableBody">
                     <c:forEach var="user" items="${userList}">
                         <tr>
                             <td>
@@ -141,7 +138,6 @@
                             </td>
                             <td class="text-end">
                                 <button class="btn btn-sm btn-light text-primary border-0 me-1" title="Sửa"><i class="fas fa-edit"></i></button>
-
                                 <c:choose>
                                     <c:when test="${user.kichHoat == 1}">
                                         <button class="btn btn-sm btn-light text-danger border-0" title="Khóa tài khoản"><i class="fas fa-lock"></i></button>
@@ -156,41 +152,9 @@
 
                     <c:if test="${empty userList}">
                         <tr>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-sm" style="background:#dbeafe; color:#1e40af;">DT</div>
-                                    <div class="fw-bold" style="font-size:0.85rem;">Đỗ Thị L.</div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-muted" style="font-size:0.75rem;">dothil@example.com</div>
-                                <div class="text-muted" style="font-size:0.75rem;">0981112233</div>
-                            </td>
-                            <td><span class="badge bg-secondary rounded-pill">Bệnh nhân</span></td>
-                            <td class="text-muted small">2024-05-30</td>
-                            <td><span class="badge-active">Hoạt động</span></td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-light text-primary border-0 me-1"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-light text-danger border-0"><i class="fas fa-lock"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-sm" style="background:#e0f2fe; color:#0369a1;">BS</div>
-                                    <div class="fw-bold" style="font-size:0.85rem;">Bác sĩ Trần Thị B</div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-muted" style="font-size:0.75rem;">bacsi@example.com</div>
-                                <div class="text-muted" style="font-size:0.75rem;">0912345678</div>
-                            </td>
-                            <td><span class="badge bg-info rounded-pill">Bác sĩ</span></td>
-                            <td class="text-muted small">2024-01-15</td>
-                            <td><span class="badge-active">Hoạt động</span></td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-light text-primary border-0 me-1"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-light text-danger border-0"><i class="fas fa-lock"></i></button>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-folder-open fs-3 mb-2"></i>
+                                <p class="mb-0">Không tìm thấy tài khoản nào phù hợp.</p>
                             </td>
                         </tr>
                     </c:if>
@@ -198,15 +162,27 @@
                 </table>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                <span class="text-muted small">Hiển thị 1 đến 10 của 45 tài khoản</span>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><a class="page-link shadow-none" href="#">Trước</a></li>
-                    <li class="page-item active"><a class="page-link shadow-none" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link shadow-none" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link shadow-none" href="#">3</a></li>
-                    <li class="page-item"><a class="page-link shadow-none" href="#">Sau</a></li>
-                </ul>
+            <div id="paginationContainer">
+                <c:if test="${totalPages > 1}">
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <span class="text-muted small">
+                            Hiển thị trang ${currentPage} / ${totalPages} (Tổng số: ${totalRecords} tài khoản)
+                        </span>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                                <a class="page-link shadow-none" href="${pageContext.request.contextPath}/admin/users?role=${selectedRole}&status=${selectedStatus}&keyword=${searchKeyword}&page=${currentPage - 1}">Trước</a>
+                            </li>
+                            <c:forEach begin="1" end="${totalPages}" var="i">
+                                <li class="page-item ${currentPage == i ? 'active' : ''}">
+                                    <a class="page-link shadow-none" href="${pageContext.request.contextPath}/admin/users?role=${selectedRole}&status=${selectedStatus}&keyword=${searchKeyword}&page=${i}">${i}</a>
+                                </li>
+                            </c:forEach>
+                            <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                                <a class="page-link shadow-none" href="${pageContext.request.contextPath}/admin/users?role=${selectedRole}&status=${selectedStatus}&keyword=${searchKeyword}&page=${currentPage + 1}">Sau</a>
+                            </li>
+                        </ul>
+                    </div>
+                </c:if>
             </div>
         </div>
     </main>
@@ -222,12 +198,10 @@
             <div class="modal-body">
                 <form action="${pageContext.request.contextPath}/admin/users" method="POST">
                     <input type="hidden" name="action" value="create">
-
                     <div class="mb-3">
                         <label class="form-label small fw-medium">Họ và Tên <span class="text-danger">*</span></label>
                         <input type="text" class="form-control shadow-none" name="hoTen" required placeholder="Nhập họ và tên...">
                     </div>
-
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label small fw-medium">Email <span class="text-danger">*</span></label>
@@ -238,12 +212,10 @@
                             <input type="text" class="form-control shadow-none" name="soDienThoai" placeholder="09xxxxxxx">
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label small fw-medium">Mật khẩu <span class="text-danger">*</span></label>
                         <input type="password" class="form-control shadow-none" name="matKhau" required placeholder="Nhập mật khẩu khởi tạo">
                     </div>
-
                     <div class="mb-4">
                         <label class="form-label small fw-medium">Vai trò hệ thống <span class="text-danger">*</span></label>
                         <select class="form-select shadow-none" name="vaiTro" required>
@@ -254,7 +226,6 @@
                         </select>
                         <div class="form-text small text-muted mt-1"><i class="fas fa-info-circle"></i> Nếu chọn "Bệnh nhân", hệ thống sẽ tự động tạo hồ sơ bệnh án đi kèm.</div>
                     </div>
-
                     <div class="d-flex justify-content-end gap-2">
                         <button type="button" class="btn btn-light fw-medium px-4" data-bs-dismiss="modal">Hủy</button>
                         <button type="submit" class="btn btn-primary fw-medium px-4" style="background-color: var(--primary-blue); border:none;">Tạo tài khoản</button>
@@ -267,5 +238,50 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/script.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("searchFilterForm");
+        const keywordInput = document.getElementById("keywordInput");
+        const roleSelect = document.getElementById("roleSelect");
+        const statusSelect = document.getElementById("statusSelect");
+        const tableBody = document.getElementById("userTableBody");
+        const paginationContainer = document.getElementById("paginationContainer");
+
+        let debounceTimer;
+
+        function doLiveSearch() {
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            params.set("page", "1");
+
+            const url = form.action + "?" + params.toString();
+
+            window.history.pushState({}, "", url);
+
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, "text/html");
+
+                    tableBody.innerHTML = doc.getElementById("userTableBody").innerHTML;
+                    paginationContainer.innerHTML = doc.getElementById("paginationContainer").innerHTML;
+                })
+                .catch(err => console.error("Lỗi Live Search:", err));
+        }
+
+        keywordInput.addEventListener("input", function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(doLiveSearch, 300);
+        });
+
+        roleSelect.addEventListener("change", doLiveSearch);
+
+        statusSelect.addEventListener("change", doLiveSearch);
+    });
+</script>
+
 </body>
 </html>
