@@ -27,6 +27,7 @@ public class PatientDAO {
                 p.setBaoHiemYTe(rs.getString("bao_hiem_y_te"));
                 p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
                 p.setTienSuBenh(rs.getString("tien_su_benh"));
+                p.setTienSuGiaDinh(rs.getString("tien_su_gia_dinh"));
                 p.setDiUng(rs.getString("di_ung"));
                 p.setNhomMau(rs.getString("nhom_mau"));
                 p.setNgayChanDoanTieuDuong(rs.getDate("ngay_chan_doan_tieu_duong"));

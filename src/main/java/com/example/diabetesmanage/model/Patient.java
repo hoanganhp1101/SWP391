@@ -14,6 +14,7 @@ public class Patient {
     private String baoHiemYTe;
     private String loaiTieuDuong;
     private String tienSuBenh;
+    private String tienSuGiaDinh;
     private String diUng;
     private String nhomMau;
     private Date ngayChanDoanTieuDuong;
@@ -48,6 +49,8 @@ public class Patient {
     public void setHoTen(String hoTen) { this.hoTen = hoTen; }
     public String getTienSuBenh() { return tienSuBenh; }
     public void setTienSuBenh(String tienSuBenh) { this.tienSuBenh = tienSuBenh; }
+    public String getTienSuGiaDinh() { return tienSuGiaDinh; }
+    public void setTienSuGiaDinh(String tienSuGiaDinh) { this.tienSuGiaDinh = tienSuGiaDinh; }
     public String getDiUng() { return diUng; }
     public void setDiUng(String diUng) { this.diUng = diUng; }
     public String getNhomMau() { return nhomMau; }

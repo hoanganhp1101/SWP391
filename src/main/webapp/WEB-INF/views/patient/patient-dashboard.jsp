@@ -782,7 +782,7 @@
                 <a href="patient-dashboard" class="menu-btn active"><i class="fas fa-chart-pie"></i> Tổng quan</a>
                 <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
                 <a href="#" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
-                <a href="#" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
+                <a href="patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
                 <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
                 <a href="#" class="menu-btn"><i class="fas fa-history"></i> Lịch sử cảnh báo</a>
             </nav>
@@ -986,8 +986,14 @@
             <form action="logData" method="POST">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Đường huyết (mg/dL)</label>
-                        <input type="number" step="0.1" name="duong_huyet" class="form-control" placeholder="VD: 110">
+                        <label>Đường huyết</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="number" step="0.1" name="duong_huyet" class="form-control" placeholder="VD: 110">
+                            <select name="don_vi_duong_huyet" class="form-control" style="width: 100px;">
+                                <option value="mg/dL">mg/dL</option>
+                                <option value="mmol/L">mmol/L</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Nhịp tim (BPM)</label>
@@ -1032,6 +1038,8 @@
         // Dữ liệu thật từ backend (DB)
         const dbData = ${chartDataJson != null ? chartDataJson : '[]'};
 
+        let currentUnit = 'mg/dL'; // default
+
         function processData(dataList) {
             const result = {
                 labels: [],
@@ -1047,8 +1055,15 @@
                 } else {
                     result.labels.push('');
                 }
+                
+                // Convert glucose if needed
+                let glucoseVal = item.glucose;
+                if (glucoseVal !== null && currentUnit === 'mmol/L') {
+                    glucoseVal = (glucoseVal / 18.0).toFixed(1);
+                }
+
                 // Nếu null sẽ vẽ đứt quãng hoặc không vẽ
-                result.glucose.push(item.glucose);
+                result.glucose.push(glucoseVal);
                 result.heartRate.push(item.hr);
                 result.systolic.push(item.sys);
                 result.diastolic.push(item.dia);
@@ -1152,6 +1167,7 @@
         function updateChart(dataset) {
             trendsChart.data.labels = dataset.labels;
             trendsChart.data.datasets[0].data = dataset.glucose;
+            trendsChart.data.datasets[0].label = 'Đường huyết (' + currentUnit + ')';
             trendsChart.data.datasets[1].data = dataset.heartRate;
             trendsChart.data.datasets[2].data = dataset.systolic;
             trendsChart.data.datasets[3].data = dataset.diastolic;

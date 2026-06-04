@@ -25,6 +25,7 @@ public class LogDataServlet extends HttpServlet {
         }
 
         String glucoseStr = request.getParameter("duong_huyet");
+        String donViStr = request.getParameter("don_vi_duong_huyet");
         String nhipTimStr = request.getParameter("nhip_tim");
         String haThuStr = request.getParameter("huyet_ap_thu");
         String haTruongStr = request.getParameter("huyet_ap_truong");
@@ -38,7 +39,11 @@ public class LogDataServlet extends HttpServlet {
         
         try {
             if (glucoseStr != null && !glucoseStr.trim().isEmpty()) {
-                record.setDuongHuyetMgdl(Double.parseDouble(glucoseStr));
+                double glucose = Double.parseDouble(glucoseStr);
+                if ("mmol/L".equals(donViStr)) {
+                    glucose = glucose * 18.0;
+                }
+                record.setDuongHuyetMgdl(glucose);
             }
             if (nhipTimStr != null && !nhipTimStr.trim().isEmpty()) {
                 record.setNhipTim(Integer.parseInt(nhipTimStr));

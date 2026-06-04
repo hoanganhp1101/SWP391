@@ -161,7 +161,7 @@
                 <a href="patient-dashboard" class="menu-btn"><i class="fas fa-chart-pie"></i> Tổng quan</a>
                 <a href="patient-medical-profile" class="menu-btn active"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
                 <a href="#" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
-                <a href="#" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
+                <a href="patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
                 <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
                 <a href="#" class="menu-btn"><i class="fas fa-history"></i> Lịch sử cảnh báo</a>
             </nav>
@@ -228,6 +228,10 @@
                         <div class="info-group">
                             <div class="info-label">Tiền sử bệnh lý</div>
                             <div class="info-value">${patientInfo.tienSuBenh != null ? patientInfo.tienSuBenh : 'Không ghi nhận'}</div>
+                        </div>
+                        <div class="info-group">
+                            <div class="info-label">Tiền sử gia đình</div>
+                            <div class="info-value">${patientInfo.tienSuGiaDinh != null ? patientInfo.tienSuGiaDinh : 'Không ghi nhận'}</div>
                         </div>
                         <div class="info-group">
                             <div class="info-label">Dị ứng thuốc / Thức ăn</div>

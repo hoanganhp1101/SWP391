@@ -111,6 +111,21 @@ CREATE TABLE lab_results (
     CONSTRAINT fk_lab_encounter FOREIGN KEY (encounter_id) REFERENCES medical_encounters(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE medication_logs (
+    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    patient_id          CHAR(36)        NOT NULL,
+    medication_id       CHAR(36)        NOT NULL, -- Link với thuốc trong đơn
+    ngay_uong           DATE            NOT NULL, -- Cần uống vào ngày nào
+    thoi_diem_du_kien   TIME            DEFAULT NULL, -- Giờ dự kiến (VD: 08:00 sáng)
+    thoi_gian_thuc_te   DATETIME        DEFAULT NULL, -- Lúc bệnh nhân bấm tick
+    trang_thai          ENUM('da_uong', 'bo_qua', 'chua_uong') NOT NULL DEFAULT 'chua_uong',
+    ghi_chu             TEXT            DEFAULT NULL,
+    ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_ml_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ml_med FOREIGN KEY (medication_id) REFERENCES medications(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE health_records (
     id                      CHAR(36)        NOT NULL DEFAULT (UUID()),
