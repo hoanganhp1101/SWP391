@@ -13,11 +13,13 @@ import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.AppointmentDAO;
 import com.example.diabetesmanage.dao.MedicalDocumentDAO;
 import com.example.diabetesmanage.dao.AlertDAO;
+import com.example.diabetesmanage.dao.AIAnalysisDAO;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.model.MedicalDocument;
 import com.example.diabetesmanage.model.Alert;
+import com.example.diabetesmanage.model.AIAnalysis;
 
 @WebServlet(name = "PatientDashboardServlet", urlPatterns = {"/patient-dashboard"})
 public class PatientDashboardServlet extends HttpServlet {
@@ -83,6 +85,13 @@ public class PatientDashboardServlet extends HttpServlet {
             AlertDAO alertDAO = new AlertDAO();
             List<Alert> alerts = alertDAO.getRecentAlerts(patientId);
             request.setAttribute("alerts", alerts);
+
+            // Lấy kết quả phân tích AI mới nhất
+            AIAnalysisDAO aiDAO = new AIAnalysisDAO();
+            AIAnalysis latestAI = aiDAO.getLatestAnalysis(patientId);
+            if (latestAI != null) {
+                request.setAttribute("aiAnalysis", latestAI);
+            }
         }
 
         // Chuyển hướng tới giao diện JSP
