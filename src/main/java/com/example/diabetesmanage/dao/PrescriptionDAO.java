@@ -96,4 +96,53 @@ public class PrescriptionDAO {
         
         return p;
     }
+
+    public List<Prescription> getPrescriptionsForPatient(String patientId) {
+        List<Prescription> list = new ArrayList<>();
+        String sql = "SELECT p.*, u.ho_ten as bac_si_name " +
+                     "FROM prescriptions p " +
+                     "JOIN users u ON p.bac_si_id = u.id " +
+                     "WHERE p.patient_id = ? " +
+                     "ORDER BY p.ngay_ke_don DESC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Prescription p = new Prescription();
+                p.setId(rs.getString("id"));
+                p.setPatientId(rs.getString("patient_id"));
+                p.setBacSiId(rs.getString("bac_si_id"));
+                p.setNgayKeDon(rs.getDate("ngay_ke_don"));
+                p.setChanDoan(rs.getString("chan_doan"));
+                p.setHuongDieuTri(rs.getString("huong_dieu_tri"));
+                p.setCheDoAn(rs.getString("che_do_an"));
+                p.setLuyenTap(rs.getString("luyen_tap"));
+                p.setNgayTaiKham(rs.getTimestamp("ngay_tai_kham"));
+                p.setBacSiName(rs.getString("bac_si_name"));
+                p.setMedications(new ArrayList<>());
+
+                // Load medications for this prescription
+                String medSql = "SELECT * FROM medications WHERE prescription_id = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(medSql)) {
+                    ps2.setString(1, p.getId());
+                    ResultSet rs2 = ps2.executeQuery();
+                    while (rs2.next()) {
+                        Medication m = new Medication();
+                        m.setId(rs2.getString("id"));
+                        m.setTenThuoc(rs2.getString("ten_thuoc"));
+                        m.setLieuLuong(rs2.getString("lieu_luong"));
+                        m.setDonVi(rs2.getString("don_vi"));
+                        m.setTanSuat(rs2.getString("tan_suat"));
+                        p.getMedications().add(m);
+                    }
+                }
+
+                list.add(p);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

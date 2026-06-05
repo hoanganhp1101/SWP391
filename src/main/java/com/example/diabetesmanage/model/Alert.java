@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 public class Alert {
     private String id;
     private String patientId;
+    private String aiAnalysisId;
     private String loaiCanhBao;
     private String mucDo;
     private String tieuDe;
@@ -33,4 +34,7 @@ public class Alert {
 
     public Timestamp getThoiGianTao() { return thoiGianTao; }
     public void setThoiGianTao(Timestamp thoiGianTao) { this.thoiGianTao = thoiGianTao; }
+
+    public String getAiAnalysisId() { return aiAnalysisId; }
+    public void setAiAnalysisId(String aiAnalysisId) { this.aiAnalysisId = aiAnalysisId; }
 }

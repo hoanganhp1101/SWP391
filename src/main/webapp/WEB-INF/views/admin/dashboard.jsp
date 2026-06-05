@@ -96,7 +96,10 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white font-weight-bold d-flex justify-content-between align-items-center">
                     <span><i class="fas fa-list me-2 text-primary"></i>Theo dõi Log hệ thống gần đây</span>
-                    <a href="#" class="btn btn-sm btn-primary">Xem tất cả báo cáo</a>
+                    <div>
+                        <a href="ai-report" class="btn btn-sm btn-outline-success me-2"><i class="fas fa-robot"></i> Báo cáo AI</a>
+                        <a href="#" class="btn btn-sm btn-primary">Xem tất cả báo cáo</a>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <table class="table table-hover mb-0">
