@@ -1,7 +1,7 @@
 package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
-import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.model.*;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,22 +9,19 @@ import java.util.List;
 
 public class HealthRecordDAO {
 
-    public List<HealthRecord> getByPatient(String patientId) {
+    public List<HealthRecord> getHealthRecord() {
 
         List<HealthRecord> list = new ArrayList<>();
 
         String sql =
                 "SELECT * " +
                         "FROM health_records " +
-                        "WHERE patient_id = ? " +
                         "ORDER BY thoi_gian_do DESC";
 
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
-
-            ps.setString(1, patientId);
 
             ResultSet rs = ps.executeQuery();
 
@@ -104,12 +101,16 @@ public class HealthRecordDAO {
         return null;
     }
 
-    public HealthRecord getRecordById(String recordId) {
+    public HealthRecord getHealthRecordRecordById(String recordId) {
 
         String sql =
-                "SELECT * " +
-                        "FROM health_records " +
-                        "WHERE id = ?";
+        "SELECT hr.*, " +
+                "p.id AS patient_id, " +
+                "u.ho_ten " +
+                "FROM health_records hr " +
+                "JOIN patients p ON hr.patient_id = p.id " +
+                "JOIN users u ON p.user_id = u.id " +
+                "WHERE hr.id = ?";
 
         try (
                 Connection con = DBContext.getConnection();
@@ -125,10 +126,70 @@ public class HealthRecordDAO {
                 HealthRecord hr = new HealthRecord();
 
                 hr.setId(rs.getString("id"));
-                hr.setDuongHuyetMgdl(rs.getDouble("duong_huyet_mgdl"));
-                hr.setHba1cPercent(rs.getDouble("hba1c_percent"));
-                hr.setBmi(rs.getDouble("bmi"));
-                hr.setCanNangKg(rs.getDouble("can_nang_kg"));
+
+                hr.setDuongHuyetMgdl(
+                        rs.getDouble("duong_huyet_mgdl")
+                );
+
+                hr.setThoiDiemDoDuong(
+                        rs.getString("thoi_diem_do_duong")
+                );
+
+                hr.setHuyetApTamThu(
+                        rs.getInt("huyet_ap_tam_thu")
+                );
+
+                hr.setHuyetApTamTruong(
+                        rs.getInt("huyet_ap_tam_truong")
+                );
+
+                hr.setNhipTim(
+                        rs.getInt("nhip_tim")
+                );
+
+                hr.setCanNangKg(
+                        rs.getDouble("can_nang_kg")
+                );
+
+                hr.setBmi(
+                        rs.getDouble("bmi")
+                );
+
+                hr.setHba1cPercent(
+                        rs.getDouble("hba1c_percent")
+                );
+
+                hr.setCholesterolMmol(
+                        rs.getDouble("cholesterol_mmol")
+                );
+
+                hr.setTriglycerideMmol(
+                        rs.getDouble("triglyceride_mmol")
+                );
+
+                hr.setSoBuocChan(
+                        rs.getInt("so_buoc_chan")
+                );
+
+                hr.setCarbsG(
+                        rs.getDouble("carbs_g")
+                );
+
+                hr.setSoGioNgu(
+                        rs.getDouble("so_gio_ngu")
+                );
+
+                hr.setLieuLuongInsulinUi(
+                        rs.getInt("lieu_luong_insulin_ui")
+                );
+
+                hr.setLoaiInsulinTiem(
+                        rs.getString("loai_insulin_tiem")
+                );
+
+                hr.setGhiChu(
+                        rs.getString("ghi_chu")
+                );
 
                 Timestamp timestamp =
                         rs.getTimestamp("thoi_gian_do");
@@ -139,8 +200,23 @@ public class HealthRecordDAO {
                     );
                 }
 
+                Patient patient = new Patient();
+                patient.setId(
+                        rs.getString("patient_id")
+                );
+
+                User user = new User();
+                user.setHoTen(
+                        rs.getString("ho_ten")
+                );
+
+                patient.setUser(user);
+
+                hr.setPatient(patient);
+
                 return hr;
             }
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -149,61 +225,4 @@ public class HealthRecordDAO {
         return null;
     }
 
-    public boolean insert(HealthRecord hr) {
-
-        String sql =
-                "INSERT INTO health_records(" +
-                        "patient_id," +
-                        "duong_huyet_mgdl," +
-                        "hba1c_percent," +
-                        "bmi," +
-                        "can_nang_kg," +
-                        "thoi_gian_do" +
-                        ") VALUES (?, ?, ?, ?, ?, ?)";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-
-            ps.setString(
-                    1,
-                    hr.getPatient().getId()
-            );
-
-            ps.setDouble(
-                    2,
-                    hr.getDuongHuyetMgdl()
-            );
-
-            ps.setDouble(
-                    3,
-                    hr.getHba1cPercent()
-            );
-
-            ps.setDouble(
-                    4,
-                    hr.getBmi()
-            );
-
-            ps.setDouble(
-                    5,
-                    hr.getCanNangKg()
-            );
-
-            ps.setTimestamp(
-                    6,
-                    Timestamp.valueOf(
-                            hr.getThoiGianDo()
-                    )
-            );
-
-            return ps.executeUpdate() > 0;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
 }

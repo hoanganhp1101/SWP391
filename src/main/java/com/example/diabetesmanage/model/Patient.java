@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.model;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 public class Patient {
@@ -8,6 +9,7 @@ public class Patient {
 
     private User user;
     private User doctor;
+    private Integer tuoi;
 
     private LocalDate ngaySinh;
     private String gioiTinh;
@@ -19,10 +21,37 @@ public class Patient {
     private String diUng;
     private String nhomMau;
 
+    private Timestamp ngayCapNhat;
     private LocalDate ngayChanDoanTieuDuong;
     private String loaiTieuDuong;
 
+    private Double duongHuyetGanNhat;
+    private Double bmiGanNhat;
+    private Double hba1cGanNhat;
+
+    private String mucNguyCo;
+    private Double diemNguyCo;
+
+    private Timestamp lanDoCuoi;
+    private Integer canhBaoChuaDoc;
+
+    public Integer getTuoi() {
+        return tuoi;
+    }
+
+    public void setTuoi(Integer tuoi) {
+        this.tuoi = tuoi;
+    }
+
     public Patient() {
+    }
+
+    public Timestamp getNgayCapNhat() {
+        return ngayCapNhat;
+    }
+
+    public void setNgayCapNhat(Timestamp ngayCapNhat) {
+        this.ngayCapNhat = ngayCapNhat;
     }
 
     public String getId() {
@@ -129,4 +158,60 @@ public class Patient {
         this.loaiTieuDuong = loaiTieuDuong;
     }
 // Getter Setter
+
+    public Double getDuongHuyetGanNhat() {
+        return duongHuyetGanNhat;
+    }
+
+    public void setDuongHuyetGanNhat(Double duongHuyetGanNhat) {
+        this.duongHuyetGanNhat = duongHuyetGanNhat;
+    }
+
+    public Double getBmiGanNhat() {
+        return bmiGanNhat;
+    }
+
+    public void setBmiGanNhat(Double bmiGanNhat) {
+        this.bmiGanNhat = bmiGanNhat;
+    }
+
+    public Double getHba1cGanNhat() {
+        return hba1cGanNhat;
+    }
+
+    public void setHba1cGanNhat(Double hba1cGanNhat) {
+        this.hba1cGanNhat = hba1cGanNhat;
+    }
+
+    public String getMucNguyCo() {
+        return mucNguyCo;
+    }
+
+    public void setMucNguyCo(String mucNguyCo) {
+        this.mucNguyCo = mucNguyCo;
+    }
+
+    public Double getDiemNguyCo() {
+        return diemNguyCo;
+    }
+
+    public void setDiemNguyCo(Double diemNguyCo) {
+        this.diemNguyCo = diemNguyCo;
+    }
+
+    public Timestamp getLanDoCuoi() {
+        return lanDoCuoi;
+    }
+
+    public void setLanDoCuoi(Timestamp lanDoCuoi) {
+        this.lanDoCuoi = lanDoCuoi;
+    }
+
+    public Integer getCanhBaoChuaDoc() {
+        return canhBaoChuaDoc;
+    }
+
+    public void setCanhBaoChuaDoc(Integer canhBaoChuaDoc) {
+        this.canhBaoChuaDoc = canhBaoChuaDoc;
+    }
 }

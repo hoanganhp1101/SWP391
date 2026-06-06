@@ -32,7 +32,7 @@ public class PatientRecordDetailController extends HttpServlet {
         }
 
         HealthRecord record =
-                healthRecordDAO.getRecordById(recordId);
+                healthRecordDAO.getHealthRecordRecordById(recordId);
 
         if (record == null) {
 
@@ -49,7 +49,7 @@ public class PatientRecordDetailController extends HttpServlet {
         );
 
         request.getRequestDispatcher(
-                "/doctor/record-detail.jsp"
+                "/WEB-INF/views/doctor/medicalrecorddetail.jsp"
         ).forward(request, response);
     }
 }

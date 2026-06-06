@@ -138,14 +138,6 @@
         }
 
         /* ==========================
-           MAIN
-        ========================== */
-
-        .main-content{
-            flex:1;
-        }
-
-        /* ==========================
            TOPBAR
         ========================== */
 
@@ -235,6 +227,246 @@
             border-radius:50%;
             object-fit:cover;
         }
+        .page-content{
+            padding:32px;
+        }
+
+        .page-header{
+            margin-bottom:28px;
+        }
+
+        .page-header h1{
+            font-size:38px;
+            font-weight:700;
+            margin-bottom:10px;
+        }
+
+        .page-header p{
+            color:#64748b;
+        }
+
+        .card{
+            background:white;
+            border:1px solid #e5e7eb;
+            border-radius:24px;
+            overflow:hidden;
+        }
+
+        .card-top{
+            padding:26px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:20px;
+            border-bottom:1px solid #e5e7eb;
+        }
+        .main-content{
+            flex:1;
+            background:#f5f7fb;
+            padding:28px;
+            overflow:auto;
+        }
+
+        .dashboard-header h1{
+            font-size:42px;
+            font-weight:700;
+            margin-bottom:8px;
+        }
+
+        .dashboard-header p{
+            color:#6b7280;
+            font-size:18px;
+        }
+
+        .stats-grid{
+            margin-top:30px;
+
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:24px;
+        }
+
+        .stat-card{
+            background:white;
+            border:1px solid #e5e7eb;
+            border-radius:18px;
+            padding:24px;
+        }
+
+        .card-top{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+        }
+
+        .card-title{
+            color:#6b7280;
+            font-size:16px;
+        }
+
+        .stat-card h2{
+            margin-top:10px;
+            font-size:42px;
+            font-weight:700;
+        }
+
+        .icon{
+            width:56px;
+            height:56px;
+
+            border-radius:14px;
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            font-size:24px;
+        }
+
+        .icon.blue{
+            background:#e8f0ff;
+            color:#1557d5;
+        }
+
+        .icon.red{
+            background:#feecec;
+            color:#ef4444;
+        }
+
+        .icon.yellow{
+            background:#fff7e8;
+            color:#f59e0b;
+        }
+
+        .icon.green{
+            background:#e9faf3;
+            color:#10b981;
+        }
+
+        .trend{
+            margin-top:18px;
+            font-size:15px;
+        }
+
+        .positive{
+            color:#10b981;
+        }
+
+        .negative{
+            color:#ef4444;
+        }
+
+        .risk-card{
+            margin-top:30px;
+            background:white;
+            border:1px solid #e5e7eb;
+            border-radius:20px;
+            padding:28px;
+        }
+
+        .risk-card h3{
+            font-size:28px;
+            margin-bottom:30px;
+        }
+
+        .risk-content{
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+        }
+
+        .donut-chart{
+            width:260px;
+            height:260px;
+            border-radius:50%;
+
+            background:
+                    conic-gradient(
+                            #10b981 0% 52%,
+                            #f59e0b 52% 83%,
+                            #f97316 83% 93%,
+                            #ef4444 93% 100%
+                    );
+
+            position:relative;
+        }
+
+        .donut-chart::after{
+            content:"";
+            position:absolute;
+
+            width:140px;
+            height:140px;
+
+            background:white;
+            border-radius:50%;
+
+            top:50%;
+            left:50%;
+
+            transform:translate(-50%,-50%);
+        }
+
+        .risk-legend{
+            margin-top:24px;
+
+            display:flex;
+            gap:24px;
+
+            font-size:18px;
+        }
+
+        .legend-item{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .dot{
+            width:14px;
+            height:14px;
+            border-radius:50%;
+            display:inline-block;
+        }
+
+        .green{
+            background:#10b981;
+        }
+
+        .yellow{
+            background:#f59e0b;
+        }
+
+        .orange{
+            background:#f97316;
+        }
+
+        .red{
+            background:#ef4444;
+        }
+
+        .risk-stats{
+            margin-top:50px;
+
+            width:100%;
+
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+        }
+
+        .risk-box{
+            text-align:center;
+        }
+
+        .risk-box h2{
+            font-size:42px;
+            margin:10px 0;
+        }
+
+        .risk-box p{
+            color:#6b7280;
+        }
     </style>
 
     <link rel="stylesheet"
@@ -297,7 +529,7 @@
                 <span>Overview</span>
             </a>
 
-            <a href="/doctor/patient-list" class="menu-item">
+            <a href="${pageContext.request.contextPath}/doctor/patient-list" class="menu-item">
                 <i class="fa-solid fa-users"></i>
                 <span>Patient List</span>
             </a>
@@ -307,14 +539,9 @@
                 <span>Emergency Alerts</span>
             </a>
 
-            <a class="menu-item">
+            <a href="${pageContext.request.contextPath}/doctor/patient-records" class="menu-item">
                 <i class="fa-regular fa-clipboard"></i>
                 <span>Medical History</span>
-            </a>
-
-            <a href="/doctor/patient-records" class="menu-item">
-                <i class="fa-regular fa-clipboard"></i>
-                <span>Health Record</span>
             </a>
 
             <a class="menu-item">
@@ -348,7 +575,137 @@
     <!-- MAIN -->
     <main class="main-content">
 
+        <div class="dashboard-container">
 
+            <div class="dashboard-header">
+                <h1>Dashboard Overview</h1>
+                <p>Monitor patient health metrics and risk levels</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="card-top">
+                        <div>
+                            <span class="card-title">Total Patients</span>
+                            <h2>1,248</h2>
+                        </div>
+                        <div class="icon blue">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-top">
+                        <div>
+                            <span class="card-title">High Risk Patients</span>
+                            <h2>87</h2>
+                        </div>
+                        <div class="icon red">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-top">
+                        <div>
+                            <span class="card-title">Active Alerts</span>
+                            <h2>23</h2>
+                        </div>
+                        <div class="icon yellow">
+                            <i class="fa-regular fa-bell"></i>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+                    <div class="card-top">
+                        <div>
+                            <span class="card-title">Health Records Today</span>
+                            <h2>156</h2>
+                        </div>
+                        <div class="icon green">
+                            <i class="fa-regular fa-file-lines"></i>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Risk Distribution -->
+            <div class="risk-card">
+
+                <h3>Risk Level Distribution</h3>
+
+                <div class="risk-content">
+
+                    <div class="donut-chart"></div>
+
+                    <div class="risk-legend">
+
+                        <div class="legend-item">
+                            <span class="dot green"></span>
+                            Low Risk
+                        </div>
+
+                        <div class="legend-item">
+                            <span class="dot yellow"></span>
+                            Medium Risk
+                        </div>
+
+                        <div class="legend-item">
+                            <span class="dot orange"></span>
+                            High Risk
+                        </div>
+
+                        <div class="legend-item">
+                            <span class="dot red"></span>
+                            Critical Risk
+                        </div>
+
+                    </div>
+
+                    <div class="risk-stats">
+
+                        <div class="risk-box">
+                            <span class="dot green"></span>
+                            <h2>642</h2>
+                            <p>Low Risk</p>
+                        </div>
+
+                        <div class="risk-box">
+                            <span class="dot yellow"></span>
+                            <h2>389</h2>
+                            <p>Medium Risk</p>
+                        </div>
+
+                        <div class="risk-box">
+                            <span class="dot orange"></span>
+                            <h2>130</h2>
+                            <p>High Risk</p>
+                        </div>
+
+                        <div class="risk-box">
+                            <span class="dot red"></span>
+                            <h2>87</h2>
+                            <p>Critical Risk</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </main>
 

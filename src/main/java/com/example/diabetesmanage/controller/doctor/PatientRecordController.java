@@ -21,33 +21,16 @@ public class PatientRecordController extends HttpServlet {
                          HttpServletResponse response)
             throws ServletException, IOException {
 
-        String patientId =
-                request.getParameter("patientId");
-
-        if (patientId == null || patientId.trim().isEmpty()) {
-
-            response.sendRedirect(
-                    request.getContextPath()
-                            + "/doctor/patients"
-            );
-            return;
-        }
-
         List<HealthRecord> records =
-                healthRecordDAO.getByPatient(patientId);
+                healthRecordDAO.getHealthRecord();
 
         request.setAttribute(
                 "records",
                 records
         );
 
-        request.setAttribute(
-                "patientId",
-                patientId
-        );
-
         request.getRequestDispatcher(
-                "/doctor/patient-records.jsp"
+                "/WEB-INF/views/doctor/medicalrecordmanagement.jsp"
         ).forward(request, response);
     }
 }

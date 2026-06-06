@@ -32,15 +32,13 @@ public class PatientDetailController extends HttpServlet {
             return;
         }
 
-        User doctor =
-                (User) request.getSession()
-                        .getAttribute("user");
+//        User doctor =
+//                (User) request.getSession()
+//                        .getAttribute("user");
 
         Patient patient =
                 patientDAO.getPatientByIdAndDoctor(
-                        patientId,
-                        doctor.getId()
-                );
+                        patientId);
 
         if (patient == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
@@ -51,7 +49,7 @@ public class PatientDetailController extends HttpServlet {
         request.setAttribute("patient", patient);
 
         request.getRequestDispatcher(
-                "/doctor/patientdetail.jsp"
+                "/WEB-INF/views/doctor/patientdetail.jsp"
         ).forward(request, response);
     }
 }

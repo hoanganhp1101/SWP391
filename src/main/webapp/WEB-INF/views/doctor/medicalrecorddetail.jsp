@@ -474,77 +474,116 @@
                 <form class="form-container">
 
                     <div class="form-group">
-                        <label>Record ID</label>
-                        <input type="text"
-                               value="${record.id}"
-                               readonly>
+                        <label>Record ID *</label>
+                        <input type="text" value="${record.id}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Patient ID</label>
-                        <input type="text"
-                               value="${record.patient.id}"
-                               readonly>
+                        <label>Patient ID *</label>
+                        <input type="text" value="${record.patient.id}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text"
-                               value="${record.patient.user.hoTen}"
-                               readonly>
+                        <label>Patient Name</label>
+                        <input type="text" value="${record.patient.user.hoTen}" readonly>
                     </div>
 
                     <div class="form-group">
                         <label>Blood Glucose (mg/dL)</label>
-                        <input type="number"
-                               value="${record.duongHuyetMgdl}">
+                        <input type="number" step="0.01" value="${record.duongHuyetMgdl}" readonly>
                     </div>
 
                     <div class="form-group">
                         <label>Measurement Condition</label>
-                        <input type="text"
-                               value="${record.thoiDiemDoDuong}">
+                        <input type="text" value="${record.thoiDiemDoDuong}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Insulin Dose (Units)</label>
-                        <input type="number"
-                               value="${record.lieuLuongInsulinUi}">
+                        <label>Systolic Blood Pressure</label>
+                        <input type="number" value="${record.huyetApTamThu}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Insulin Type</label>
-                        <input type="text"
-                               value="${record.loaiInsulinTiem}">
+                        <label>Diastolic Blood Pressure</label>
+                        <input type="number" value="${record.huyetApTamTruong}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Heart Rate (bpm)</label>
+                        <input type="number" value="${record.nhipTim}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" step="0.01" value="${record.canNangKg}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>BMI</label>
+                        <input type="number" step="0.01" value="${record.bmi}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>HbA1c (%)</label>
+                        <input type="number" step="0.01" value="${record.hba1cPercent}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cholesterol (mmol/L)</label>
+                        <input type="number" step="0.01" value="${record.cholesterolMmol}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Triglyceride (mmol/L)</label>
+                        <input type="number" step="0.01" value="${record.triglycerideMmol}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Steps Walked</label>
+                        <input type="number" value="${record.soBuocChan}" readonly>
                     </div>
 
                     <div class="form-group">
                         <label>Carbohydrate Intake (g)</label>
-                        <input type="number"
-                               value="${record.carbsG}">
+                        <input type="number" step="0.01" value="${record.carbsG}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Measurement Date</label>
-                        <input type="datetime-local"
-                               value="${record.thoiGianDo}">
+                        <label>Sleep Duration (hours)</label>
+                        <input type="number" step="0.1" value="${record.soGioNgu}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Insulin Dose (UI)</label>
+                        <input type="number" value="${record.lieuLuongInsulinUi}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Insulin Type</label>
+                        <input type="text" value="${record.loaiInsulinTiem}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea rows="3" readonly>${record.ghiChu}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Measurement Time</label>
+                        <input type="text" value="${record.thoiGianDo}" readonly>
                     </div>
 
                 </form>
 
             </div>
             <div class="button-group">
-
-                <a class="cancel-btn"
-                   href="${pageContext.request.contextPath}/doctor/patient-records?patientId=${record.patient.id}">
-                    Back
-                </a>
-
-                <button type="submit"
-                        class="submit-btn">
-                    Update Medical Record
+                <button type="button" class="cancel-btn">
+                    Cancel
                 </button>
 
+                <button type="submit" class="submit-btn">
+                    Update Patient Medical Record
+                </button>
             </div>
         </div>
 

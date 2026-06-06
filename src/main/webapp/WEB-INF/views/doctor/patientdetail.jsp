@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -487,6 +488,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" value="${patient.tuoi}" readonly>
+                    </div>
+
+                    <div class="form-group">
                         <label>Gender</label>
                         <input type="text" value="${patient.gioiTinh}" readonly>
                     </div>
@@ -506,7 +512,40 @@
                         <input type="text" value="${patient.diaChi}" readonly>
                     </div>
 
-                </form>
+                    <div class="form-group">
+                        <label>Diabetes Type</label>
+                        <input type="text" value="${patient.loaiTieuDuong}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Medical History</label>
+                        <input type="text" value="${patient.tienSuBenh}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Blood Type</label>
+                        <input type="text" value="${patient.nhomMau}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Health Insurance</label>
+                        <input type="text" value="${patient.baoHiemYTe}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Allergies</label>
+                        <input type="text" value="${patient.diUng}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Diabetes Diagnosis Date</label>
+                        <input type="date" value="${patient.ngayChanDoanTieuDuong}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Last Updated</label>
+                        <input type="text" value="${patient.ngayCapNhat}" readonly>
+                    </div>
 
             </div>
 

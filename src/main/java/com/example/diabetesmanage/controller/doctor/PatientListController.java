@@ -22,14 +22,16 @@ public class PatientListController extends HttpServlet {
                          HttpServletResponse response)
             throws ServletException, IOException {
 
-        User doctor =
-                (User) request.getSession()
-                        .getAttribute("user");
+//        User doctor =
+//                (User) request.getSession()
+//                        .getAttribute("user");
 
-        List<Patient> patients =
-                patientDAO.getPatientsByDoctor(
-                        doctor.getId()
-                );
+//        List<Patient> patients =
+//                patientDAO.getPatientsByDoctor(
+//                        doctor.getId()
+//                );
+          List<Patient> patients =
+                  patientDAO.getPatients();
 
         request.setAttribute(
                 "patients",
@@ -37,7 +39,7 @@ public class PatientListController extends HttpServlet {
         );
 
         request.getRequestDispatcher(
-                "/doctor/patient-list.jsp"
+                "/WEB-INF/views/doctor/patientmanagement.jsp"
         ).forward(request, response);
     }
 }
