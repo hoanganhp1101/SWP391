@@ -18,9 +18,9 @@ import util.Encode;
 @WebServlet(name = "Logincontroller", urlPatterns = { "/Logincontroller" })
 public class LoginController extends HttpServlet {
 
-    private static final String LOGIN_VIEW = "/views/auth/login.jsp";
-    private static final String ADMIN_VIEW = "/views/admin/dashboard/finacialDashboard.jsp";
-    private static final String USER_VIEW = "/views/inventory/homepage.jsp";
+    private static final String LOGIN_VIEW = "/WEB-INF/views/auth/login.jsp";
+    private static final String ADMIN_VIEW = "/WEB-INF/views/admin/dashboard.jsp";
+    private static final String USER_VIEW = "/WEB-INF/views/homepage.jsp";
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -99,10 +99,10 @@ public class LoginController extends HttpServlet {
             // Redirect theo role tới CÁC CONTROLLER TƯƠNG ỨNG
             String role = user.getVaiTro();
             
-            if ("Admin".equalsIgnoreCase(role)) {
+            if ("quan_tri_vien".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 1);
                 // Đẩy về Controller xử lý danh sách nhân viên của Admin
-                response.sendRedirect(request.getContextPath() + "/financial-dashboard");
+                response.sendRedirect(request.getContextPath() + "/admin-dashboard");
                 
             } else {
                 // Các trường hợp còn lại (Ví dụ: Thủ kho - Inventory)
@@ -127,6 +127,6 @@ public class LoginController extends HttpServlet {
 
     @Override
     public String getServletInfo() {
-        return "Login Controller — Fashion Warehouse";
+        return "Login Controller — Diabetes Support System";
     }
 }

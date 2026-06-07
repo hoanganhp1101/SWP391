@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.mail.MessagingException;
-import model.Users;
+import model.User;
 import util.EmailUtils;
 import util.Encode;
 
@@ -17,7 +17,7 @@ import util.Encode;
 @WebServlet(name = "ForgotPasswordController", urlPatterns = { "/ForgotPassword" })
 public class ForgotPasswordController extends HttpServlet {
 
-    private static final String FORGOT_VIEW = "/views/auth/forgot-password.jsp";
+    private static final String FORGOT_VIEW = "/WEB-INF/views/auth/forgot-password.jsp";
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // ── GET: hiển thị form ────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ public class ForgotPasswordController extends HttpServlet {
 
         // Tìm user theo email
         UserDAO dao = UserDAO.getInstance();
-        Users user = dao.getUserByEmail(email.trim());
+        User user = dao.getUserByEmail(email.trim());
 
         if (user == null) {
             request.setAttribute("error", "Email không tồn tại trong hệ thống");
@@ -70,8 +70,8 @@ public class ForgotPasswordController extends HttpServlet {
         }
 
         // Gửi email chứa mật khẩu mới
-        String subject = "[Fashion Warehouse] Mật khẩu mới của bạn";
-        String body = buildEmailBody(user.getFullName(), newPassword);
+        String subject = "[Diab] Mật khẩu mới của bạn";
+        String body = buildEmailBody(user.getHoTen(), newPassword);
 
         try {
             EmailUtils.sendHtmlEmail(user.getEmail(), subject, body);

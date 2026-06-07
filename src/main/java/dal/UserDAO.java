@@ -43,8 +43,6 @@ public class UserDAO extends DBContext {
         return u;
     }
 
-    
-
     // ── Find by Email ─────────────────────────────────────────────────────────
     /**
      * Tìm user theo Email.
@@ -75,18 +73,28 @@ public class UserDAO extends DBContext {
         return getUserByEmail(email);
     }
 
-    public User checkLogin(String emailOrUsername, String hashedPassword) {
-        if (emailOrUsername == null || hashedPassword == null) {
+    public User checkLogin(String email, String hashedPassword) {
+        if (email == null || hashedPassword == null) {
+
             return null;
         }
 
-        User user = getUserByEmail(emailOrUsername);
+        // 1. Tìm user trong DB theo Email
+        User user = getUserByEmail(email);
+
         if (user == null) {
-            user = getUserByUsername(emailOrUsername);
+
+            return null;
         }
-        if (user != null && hashedPassword.equals(user.getMatKhauHash())) {
+
+        // In ra để bạn nhìn tận mắt hai chuỗi có khớp nhau không ở tab Output
+        // 2. Sửa từ .equals() sang .trim().equalsIgnoreCase() để chống lỗi khoảng trắng và chữ hoa/thường
+        if (hashedPassword.trim().equalsIgnoreCase(user.getMatKhauHash().trim())) {
+
             return user;
         }
+
+        System.out.println("DEBUG: Tìm thấy tài khoản nhưng MẬT KHẨU KHÔNG KHỚP!");
         return null;
     }
 
@@ -137,7 +145,7 @@ public class UserDAO extends DBContext {
             } catch (SQLException e) {
                 Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "Link GoogleId error", e);
             }
-            
+
             return existing;
         }
 
@@ -165,11 +173,23 @@ public class UserDAO extends DBContext {
     }
 
     // ================= CHECK DUPLICATE =================
-    
-
     public boolean isEmailExists(String email) {
-        String sql = "SELECT 1 FROM User WHERE email=?";
-        return checkExists(sql, email);
+        // Kiểm tra xem chữ 'email' và 'users' có viết hoa/thường chuẩn khớp với DB không
+        String sql = "SELECT email FROM users WHERE email = ?";
+
+        try (Connection conn = new DBContext().getConnection(); PreparedStatement st = conn.prepareStatement(sql)) {
+
+            st.setString(1, email);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return true; // Nếu tìm thấy bản ghi nghĩa là ĐÃ TỒN TẠI
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("dal.UserDAO.isEmailExists error");
+            e.printStackTrace(); // <-- Lỗi thật sự sẽ in ra ở đây trong tab Console
+        }
+        return false;
     }
 
     public boolean isemailExistsForUpdate(String email, UUID id) {
@@ -197,4 +217,31 @@ public class UserDAO extends DBContext {
         }
     }
 
+    /**
+     * Thêm tài khoản người dùng mới vào database.
+     */
+    public boolean registerUser(User user) {
+        // Thêm cột so_dien_thoai vào danh sách cột và thêm một dấu hỏi (?) tương ứng
+        String sql = "INSERT INTO users (ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, kich_hoat, ngay_tao) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = new DBContext().getConnection(); PreparedStatement st = conn.prepareStatement(sql)) {
+
+            // Lưu ý sắp xếp chuẩn xác thứ tự các dấu ? dựa trên câu SQL trên
+            st.setString(1, user.getHoTen());
+            st.setString(2, user.getEmail());
+            st.setString(3, user.getSoDienThoai()); // Cột số điện thoại mới thêm
+            st.setString(4, user.getVaiTro());
+            st.setString(5, user.getMatKhauHash());
+            st.setBoolean(6, user.isKichHoat());
+            st.setTimestamp(7, user.getNgayTao());
+
+            int row = st.executeUpdate();
+            return row > 0;
+        } catch (Exception e) {
+            System.out.println("dal.UserDAO.registerUser registerUser error");
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

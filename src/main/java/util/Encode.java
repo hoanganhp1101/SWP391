@@ -12,20 +12,31 @@ import java.util.Base64;
  * @author ASUS
  */
 public class Encode {
-    
-    public String Encode(String str){
-        String salt = "fgdtebxcrt213rsAS";
+
+    public String Encode(String str) {
+        // Nếu DB dùng hàm SHA2() thuần túy thì không cần cộng chuỗi salt ở đây
+        if (str == null) {
+            return null;
+        }
+
         String result = null;
-        
-        str = str + salt;
-        
         try {
-        byte[] DataByte = str.getBytes("UTF-8");
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            result = Base64.getEncoder().encodeToString(md.digest(DataByte));
+            // 1. Đổi sang thuật toán SHA-256 để khớp với SHA2 của DB
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] dataByte = str.getBytes("UTF-8");
+            byte[] digest = md.digest(dataByte);
+
+            // 2. Chuyển đổi mảng byte thành chuỗi HEX (Thập lục phân) thay vì Base64
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            result = sb.toString();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         return result;
     }
+
 }

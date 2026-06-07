@@ -1,10 +1,4 @@
 <%-- 
-    Document   : register
-    Created on : May 24, 2026, 10:33:46 PM
-    Author     : iac26
---%>
-
-<%-- 
     Document   : register.jsp
     Created on : May 24, 2026
     Author     : iac26
@@ -78,7 +72,7 @@
             .register-btn {
                 width: 100%;
                 padding: 12px;
-                background: #ff7f50; /* Đổi màu cam để phân biệt với nút login màu xanh */
+                background: #ff7f50; 
                 color: #fff;
                 border: none;
                 border-radius: 8px;
@@ -124,10 +118,16 @@
             <form action="RegisterController" method="post">
                 <input type="hidden" name="service" value="createaccount">
 
-                <input type="text" name="UserName" placeholder="Tên đăng nhập"
-                       value="${not empty UserName ? UserName : ''}" required>
-                <c:if test="${not empty usernameError}">
-                    <p class="error-text">${usernameError}</p>
+                <input type="text" name="hoTen" placeholder="Họ và tên"
+                       value="${not empty hoTen ? hoTen : ''}" required>
+                <c:if test="${not empty hoTenError}">
+                    <p class="error-text">${hoTenError}</p>
+                </c:if>
+
+                <input type="text" name="soDienThoai" placeholder="Số điện thoại"
+                       value="${not empty soDienThoai ? soDienThoai : ''}" required>
+                <c:if test="${not empty phoneError}">
+                    <p class="error-text">${phoneError}</p>
                 </c:if>
 
                 <input type="email" name="Email" placeholder="Địa chỉ Email"
