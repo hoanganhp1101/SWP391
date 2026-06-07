@@ -12,15 +12,14 @@ import model.User;
 import util.Encode;
 
 /**
- * LoginController — xử lý đăng nhập với hashed password.
- * URL: /Logincontroller
+ * LoginController — xử lý đăng nhập với hashed password. URL: /Logincontroller
  */
-@WebServlet(name = "Logincontroller", urlPatterns = { "/Logincontroller" })
+@WebServlet(name = "Logincontroller", urlPatterns = {"/Logincontroller"})
 public class LoginController extends HttpServlet {
 
     private static final String LOGIN_VIEW = "/WEB-INF/views/auth/login.jsp";
     private static final String ADMIN_VIEW = "/WEB-INF/views/admin/dashboard.jsp";
-    private static final String USER_VIEW = "/WEB-INF/views/homepage.jsp";
+    private static final String USER_VIEW = "/WEB-INF/views/patient-dashboard.jsp";
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -60,8 +59,8 @@ public class LoginController extends HttpServlet {
             if (inputUser == null || inputUser.isBlank()) {
                 request.setAttribute("emailError", "Vui lòng nhập email hoặc tên đăng nhập");
                 hasError = true;
-              
-            } else if (inputUser.length()<6||inputUser.length() > 100) {
+
+            } else if (inputUser.length() < 6 || inputUser.length() > 100) {
                 request.setAttribute("emailError", "Email/username phải nằm trong khoảng từ 6-100 ký tự");
                 hasError = true;
             }
@@ -80,7 +79,6 @@ public class LoginController extends HttpServlet {
                 return;
             }
 
-           
             Encode encoder = new Encode();
             String hashedPass = encoder.Encode(inputPass);
 
@@ -98,18 +96,24 @@ public class LoginController extends HttpServlet {
 
             // Redirect theo role tới CÁC CONTROLLER TƯƠNG ỨNG
             String role = user.getVaiTro();
-            
             if ("quan_tri_vien".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 1);
-                // Đẩy về Controller xử lý danh sách nhân viên của Admin
+                // Điều hướng về Servlet xử lý Dashboard của Admin
                 response.sendRedirect(request.getContextPath() + "/admin-dashboard");
-                
-            } else {
-                // Các trường hợp còn lại (Ví dụ: Thủ kho - Inventory)
+
+            } else if ("benh_nhan".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 2);
-                // Đẩy về Controller trang chủ của kho 
-                response.sendRedirect(request.getContextPath() + "/HomeController"); 
+                // Bệnh nhân đăng nhập thành công -> Forward trực tiếp sang trang dashboard bệnh nhân
+               response.sendRedirect(request.getContextPath() + "/patient-dashboard");
+
+            } else if ("bac_si".equalsIgnoreCase(role)) {
+                session.setAttribute("status", 3);
+                // Nếu bạn có trang riêng cho bác sĩ, hãy khai báo VIEW hoặc điều hướng tới Servlet của bác sĩ ở đây
+                // Tạm thời nếu chưa có, cho dùng chung giao diện hoặc chuyển hướng tùy ý:
+                response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
+
             }
+
         }
     }
 
