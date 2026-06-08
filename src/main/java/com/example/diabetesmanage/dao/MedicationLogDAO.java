@@ -14,7 +14,7 @@ import java.util.List;
 
 public class MedicationLogDAO {
 
-    public List<MedicationLog> getTodayChecklist(String patientId) {
+    public List<MedicationLog> getChecklistByDate(String patientId, Date date) {
         List<MedicationLog> checklist = new ArrayList<>();
         
         // Step 1: Get the latest prescription
@@ -25,8 +25,8 @@ public class MedicationLogDAO {
             return checklist;
         }
 
-        // Step 2: Check logs for each medication for today
-        String sql = "SELECT * FROM medication_logs WHERE patient_id = ? AND medication_id = ? AND ngay_uong = CURDATE()";
+        // Step 2: Check logs for each medication for specific date
+        String sql = "SELECT * FROM medication_logs WHERE patient_id = ? AND medication_id = ? AND ngay_uong = ?";
         
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -34,6 +34,7 @@ public class MedicationLogDAO {
             for (Medication med : latestPrescription.getMedications()) {
                 ps.setString(1, patientId);
                 ps.setString(2, med.getId());
+                ps.setDate(3, date);
                 ResultSet rs = ps.executeQuery();
                 
                 MedicationLog log = new MedicationLog();
@@ -54,9 +55,9 @@ public class MedicationLogDAO {
                     log.setTrangThai(rs.getString("trang_thai"));
                     log.setGhiChu(rs.getString("ghi_chu"));
                 } else {
-                    // Not logged yet today -> default 'chua_uong'
+                    // Not logged yet -> default 'chua_uong'
                     log.setTrangThai("chua_uong");
-                    log.setNgayUong(new Date(System.currentTimeMillis()));
+                    log.setNgayUong(date);
                 }
                 checklist.add(log);
             }
@@ -67,15 +68,16 @@ public class MedicationLogDAO {
         return checklist;
     }
 
-    public boolean toggleMedicationStatus(String patientId, String medicationId) {
-        // First check if an entry exists for today
-        String checkSql = "SELECT id, trang_thai FROM medication_logs WHERE patient_id = ? AND medication_id = ? AND ngay_uong = CURDATE()";
+    public boolean toggleMedicationStatus(String patientId, String medicationId, Date date) {
+        // First check if an entry exists for the specific date
+        String checkSql = "SELECT id, trang_thai FROM medication_logs WHERE patient_id = ? AND medication_id = ? AND ngay_uong = ?";
         
         try (Connection conn = DBContext.getConnection();
              PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
             
             checkPs.setString(1, patientId);
             checkPs.setString(2, medicationId);
+            checkPs.setDate(3, date);
             ResultSet rs = checkPs.executeQuery();
             
             if (rs.next()) {
@@ -93,10 +95,11 @@ public class MedicationLogDAO {
             } else {
                 // Entry does not exist, insert new as 'da_uong'
                 String insertSql = "INSERT INTO medication_logs (patient_id, medication_id, ngay_uong, thoi_gian_thuc_te, trang_thai) " +
-                                   "VALUES (?, ?, CURDATE(), CURRENT_TIMESTAMP, 'da_uong')";
+                                   "VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'da_uong')";
                 try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
                     insertPs.setString(1, patientId);
                     insertPs.setString(2, medicationId);
+                    insertPs.setDate(3, date);
                     return insertPs.executeUpdate() > 0;
                 }
             }
@@ -105,5 +108,41 @@ public class MedicationLogDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public int getAdherenceRate(String patientId, int days) {
+        // Get total medications supposed to be taken per day
+        PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
+        Prescription latestPrescription = prescriptionDAO.getLatestPrescription(patientId);
+        
+        if (latestPrescription == null || latestPrescription.getMedications() == null || latestPrescription.getMedications().isEmpty()) {
+            return 0; // No prescription, no adherence
+        }
+        
+        int medsPerDay = latestPrescription.getMedications().size();
+        int expectedTotal = medsPerDay * days;
+        if (expectedTotal == 0) return 0;
+        
+        int takenTotal = 0;
+        String sql = "SELECT COUNT(*) FROM medication_logs " +
+                     "WHERE patient_id = ? AND trang_thai = 'da_uong' " +
+                     "AND ngay_uong > DATE_SUB(CURDATE(), INTERVAL ? DAY) AND ngay_uong <= CURDATE()";
+                     
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+             
+            ps.setString(1, patientId);
+            ps.setInt(2, days);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                takenTotal = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // Prevent > 100% in case of dirty data
+        if (takenTotal > expectedTotal) takenTotal = expectedTotal;
+        return (int) (((double) takenTotal / expectedTotal) * 100);
     }
 }

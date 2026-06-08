@@ -787,6 +787,7 @@
                     position: relative;
                     overflow: hidden;
                 }
+
                 .ai-card::before {
                     content: '';
                     position: absolute;
@@ -794,15 +795,17 @@
                     right: -50%;
                     width: 200%;
                     height: 200%;
-                    background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 60%);
+                    background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
                     pointer-events: none;
                 }
+
                 .ai-card-header {
                     display: flex;
                     align-items: center;
                     gap: 0.75rem;
                     margin-bottom: 1.25rem;
                 }
+
                 .ai-icon {
                     width: 40px;
                     height: 40px;
@@ -814,45 +817,76 @@
                     font-size: 1.125rem;
                     color: white;
                 }
+
                 .ai-card-header h3 {
                     font-size: 1rem;
                     font-weight: 600;
                     color: #f1f5f9;
                 }
+
                 .ai-card-header span {
                     font-size: 0.75rem;
                     color: #94a3b8;
                 }
+
                 .ai-risk-section {
                     display: flex;
                     align-items: center;
                     gap: 2rem;
                     margin-bottom: 1.25rem;
                 }
+
                 .ai-risk-score {
                     font-size: 2.5rem;
                     font-weight: 800;
                 }
-                .ai-risk-score.safe { color: #22c55e; }
-                .ai-risk-score.medium { color: #f59e0b; }
-                .ai-risk-score.high { color: #f97316; }
-                .ai-risk-score.danger { color: #ef4444; }
+
+                .ai-risk-score.safe {
+                    color: #22c55e;
+                }
+
+                .ai-risk-score.medium {
+                    color: #f59e0b;
+                }
+
+                .ai-risk-score.high {
+                    color: #f97316;
+                }
+
+                .ai-risk-score.danger {
+                    color: #ef4444;
+                }
+
                 .ai-risk-bar {
                     flex: 1;
                     height: 10px;
-                    background: rgba(255,255,255,0.1);
+                    background: rgba(255, 255, 255, 0.1);
                     border-radius: 5px;
                     overflow: hidden;
                 }
+
                 .ai-risk-fill {
                     height: 100%;
                     border-radius: 5px;
                     transition: width 1.5s ease;
                 }
-                .ai-risk-fill.safe { background: linear-gradient(90deg, #22c55e, #4ade80); }
-                .ai-risk-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-                .ai-risk-fill.high { background: linear-gradient(90deg, #f97316, #fb923c); }
-                .ai-risk-fill.danger { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+                .ai-risk-fill.safe {
+                    background: linear-gradient(90deg, #22c55e, #4ade80);
+                }
+
+                .ai-risk-fill.medium {
+                    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+                }
+
+                .ai-risk-fill.high {
+                    background: linear-gradient(90deg, #f97316, #fb923c);
+                }
+
+                .ai-risk-fill.danger {
+                    background: linear-gradient(90deg, #ef4444, #f87171);
+                }
+
                 .ai-risk-label {
                     font-size: 0.75rem;
                     padding: 0.25rem 0.75rem;
@@ -860,233 +894,193 @@
                     font-weight: 600;
                     text-transform: uppercase;
                 }
-                .ai-risk-label.safe { background: rgba(34,197,94,0.15); color: #4ade80; }
-                .ai-risk-label.medium { background: rgba(245,158,11,0.15); color: #fbbf24; }
-                .ai-risk-label.high { background: rgba(249,115,22,0.15); color: #fb923c; }
-                .ai-risk-label.danger { background: rgba(239,68,68,0.15); color: #f87171; }
+
+                .ai-risk-label.safe {
+                    background: rgba(34, 197, 94, 0.15);
+                    color: #4ade80;
+                }
+
+                .ai-risk-label.medium {
+                    background: rgba(245, 158, 11, 0.15);
+                    color: #fbbf24;
+                }
+
+                .ai-risk-label.high {
+                    background: rgba(249, 115, 22, 0.15);
+                    color: #fb923c;
+                }
+
+                .ai-risk-label.danger {
+                    background: rgba(239, 68, 68, 0.15);
+                    color: #f87171;
+                }
+
                 .ai-detail {
                     font-size: 0.875rem;
                     color: #cbd5e1;
                     line-height: 1.6;
                     margin-bottom: 1rem;
                     padding: 0.75rem;
-                    background: rgba(255,255,255,0.03);
+                    background: rgba(255, 255, 255, 0.03);
                     border-radius: 8px;
                     border-left: 3px solid #6366f1;
                 }
+
                 .ai-recommendations {
                     display: flex;
                     flex-wrap: wrap;
                     gap: 0.5rem;
                 }
+
                 .ai-rec-tag {
                     font-size: 0.75rem;
                     padding: 0.375rem 0.75rem;
-                    background: rgba(99,102,241,0.12);
-                    border: 1px solid rgba(99,102,241,0.25);
+                    background: rgba(99, 102, 241, 0.12);
+                    border: 1px solid rgba(99, 102, 241, 0.25);
                     border-radius: 20px;
                     color: #a5b4fc;
                 }
+
                 .ai-disclaimer {
                     margin-top: 1rem;
                     padding-top: 0.75rem;
-                    border-top: 1px solid rgba(255,255,255,0.06);
+                    border-top: 1px solid rgba(255, 255, 255, 0.06);
                     font-size: 0.7rem;
                     color: #64748b;
                 }
 
-                /* === Chatbot Floating UI === */
-                .chatbot-toggle {
-                    position: fixed;
-                    bottom: 2rem;
-                    right: 2rem;
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-                    border: none;
+
+
+                /* Notifications */
+                .notification-container {
+                    position: relative;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 8px 32px rgba(99,102,241,0.4);
-                    z-index: 999;
-                    transition: transform 0.3s, box-shadow 0.3s;
-                    color: white;
-                    font-size: 1.5rem;
                 }
-                .chatbot-toggle:hover {
-                    transform: scale(1.1);
-                    box-shadow: 0 12px 40px rgba(99,102,241,0.5);
-                }
-                .chatbot-toggle .badge-dot {
+
+                .notif-badge {
                     position: absolute;
-                    top: 8px;
-                    right: 8px;
-                    width: 12px;
-                    height: 12px;
-                    background: #22c55e;
+                    top: -5px;
+                    right: -8px;
+                    background: var(--danger, #ef4444);
+                    color: white;
+                    font-size: 0.65rem;
+                    font-weight: bold;
                     border-radius: 50%;
-                    border: 2px solid white;
-                    animation: pulse-dot 2s infinite;
-                }
-                @keyframes pulse-dot {
-                    0%, 100% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.3); opacity: 0.7; }
-                }
-                .chatbot-window {
-                    position: fixed;
-                    bottom: 6.5rem;
-                    right: 2rem;
-                    width: 400px;
-                    max-height: 550px;
-                    background: rgba(15, 23, 42, 0.95);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(99,102,241,0.25);
-                    border-radius: 20px;
-                    display: flex;
-                    flex-direction: column;
-                    z-index: 999;
-                    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-                    transform: translateY(20px) scale(0.95);
-                    opacity: 0;
-                    pointer-events: none;
-                    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-                    overflow: hidden;
-                }
-                .chatbot-window.open {
-                    transform: translateY(0) scale(1);
-                    opacity: 1;
-                    pointer-events: auto;
-                }
-                .chatbot-header {
-                    padding: 1rem 1.25rem;
-                    background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1));
-                    border-bottom: 1px solid rgba(255,255,255,0.06);
+                    min-width: 18px;
+                    height: 18px;
                     display: flex;
                     align-items: center;
-                    gap: 0.75rem;
+                    justify-content: center;
+                    border: 2px solid var(--bg-white, #ffffff);
                 }
-                .chatbot-header-icon {
+
+                .notification-dropdown {
+                    position: absolute;
+                    top: 150%;
+                    right: -10px;
+                    width: 340px;
+                    background: var(--bg-white, #ffffff);
+                    border: 1px solid var(--border, #e2e8f0);
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                    display: none;
+                    flex-direction: column;
+                    z-index: 1000;
+                    overflow: hidden;
+                    animation: slideDown 0.2s ease-out;
+                    cursor: default;
+                }
+
+                .notification-dropdown.show {
+                    display: flex;
+                }
+
+                .notif-header {
+                    padding: 1rem 1.25rem;
+                    font-weight: 600;
+                    border-bottom: 1px solid var(--border, #e2e8f0);
+                    font-size: 0.875rem;
+                    background: var(--bg-body, #f8fafc);
+                    color: var(--text-dark, #1e293b);
+                }
+
+                .notif-body {
+                    max-height: 400px;
+                    overflow-y: auto;
+                }
+
+                .notif-item {
+                    display: flex;
+                    gap: 1rem;
+                    padding: 1rem 1.25rem;
+                    border-bottom: 1px solid var(--border, #e2e8f0);
+                    transition: background 0.2s, opacity 0.2s;
+                    align-items: flex-start;
+                    cursor: pointer;
+                }
+
+                .notif-item:hover {
+                    background: var(--bg-body, #f8fafc);
+                }
+
+                .notif-item.read {
+                    background: var(--bg-body, #f8fafc);
+                    opacity: 0.6;
+                }
+
+                .notif-icon {
                     width: 36px;
                     height: 36px;
-                    border-radius: 10px;
-                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-size: 1rem;
-                    color: white;
+                    flex-shrink: 0;
                 }
-                .chatbot-header-info h4 {
-                    color: #f1f5f9;
+
+                .notif-content {
+                    flex-grow: 1;
+                }
+
+                .notif-title {
                     font-size: 0.875rem;
                     font-weight: 600;
+                    color: var(--text-dark, #1e293b);
+                    margin-bottom: 0.25rem;
                 }
-                .chatbot-header-info span {
-                    color: #22c55e;
-                    font-size: 0.7rem;
+
+                .notif-message {
+                    font-size: 0.8125rem;
+                    color: var(--text-muted, #64748b);
+                    line-height: 1.4;
+                    margin-bottom: 0.25rem;
                 }
-                .chatbot-close {
-                    margin-left: auto;
-                    background: none;
-                    border: none;
+
+                .notif-time {
+                    font-size: 0.75rem;
                     color: #94a3b8;
-                    font-size: 1.25rem;
-                    cursor: pointer;
-                    transition: color 0.2s;
                 }
-                .chatbot-close:hover { color: #f1f5f9; }
-                .chatbot-messages {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 1rem;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.75rem;
-                    max-height: 380px;
+
+                .notif-empty {
+                    padding: 2rem;
+                    text-align: center;
+                    color: var(--text-muted, #64748b);
+                    font-size: 0.875rem;
                 }
-                .chat-msg {
-                    max-width: 85%;
-                    padding: 0.75rem 1rem;
-                    border-radius: 16px;
-                    font-size: 0.8125rem;
-                    line-height: 1.5;
-                    word-wrap: break-word;
-                    animation: fadeInMsg 0.3s ease;
-                }
-                @keyframes fadeInMsg {
-                    from { opacity: 0; transform: translateY(8px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .chat-msg.bot {
-                    align-self: flex-start;
-                    background: rgba(99,102,241,0.12);
-                    color: #e2e8f0;
-                    border-bottom-left-radius: 4px;
-                }
-                .chat-msg.user {
-                    align-self: flex-end;
-                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-                    color: white;
-                    border-bottom-right-radius: 4px;
-                }
-                .chat-typing {
-                    align-self: flex-start;
-                    display: flex;
-                    gap: 4px;
-                    padding: 0.75rem 1rem;
-                }
-                .chat-typing span {
-                    width: 8px;
-                    height: 8px;
-                    background: #6366f1;
-                    border-radius: 50%;
-                    animation: typing 1.4s infinite;
-                }
-                .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-                .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
-                @keyframes typing {
-                    0%, 100% { opacity: 0.3; transform: scale(0.8); }
-                    50% { opacity: 1; transform: scale(1.1); }
-                }
-                .chatbot-input {
-                    display: flex;
-                    padding: 0.75rem 1rem;
-                    gap: 0.5rem;
-                    border-top: 1px solid rgba(255,255,255,0.06);
-                    background: rgba(255,255,255,0.02);
-                }
-                .chatbot-input input {
-                    flex: 1;
-                    background: rgba(255,255,255,0.06);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    border-radius: 12px;
-                    padding: 0.625rem 1rem;
-                    color: #e2e8f0;
-                    font-size: 0.8125rem;
-                    outline: none;
-                    transition: border-color 0.2s;
-                }
-                .chatbot-input input::placeholder { color: #64748b; }
-                .chatbot-input input:focus { border-color: rgba(99,102,241,0.5); }
-                .chatbot-input button {
-                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-                    border: none;
-                    border-radius: 12px;
-                    width: 40px;
-                    height: 40px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    cursor: pointer;
-                    transition: transform 0.2s;
-                }
-                .chatbot-input button:hover { transform: scale(1.05); }
-                .chatbot-input button:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
+
+                @keyframes slideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
             </style>
         </head>
@@ -1096,7 +1090,7 @@
             <!-- Top Navigation -->
             <nav class="top-nav">
                 <div class="nav-left">
-                    <div class="logo">HealthAlert</div>
+                    <div class="logo">DiabCare</div>
                     <div class="nav-links">
                         <a href="patient-dashboard" class="active">Tổng quan</a>
                         <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
@@ -1105,7 +1099,7 @@
                     </div>
                 </div>
                 <div class="nav-right">
-                    <i class="far fa-bell"></i>
+                    <jsp:include page="notifications.jsp" />
                     <i class="fas fa-cog"></i>
                     <div class="avatar-small"></div>
                 </div>
@@ -1146,7 +1140,8 @@
                     <!-- Top Cards -->
                     <div class="row-top">
                         <!-- Heart Rate -->
-                        <div class="metric-card ${latestHeartRate != null && (latestHeartRate < 60 || latestHeartRate > 100) ? 'red-border' : ''}">
+                        <div
+                            class="metric-card ${latestHeartRate != null && (latestHeartRate < 60 || latestHeartRate > 100) ? 'red-border' : ''}">
                             <div class="metric-header">
                                 <div class="metric-title red"><i class="far fa-heart"></i> NHỊP TIM</div>
                                 <c:choose>
@@ -1154,7 +1149,8 @@
                                         <span class="badge" style="background: #e2e8f0; color: #64748b;">--</span>
                                     </c:when>
                                     <c:when test="${latestHeartRate < 60}">
-                                        <span class="badge warning" style="background: #fef3c7; color: #d97706;">NHỊP CHẬM</span>
+                                        <span class="badge warning" style="background: #fef3c7; color: #d97706;">NHỊP
+                                            CHẬM</span>
                                     </c:when>
                                     <c:when test="${latestHeartRate <= 100}">
                                         <span class="badge success">BÌNH THƯỜNG</span>
@@ -1170,7 +1166,8 @@
                             <c:if test="${latestHeartRate != null}">
                                 <div class="metric-desc">
                                     <c:choose>
-                                        <c:when test="${latestHeartRate < 60}">Dưới mức tiêu chuẩn (60-100 BPM).</c:when>
+                                        <c:when test="${latestHeartRate < 60}">Dưới mức tiêu chuẩn (60-100 BPM).
+                                        </c:when>
                                         <c:when test="${latestHeartRate <= 100}">Trong khoảng an toàn.</c:when>
                                         <c:otherwise>Cao hơn mức tiêu chuẩn.</c:otherwise>
                                     </c:choose>
@@ -1179,7 +1176,8 @@
                         </div>
 
                         <!-- Blood Pressure -->
-                        <div class="metric-card ${latestSystolic != null && (latestSystolic > 120 || latestDiastolic > 80 || latestSystolic < 90) ? 'red-border' : ''}">
+                        <div
+                            class="metric-card ${latestSystolic != null && (latestSystolic > 120 || latestDiastolic > 80 || latestSystolic < 90) ? 'red-border' : ''}">
                             <div class="metric-header">
                                 <div class="metric-title brown"><i class="fas fa-stethoscope"></i> HUYẾT ÁP</div>
                                 <c:choose>
@@ -1187,7 +1185,8 @@
                                         <span class="badge" style="background: #e2e8f0; color: #64748b;">--</span>
                                     </c:when>
                                     <c:when test="${latestSystolic < 90 || latestDiastolic < 60}">
-                                        <span class="badge warning" style="background: #fef3c7; color: #d97706;">HUYẾT ÁP THẤP</span>
+                                        <span class="badge warning" style="background: #fef3c7; color: #d97706;">HUYẾT
+                                            ÁP THẤP</span>
                                     </c:when>
                                     <c:when test="${latestSystolic <= 120 && latestDiastolic <= 80}">
                                         <span class="badge success">BÌNH THƯỜNG</span>
@@ -1198,13 +1197,16 @@
                                 </c:choose>
                             </div>
                             <div class="metric-value">
-                                ${latestSystolic != null ? latestSystolic : '--'}/${latestDiastolic != null ? latestDiastolic : '--'} <span class="metric-unit">mmHg</span>
+                                ${latestSystolic != null ? latestSystolic : '--'}/${latestDiastolic != null ?
+                                latestDiastolic : '--'} <span class="metric-unit">mmHg</span>
                             </div>
                             <c:if test="${latestSystolic != null && latestDiastolic != null}">
                                 <div class="metric-desc">
                                     <c:choose>
-                                        <c:when test="${latestSystolic < 90 || latestDiastolic < 60}">Cần theo dõi nguy cơ tụt huyết áp.</c:when>
-                                        <c:when test="${latestSystolic <= 120 && latestDiastolic <= 80}">Chỉ số lý tưởng.</c:when>
+                                        <c:when test="${latestSystolic < 90 || latestDiastolic < 60}">Cần theo dõi nguy
+                                            cơ tụt huyết áp.</c:when>
+                                        <c:when test="${latestSystolic <= 120 && latestDiastolic <= 80}">Chỉ số lý
+                                            tưởng.</c:when>
                                         <c:otherwise>Cần theo dõi, có nguy cơ tăng huyết áp.</c:otherwise>
                                     </c:choose>
                                 </div>
@@ -1250,32 +1252,43 @@
                                 <div class="ai-icon"><i class="fas fa-robot"></i></div>
                                 <div>
                                     <h3>AI Phân tích sức khỏe</h3>
-                                    <span>Cập nhật: ${aiAnalysis.thoiGianPhanTich != null ? aiAnalysis.thoiGianPhanTich.toString().substring(0,16) : 'N/A'} • Model: ${aiAnalysis.modelVersion}</span>
+                                    <span>Cập nhật: ${aiAnalysis.thoiGianPhanTich != null ?
+                                        aiAnalysis.thoiGianPhanTich.toString().substring(0,16) : 'N/A'} • Model:
+                                        ${aiAnalysis.modelVersion}</span>
                                 </div>
                             </div>
                             <div class="ai-risk-section">
-                                <c:set var="riskClass" value="${aiAnalysis.mucCanhBao == 'an_toan' ? 'safe' : (aiAnalysis.mucCanhBao == 'trung_binh' ? 'medium' : (aiAnalysis.mucCanhBao == 'cao' ? 'high' : 'danger'))}" />
-                                <div class="ai-risk-score ${riskClass}">${aiAnalysis.diemNguyCo}<span style="font-size:1rem;color:#94a3b8">/100</span></div>
+                                <c:set var="riskClass"
+                                    value="${aiAnalysis.mucCanhBao == 'an_toan' ? 'safe' : (aiAnalysis.mucCanhBao == 'trung_binh' ? 'medium' : (aiAnalysis.mucCanhBao == 'cao' ? 'high' : 'danger'))}" />
+                                <div class="ai-risk-score ${riskClass}">${aiAnalysis.diemNguyCo}<span
+                                        style="font-size:1rem;color:#94a3b8">/100</span></div>
                                 <div style="flex:1">
                                     <div class="ai-risk-bar">
-                                        <div class="ai-risk-fill ${riskClass}" style="width: ${aiAnalysis.diemNguyCo}%"></div>
+                                        <div class="ai-risk-fill ${riskClass}"
+                                            style="width: ${aiAnalysis.diemNguyCo}%;">
+                                        </div>
                                     </div>
                                     <div style="display:flex;justify-content:space-between;margin-top:0.5rem">
                                         <span class="ai-risk-label ${riskClass}">
-                                            ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao == 'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ CAO' : 'NGUY HIỂM'))}
+                                            ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao ==
+                                            'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ
+                                            CAO' : 'NGUY HIỂM'))}
                                         </span>
                                         <c:if test="${aiAnalysis.doTinCay != null}">
-                                            <span style="font-size:0.7rem;color:#64748b">Độ tin cậy: ${aiAnalysis.doTinCay}</span>
+                                            <span style="font-size:0.7rem;color:#64748b">Độ tin cậy:
+                                                ${aiAnalysis.doTinCay}</span>
                                         </c:if>
                                     </div>
                                 </div>
                             </div>
                             <div class="ai-detail">${aiAnalysis.phanTichChiTiet}</div>
                             <c:if test="${not empty aiAnalysis.khuyenNghi}">
-                                <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> Khuyến nghị</div>
+                                <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem"><i
+                                        class="fas fa-lightbulb" style="color:#fbbf24"></i> Khuyến nghị</div>
                                 <div class="ai-recommendations" id="aiRecommendations"></div>
                             </c:if>
-                            <div class="ai-disclaimer">⚠️ Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết định y tế cần được bác sĩ xác nhận.</div>
+                            <div class="ai-disclaimer">⚠️ Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết định y tế
+                                cần được bác sĩ xác nhận.</div>
                         </div>
                     </c:if>
 
@@ -1462,30 +1475,7 @@
                 </div>
             </div>
 
-            <!-- Chatbot Toggle Button -->
-            <button class="chatbot-toggle" id="chatbotToggle" title="Hỏi AI DiabCare">
-                <i class="fas fa-robot"></i>
-                <div class="badge-dot"></div>
-            </button>
-
-            <!-- Chatbot Window -->
-            <div class="chatbot-window" id="chatbotWindow">
-                <div class="chatbot-header">
-                    <div class="chatbot-header-icon"><i class="fas fa-robot"></i></div>
-                    <div class="chatbot-header-info">
-                        <h4>DiabCare AI</h4>
-                        <span>● Đang hoạt động</span>
-                    </div>
-                    <button class="chatbot-close" id="chatbotClose"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="chatbot-messages" id="chatbotMessages">
-                    <div class="chat-msg bot">Xin chào! Tôi là trợ lý AI DiabCare. Tôi có thể giúp bạn tìm hiểu về bệnh tiểu đường, chế độ ăn, thuốc, và các chỉ số sức khỏe. Hãy hỏi tôi bất cứ điều gì! 😊</div>
-                </div>
-                <div class="chatbot-input">
-                    <input type="text" id="chatInput" placeholder="Nhập câu hỏi..." autocomplete="off">
-                    <button id="chatSendBtn" title="Gửi"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            </div>
+            <jsp:include page="chatbot.jsp" />
 
             <script>
                 // Chart.js configuration for Health Trends
@@ -1524,7 +1514,7 @@
                     return result;
                 }
 
-                const dbData = ${chartDataJson != null ? chartDataJson : '[]'};
+                const dbData = ${ chartDataJson != null ? chartDataJson : '[]'};
                 const realChartData = processData(dbData);
 
                 let trendsChart = new Chart(ctx, {
@@ -1606,8 +1596,8 @@
                                     display: true,
                                     stepSize: 20
                                 },
-                                min: 40,
-                                max: 180
+                                min: 50,
+                                max: 350
                             }
                         }
                     }
@@ -1690,8 +1680,8 @@
                     btn7.click();
                 }, 100);
 
-                // Modal Logic
-                const recordModal = document.getElementById('recordModal');
+                // Existing chatbot logic
+                const chatbotFab = document.getElementById('chatbotFab');
                 const btnNewRecord = document.querySelector('.btn-new');
                 const closeModalBtn = document.getElementById('closeModalBtn');
                 const cancelModalBtn = document.getElementById('cancelModalBtn');
@@ -1716,98 +1706,24 @@
                 });
 
                 // ==================== AI RECOMMENDATIONS PARSING ====================
-                (function() {
+                (function () {
                     const recContainer = document.getElementById('aiRecommendations');
                     if (recContainer) {
                         try {
                             const rawRec = `${aiAnalysis.khuyenNghi}`;
                             if (rawRec && rawRec !== 'null' && rawRec.trim().startsWith('[')) {
                                 const recs = JSON.parse(rawRec);
-                                recs.forEach(function(rec) {
+                                recs.forEach(function (rec) {
                                     const tag = document.createElement('span');
                                     tag.className = 'ai-rec-tag';
                                     tag.textContent = '💡 ' + rec;
                                     recContainer.appendChild(tag);
                                 });
                             }
-                        } catch(e) { console.log('AI rec parse error:', e); }
+                        } catch (e) { console.log('AI rec parse error:', e); }
                     }
                 })();
 
-                // ==================== CHATBOT LOGIC ====================
-                const chatToggle = document.getElementById('chatbotToggle');
-                const chatWindow = document.getElementById('chatbotWindow');
-                const chatClose = document.getElementById('chatbotClose');
-                const chatInput = document.getElementById('chatInput');
-                const chatSendBtn = document.getElementById('chatSendBtn');
-                const chatMessages = document.getElementById('chatbotMessages');
-
-                chatToggle.addEventListener('click', () => {
-                    chatWindow.classList.toggle('open');
-                    if (chatWindow.classList.contains('open')) {
-                        chatInput.focus();
-                    }
-                });
-
-                chatClose.addEventListener('click', () => {
-                    chatWindow.classList.remove('open');
-                });
-
-                chatInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendChat();
-                    }
-                });
-
-                chatSendBtn.addEventListener('click', sendChat);
-
-                function sendChat() {
-                    const msg = chatInput.value.trim();
-                    if (!msg) return;
-
-                    // Add user message
-                    addMessage(msg, 'user');
-                    chatInput.value = '';
-                    chatSendBtn.disabled = true;
-
-                    // Show typing indicator
-                    const typingEl = document.createElement('div');
-                    typingEl.className = 'chat-typing';
-                    typingEl.innerHTML = '<span></span><span></span><span></span>';
-                    chatMessages.appendChild(typingEl);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-                    // Call AI API
-                    fetch('ai-chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                        body: 'message=' + encodeURIComponent(msg)
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        typingEl.remove();
-                        addMessage(data.reply || 'Xin lỗi, tôi không thể trả lời lúc này.', 'bot');
-                    })
-                    .catch(err => {
-                        typingEl.remove();
-                        addMessage('Lỗi kết nối. Vui lòng thử lại sau.', 'bot');
-                        console.error('Chat error:', err);
-                    })
-                    .finally(() => {
-                        chatSendBtn.disabled = false;
-                        chatInput.focus();
-                    });
-                }
-
-                function addMessage(text, type) {
-                    const msgEl = document.createElement('div');
-                    msgEl.className = 'chat-msg ' + type;
-                    // Format text: replace newlines with <br>
-                    msgEl.innerHTML = text.replace(/\n/g, '<br>');
-                    chatMessages.appendChild(msgEl);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
             </script>
         </body>
 
