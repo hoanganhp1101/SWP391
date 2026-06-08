@@ -54,6 +54,76 @@ public class PatientDAO {
 
         return list;
     }
+    public List<Patient> getPatientsByRiskLevel(String riskLevel) {
+
+        List<Patient> list = new ArrayList<>();
+
+        String condition = "";
+
+        if ("low".equalsIgnoreCase(riskLevel)) {
+
+            condition =
+                    " AND vps.duong_huyet_gan_nhat < 140 ";
+
+        } else if ("medium".equalsIgnoreCase(riskLevel)) {
+
+            condition =
+                    " AND vps.duong_huyet_gan_nhat BETWEEN 140 AND 179 ";
+
+        } else if ("high".equalsIgnoreCase(riskLevel)) {
+
+            condition =
+                    " AND vps.duong_huyet_gan_nhat BETWEEN 180 AND 249 ";
+
+        } else if ("critical".equalsIgnoreCase(riskLevel)) {
+
+            condition =
+                    " AND vps.duong_huyet_gan_nhat >= 250 ";
+        }
+
+        String sql =
+                "SELECT vps.* " +
+                        "FROM v_patient_summary vps " +
+                        "JOIN patients p ON vps.patient_id = p.id " +
+                        "JOIN users d ON p.bac_si_id = d.id " +
+                        "WHERE d.email = ? " +
+                        condition;
+
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, "bacsi@example.com");
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Patient p = new Patient();
+
+                p.setId(rs.getString("patient_id"));
+
+                User user = new User();
+                user.setHoTen(rs.getString("ho_ten"));
+                user.setEmail(rs.getString("email"));
+
+                p.setUser(user);
+
+                p.setTuoi(rs.getInt("tuoi"));
+                p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
+                p.setGioiTinh(rs.getString("gioi_tinh"));
+                p.setNgayCapNhat(rs.getTimestamp("lan_do_cuoi"));
+
+                list.add(p);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
     public List<Patient> getPatientsByDoctor(String doctorId) {
 
         List<Patient> list = new ArrayList<>();

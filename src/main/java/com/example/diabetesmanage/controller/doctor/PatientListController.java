@@ -21,7 +21,6 @@ public class PatientListController extends HttpServlet {
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
             throws ServletException, IOException {
-
 //        User doctor =
 //                (User) request.getSession()
 //                        .getAttribute("user");
@@ -30,13 +29,20 @@ public class PatientListController extends HttpServlet {
 //                patientDAO.getPatientsByDoctor(
 //                        doctor.getId()
 //                );
-          List<Patient> patients =
-                  patientDAO.getPatients();
+        String risk = request.getParameter("risk");
 
-        request.setAttribute(
-                "patients",
-                patients
-        );
+        List<Patient> patients;
+
+        if (risk == null || risk.isBlank()) {
+
+            patients = patientDAO.getPatients();
+
+        } else {
+
+            patients = patientDAO.getPatientsByRiskLevel(risk);
+        }
+
+        request.setAttribute("patients", patients);
 
         request.getRequestDispatcher(
                 "/WEB-INF/views/doctor/patientmanagement.jsp"

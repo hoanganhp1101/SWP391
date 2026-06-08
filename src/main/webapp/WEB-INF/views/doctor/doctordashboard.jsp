@@ -545,8 +545,8 @@
             </a>
 
             <a class="menu-item">
-                <i class="fa-solid fa-chart-column"></i>
-                <span>Analytics</span>
+                <i class="fa-solid fa-prescription-bottle-medical"></i>
+                <span>Prescriptions</span>
             </a>
 
         </nav>
@@ -640,70 +640,7 @@
 
             </div>
 
-            <!-- Risk Distribution -->
-            <div class="risk-card">
 
-                <h3>Risk Level Distribution</h3>
-
-                <div class="risk-content">
-
-                    <div class="donut-chart"></div>
-
-                    <div class="risk-legend">
-
-                        <div class="legend-item">
-                            <span class="dot green"></span>
-                            Low Risk
-                        </div>
-
-                        <div class="legend-item">
-                            <span class="dot yellow"></span>
-                            Medium Risk
-                        </div>
-
-                        <div class="legend-item">
-                            <span class="dot orange"></span>
-                            High Risk
-                        </div>
-
-                        <div class="legend-item">
-                            <span class="dot red"></span>
-                            Critical Risk
-                        </div>
-
-                    </div>
-
-                    <div class="risk-stats">
-
-                        <div class="risk-box">
-                            <span class="dot green"></span>
-                            <h2>642</h2>
-                            <p>Low Risk</p>
-                        </div>
-
-                        <div class="risk-box">
-                            <span class="dot yellow"></span>
-                            <h2>389</h2>
-                            <p>Medium Risk</p>
-                        </div>
-
-                        <div class="risk-box">
-                            <span class="dot orange"></span>
-                            <h2>130</h2>
-                            <p>High Risk</p>
-                        </div>
-
-                        <div class="risk-box">
-                            <span class="dot red"></span>
-                            <h2>87</h2>
-                            <p>Critical Risk</p>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
 
         </div>
 

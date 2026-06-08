@@ -664,25 +664,29 @@ RISK FILTER
                 </div>
                 <div class="risk-filter">
 
-                    <button class="filter-btn active" data-risk="all">
+                    <a href="${pageContext.request.contextPath}/doctor/patient-list" class="filter-btn ${empty param.risk ? 'active' : ''}">
                         All
-                    </button>
+                    </a>
 
-                    <button class="filter-btn filter-low" data-risk="low">
+                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=low"
+                       class="filter-btn filter-low ${param.risk == 'low' ? 'active' : ''}">
                         Low
-                    </button>
+                    </a>
 
-                    <button class="filter-btn filter-medium" data-risk="medium">
+                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=medium"
+                       class="filter-btn filter-medium ${param.risk == 'medium' ? 'active' : ''}">
                         Medium
-                    </button>
+                    </a>
 
-                    <button class="filter-btn filter-high" data-risk="high">
+                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=high"
+                       class="filter-btn filter-high ${param.risk == 'high' ? 'active' : ''}">
                         High
-                    </button>
+                    </a>
 
-                    <button class="filter-btn filter-critical" data-risk="critical">
+                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=critical"
+                       class="filter-btn filter-critical ${param.risk == 'critical' ? 'active' : ''}">
                         Critical
-                    </button>
+                    </a>
 
                 </div>
 
