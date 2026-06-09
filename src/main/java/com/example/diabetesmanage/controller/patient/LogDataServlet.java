@@ -37,12 +37,16 @@ public class LogDataServlet extends HttpServlet {
         String haThuStr = request.getParameter("huyet_ap_thu");
         String haTruongStr = request.getParameter("huyet_ap_truong");
         String thoiDiem = request.getParameter("thoi_diem");
-        String ghiChu = request.getParameter("ghi_chu");
+        String chestPain = request.getParameter("chest_pain");
+        String dizziness = request.getParameter("dizziness");
+        String fatigue = request.getParameter("fatigue");
 
         HealthRecord record = new HealthRecord();
         record.setPatientId(patientId);
         record.setThoiDiemDoDuong(thoiDiem);
-        record.setGhiChu(ghiChu);
+        record.setChestPain(chestPain != null ? 1 : 0);
+        record.setDizziness(dizziness != null ? 1 : 0);
+        record.setFatigue(fatigue != null ? 1 : 0);
         
         try {
             if (glucoseStr != null && !glucoseStr.trim().isEmpty()) {

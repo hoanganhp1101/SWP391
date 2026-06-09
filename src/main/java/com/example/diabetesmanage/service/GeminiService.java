@@ -3,6 +3,7 @@ package com.example.diabetesmanage.service;
 import com.example.diabetesmanage.model.AIAnalysis;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
+import com.example.diabetesmanage.model.MedicationLog;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -14,6 +15,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.List;
 
 /**
  * Service gọi Google Gemini API để phân tích sức khỏe, chatbot, và tạo báo cáo.
@@ -343,6 +345,56 @@ public class GeminiService {
         sb.append("LƯU Ý: Đây là báo cáo hỗ trợ tham khảo. Quyết định lâm sàng cuối cùng thuộc về bác sĩ điều trị.\n");
 
         return sb.toString();
+    }
+
+    // ==================== CHỨC NĂNG 4: NHẮC NHỞ UỐNG THUỐC AI ====================
+
+    /**
+     * Tạo lời nhắc nhở uống thuốc cá nhân hóa bằng AI.
+     */
+    public String generateMedicationReminder(String patientName, List<MedicationLog> checklist) {
+        if (checklist == null || checklist.isEmpty()) {
+            return "Hôm nay bạn không có lịch uống thuốc nào. Hãy tiếp tục duy trì thói quen sống khỏe nhé!";
+        }
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Bạn là một trợ lý y tế ảo thân thiện của ứng dụng DiabCare, chuyên chăm sóc bệnh nhân tiểu đường. ");
+        prompt.append("Dưới đây là danh sách thuốc hôm nay của bệnh nhân tên là ").append(patientName != null ? patientName : "Bệnh nhân").append(":\n\n");
+
+        int chuaUong = 0;
+        int daUong = 0;
+
+        for (MedicationLog log : checklist) {
+            prompt.append("- Thuốc: ").append(log.getTenThuoc())
+                  .append(" (").append(log.getLieuLuong()).append(" ").append(log.getDonVi()).append(") - ");
+            if ("da_uong".equals(log.getTrangThai())) {
+                prompt.append("ĐÃ UỐNG\n");
+                daUong++;
+            } else {
+                prompt.append("CHƯA UỐNG\n");
+                chuaUong++;
+            }
+        }
+
+        prompt.append("\n=== YÊU CẦU ===\n");
+        prompt.append("Hãy viết MỘT lời nhắn siêu ngắn gọn (tối đa 2-3 câu), thân thiện và dùng emoji để:\n");
+        if (chuaUong == 0) {
+            prompt.append("- Khen ngợi bệnh nhân vì đã uống đủ tất cả các loại thuốc hôm nay. Động viên họ tiếp tục phát huy.\n");
+        } else if (daUong == 0) {
+            prompt.append("- Nhắc nhở nhẹ nhàng bệnh nhân nhớ uống thuốc đúng giờ vì hôm nay họ chưa uống viên nào.\n");
+        } else {
+            prompt.append("- Khen ngợi phần đã uống, và nhắc nhở họ đừng quên ").append(chuaUong).append(" loại thuốc còn lại trong ngày.\n");
+        }
+        prompt.append("LƯU Ý: Trả lời trực tiếp đoạn hội thoại, không cần mào đầu, không cần định dạng Markdown phức tạp.");
+
+        String response = callGeminiAPI(prompt.toString());
+
+        if (response == null || response.isEmpty()) {
+            if (chuaUong == 0) return "Tuyệt vời! Bạn đã uống đủ thuốc hôm nay. Hãy tiếp tục phát huy nhé! 🌟";
+            return "Đừng quên uống các loại thuốc còn lại trong ngày hôm nay nhé! Sức khỏe là quan trọng nhất! 💊";
+        }
+
+        return response.trim();
     }
 
     // ==================== CORE API CALL ====================

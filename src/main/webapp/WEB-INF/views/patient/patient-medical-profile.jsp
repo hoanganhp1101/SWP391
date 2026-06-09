@@ -142,7 +142,7 @@
             </div>
         </div>
         <div class="nav-right">
-            <i class="far fa-bell"></i>
+            <jsp:include page="notifications.jsp" />
             <i class="fas fa-cog"></i>
             <div class="avatar-small"></div>
         </div>
@@ -413,5 +413,6 @@
 
         </main>
     </div>
+    <jsp:include page="chatbot.jsp" />
 </body>
 </html>
