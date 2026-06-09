@@ -259,14 +259,22 @@
                     grid-template-columns: 1fr 1fr 1fr;
                     gap: 1.5rem;
                     margin-bottom: 1.5rem;
+                    align-items: start;
                 }
 
                 .metric-card {
-                    background-color: var(--bg-white);
-                    border: 1px solid var(--border);
-                    border-radius: 12px;
-                    padding: 1.5rem;
+                    background: linear-gradient(145deg, #ffffff, #f8fafc);
+                    border: 1px solid rgba(0, 0, 0, 0.05);
+                    border-radius: 16px;
+                    padding: 1.75rem 1.5rem;
                     position: relative;
+                    box-shadow: 0 4px 15px -5px rgba(0, 0, 0, 0.05);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }
+
+                .metric-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
                 }
 
                 .metric-header {
@@ -778,175 +786,189 @@
 
                 /* === AI Analysis Card === */
                 .ai-card {
-                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-                    border: 1px solid rgba(99, 102, 241, 0.3);
-                    border-radius: 16px;
+                    background: linear-gradient(145deg, #0f172a, #1e293b);
+                    border: 1px solid rgba(139, 92, 246, 0.3);
+                    border-radius: 20px;
                     padding: 1.5rem;
-                    color: #e2e8f0;
+                    color: #f8fafc;
                     grid-column: 1 / -1;
                     position: relative;
                     overflow: hidden;
+                    box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.2);
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
+
+                .ai-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 15px 35px -5px rgba(99, 102, 241, 0.3);
                 }
 
                 .ai-card::before {
                     content: '';
                     position: absolute;
-                    top: -50%;
-                    right: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+                    top: -20%;
+                    left: -10%;
+                    width: 50%;
+                    height: 150%;
+                    background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+                    transform: rotate(-15deg);
                     pointer-events: none;
                 }
 
                 .ai-card-header {
                     display: flex;
                     align-items: center;
-                    gap: 0.75rem;
+                    gap: 1rem;
                     margin-bottom: 1.25rem;
                 }
 
                 .ai-icon {
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 10px;
-                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 1.125rem;
+                    font-size: 1.25rem;
                     color: white;
+                    box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
                 }
 
                 .ai-card-header h3 {
-                    font-size: 1rem;
-                    font-weight: 600;
-                    color: #f1f5f9;
+                    font-size: 1.15rem;
+                    font-weight: 700;
+                    background: linear-gradient(to right, #ffffff, #cbd5e1);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    margin-bottom: 0.25rem;
                 }
 
                 .ai-card-header span {
-                    font-size: 0.75rem;
+                    font-size: 0.8rem;
                     color: #94a3b8;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
                 }
 
                 .ai-risk-section {
                     display: flex;
                     align-items: center;
-                    gap: 2rem;
-                    margin-bottom: 1.25rem;
+                    gap: 1.75rem;
+                    margin-bottom: 1.5rem;
+                    background: rgba(255, 255, 255, 0.03);
+                    padding: 1.25rem;
+                    border-radius: 16px;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
                 }
 
                 .ai-risk-score {
-                    font-size: 2.5rem;
+                    font-size: 2.75rem;
                     font-weight: 800;
+                    line-height: 1;
+                    text-shadow: 0 4px 10px rgba(0,0,0,0.2);
                 }
 
-                .ai-risk-score.safe {
-                    color: #22c55e;
-                }
-
-                .ai-risk-score.medium {
-                    color: #f59e0b;
-                }
-
-                .ai-risk-score.high {
-                    color: #f97316;
-                }
-
-                .ai-risk-score.danger {
-                    color: #ef4444;
-                }
+                .ai-risk-score.safe { color: #34d399; }
+                .ai-risk-score.medium { color: #fbbf24; }
+                .ai-risk-score.high { color: #fb923c; }
+                .ai-risk-score.danger { color: #f87171; }
 
                 .ai-risk-bar {
                     flex: 1;
-                    height: 10px;
+                    height: 12px;
                     background: rgba(255, 255, 255, 0.1);
-                    border-radius: 5px;
+                    border-radius: 6px;
                     overflow: hidden;
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
                 }
 
                 .ai-risk-fill {
                     height: 100%;
-                    border-radius: 5px;
-                    transition: width 1.5s ease;
+                    border-radius: 6px;
+                    transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+                    position: relative;
+                }
+                
+                .ai-risk-fill::after {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+                    animation: shimmer 2s infinite;
+                }
+                
+                @keyframes shimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
                 }
 
-                .ai-risk-fill.safe {
-                    background: linear-gradient(90deg, #22c55e, #4ade80);
-                }
-
-                .ai-risk-fill.medium {
-                    background: linear-gradient(90deg, #f59e0b, #fbbf24);
-                }
-
-                .ai-risk-fill.high {
-                    background: linear-gradient(90deg, #f97316, #fb923c);
-                }
-
-                .ai-risk-fill.danger {
-                    background: linear-gradient(90deg, #ef4444, #f87171);
-                }
+                .ai-risk-fill.safe { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(52,211,153,0.5); }
+                .ai-risk-fill.medium { background: linear-gradient(90deg, #d97706, #fbbf24); box-shadow: 0 0 10px rgba(251,191,36,0.5); }
+                .ai-risk-fill.high { background: linear-gradient(90deg, #ea580c, #fb923c); box-shadow: 0 0 10px rgba(251,146,60,0.5); }
+                .ai-risk-fill.danger { background: linear-gradient(90deg, #dc2626, #f87171); box-shadow: 0 0 10px rgba(248,113,113,0.5); }
 
                 .ai-risk-label {
-                    font-size: 0.75rem;
-                    padding: 0.25rem 0.75rem;
+                    font-size: 0.85rem;
+                    padding: 0.4rem 1.25rem;
                     border-radius: 20px;
-                    font-weight: 600;
+                    font-weight: 700;
                     text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
 
-                .ai-risk-label.safe {
-                    background: rgba(34, 197, 94, 0.15);
-                    color: #4ade80;
-                }
-
-                .ai-risk-label.medium {
-                    background: rgba(245, 158, 11, 0.15);
-                    color: #fbbf24;
-                }
-
-                .ai-risk-label.high {
-                    background: rgba(249, 115, 22, 0.15);
-                    color: #fb923c;
-                }
-
-                .ai-risk-label.danger {
-                    background: rgba(239, 68, 68, 0.15);
-                    color: #f87171;
-                }
+                .ai-risk-label.safe { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+                .ai-risk-label.medium { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+                .ai-risk-label.high { background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
+                .ai-risk-label.danger { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
 
                 .ai-detail {
-                    font-size: 0.875rem;
+                    font-size: 0.95rem;
                     color: #cbd5e1;
                     line-height: 1.6;
-                    margin-bottom: 1rem;
-                    padding: 0.75rem;
-                    background: rgba(255, 255, 255, 0.03);
-                    border-radius: 8px;
-                    border-left: 3px solid #6366f1;
+                    margin-bottom: 1.25rem;
+                    padding: 1rem 1.25rem;
+                    background: rgba(139, 92, 246, 0.05);
+                    border-radius: 12px;
+                    border-left: 4px solid #8b5cf6;
                 }
 
                 .ai-recommendations {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 0.5rem;
+                    gap: 0.75rem;
+                    margin-top: 0.75rem;
                 }
 
                 .ai-rec-tag {
-                    font-size: 0.75rem;
-                    padding: 0.375rem 0.75rem;
-                    background: rgba(99, 102, 241, 0.12);
-                    border: 1px solid rgba(99, 102, 241, 0.25);
-                    border-radius: 20px;
-                    color: #a5b4fc;
+                    font-size: 0.85rem;
+                    padding: 0.6rem 1.2rem;
+                    background: rgba(30, 41, 59, 0.6);
+                    border: 1px solid rgba(139, 92, 246, 0.3);
+                    border-radius: 12px;
+                    color: #e2e8f0;
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 0.75rem;
+                    transition: all 0.2s;
+                }
+                
+                .ai-rec-tag:hover {
+                    background: rgba(139, 92, 246, 0.15);
+                    border-color: rgba(139, 92, 246, 0.6);
+                    transform: translateY(-2px);
                 }
 
                 .ai-disclaimer {
-                    margin-top: 1rem;
-                    padding-top: 0.75rem;
-                    border-top: 1px solid rgba(255, 255, 255, 0.06);
-                    font-size: 0.7rem;
+                    margin-top: 1.5rem;
+                    padding-top: 1rem;
+                    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+                    font-size: 0.75rem;
                     color: #64748b;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
                 }
 
 
@@ -1249,11 +1271,11 @@
                     <c:if test="${not empty aiAnalysis}">
                         <div class="ai-card">
                             <div class="ai-card-header">
-                                <div class="ai-icon"><i class="fas fa-robot"></i></div>
+                                <div class="ai-icon"><i class="fas fa-sparkles"></i></div>
                                 <div>
                                     <h3>AI Phân tích sức khỏe</h3>
-                                    <span>Cập nhật: ${aiAnalysis.thoiGianPhanTich != null ?
-                                        aiAnalysis.thoiGianPhanTich.toString().substring(0,16) : 'N/A'} • Model:
+                                    <span><i class="far fa-clock"></i> Cập nhật: ${aiAnalysis.thoiGianPhanTich != null ?
+                                        aiAnalysis.thoiGianPhanTich.toString().substring(0,16) : 'N/A'} • <i class="fas fa-cube" style="margin-left: 0.25rem;"></i> Model:
                                         ${aiAnalysis.modelVersion}</span>
                                 </div>
                             </div>
@@ -1261,21 +1283,21 @@
                                 <c:set var="riskClass"
                                     value="${aiAnalysis.mucCanhBao == 'an_toan' ? 'safe' : (aiAnalysis.mucCanhBao == 'trung_binh' ? 'medium' : (aiAnalysis.mucCanhBao == 'cao' ? 'high' : 'danger'))}" />
                                 <div class="ai-risk-score ${riskClass}">${aiAnalysis.diemNguyCo}<span
-                                        style="font-size:1rem;color:#94a3b8">/100</span></div>
+                                        style="font-size:1.25rem;color:#64748b;font-weight:600;">/100</span></div>
                                 <div style="flex:1">
                                     <div class="ai-risk-bar">
                                         <div class="ai-risk-fill ${riskClass}"
                                             style="width: ${aiAnalysis.diemNguyCo}%;">
                                         </div>
                                     </div>
-                                    <div style="display:flex;justify-content:space-between;margin-top:0.5rem">
+                                    <div style="display:flex;justify-content:space-between;margin-top:0.75rem">
                                         <span class="ai-risk-label ${riskClass}">
                                             ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao ==
                                             'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ
                                             CAO' : 'NGUY HIỂM'))}
                                         </span>
                                         <c:if test="${aiAnalysis.doTinCay != null}">
-                                            <span style="font-size:0.7rem;color:#64748b">Độ tin cậy:
+                                            <span style="font-size:0.8rem;color:#94a3b8;font-weight:500;">Độ tin cậy:
                                                 ${aiAnalysis.doTinCay}</span>
                                         </c:if>
                                     </div>
@@ -1283,12 +1305,12 @@
                             </div>
                             <div class="ai-detail">${aiAnalysis.phanTichChiTiet}</div>
                             <c:if test="${not empty aiAnalysis.khuyenNghi}">
-                                <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem"><i
-                                        class="fas fa-lightbulb" style="color:#fbbf24"></i> Khuyến nghị</div>
+                                <h4 style="font-size:1.05rem;font-weight:600;color:#f8fafc;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+                                    <i class="fas fa-magic" style="color:#a78bfa;"></i> Gợi ý từ AI
+                                </h4>
                                 <div class="ai-recommendations" id="aiRecommendations"></div>
                             </c:if>
-                            <div class="ai-disclaimer">⚠️ Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết định y tế
-                                cần được bác sĩ xác nhận.</div>
+                            <div class="ai-disclaimer"><i class="fas fa-exclamation-triangle" style="color: #fbbf24;"></i> Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết định y tế cần được bác sĩ xác nhận.</div>
                         </div>
                     </c:if>
 
@@ -1463,9 +1485,18 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Ghi chú thêm</label>
-                            <textarea class="form-control" name="ghi_chu" rows="2"
-                                placeholder="Cảm thấy mệt mỏi, vừa tập thể dục xong..."></textarea>
+                            <label>Triệu chứng</label>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="chest_pain" value="1" style="width: 16px; height: 16px;"> Đau tức ngực
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="dizziness" value="1" style="width: 16px; height: 16px;"> Hoa mắt, chóng mặt
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="fatigue" value="1" style="width: 16px; height: 16px;"> Mệt mỏi kéo dài
+                                </label>
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-cancel" id="cancelModalBtn">Hủy</button>
@@ -1716,7 +1747,7 @@
                                 recs.forEach(function (rec) {
                                     const tag = document.createElement('span');
                                     tag.className = 'ai-rec-tag';
-                                    tag.textContent = '💡 ' + rec;
+                                    tag.innerHTML = '<i class="fas fa-check-circle" style="color:#a78bfa;"></i> <span>' + rec + '</span>';
                                     recContainer.appendChild(tag);
                                 });
                             }

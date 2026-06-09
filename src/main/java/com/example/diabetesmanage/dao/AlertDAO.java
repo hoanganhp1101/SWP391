@@ -31,7 +31,7 @@ public class AlertDAO {
     }
 
     public List<Alert> getRecentAlerts(String patientId) {
-        String sql = "SELECT * FROM alerts WHERE patient_id = ? ORDER BY thoi_gian_tao DESC LIMIT 5";
+        String sql = "SELECT * FROM alerts WHERE patient_id = ? ORDER BY thoi_gian_tao DESC LIMIT 3";
         List<Alert> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
