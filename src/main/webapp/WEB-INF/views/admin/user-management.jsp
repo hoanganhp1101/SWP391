@@ -43,8 +43,6 @@
         <ul class="sidebar-menu mt-3">
             <li><a href="${pageContext.request.contextPath}/admin-dashboard"><i class="fas fa-th-large"></i> Overview</a></li>
             <li><a href="${pageContext.request.contextPath}/admin/users" class="active"><i class="fas fa-users-cog"></i> User Management</a></li>
-            <li><a href="#"><i class="fas fa-users"></i> Patient List</a></li>
-            <li><a href="#"><i class="fas fa-shield-alt"></i> Roles & Permissions</a></li>
         </ul>
 
         <div class="sidebar-footer">
@@ -90,7 +88,6 @@
                         <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
                         <input id="keywordInput" type="text" name="keyword" value="${searchKeyword}" class="form-control border-start-0 ps-0 shadow-none" placeholder="Tìm tên, email hoặc SĐT...">
                     </div>
-                    <a href="${pageContext.request.contextPath}/admin/users" class="btn btn-sm btn-light border">Reset</a>
                 </div>
             </form>
 
@@ -137,15 +134,32 @@
                                 </c:choose>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-light text-primary border-0 me-1" title="Sửa"><i class="fas fa-edit"></i></button>
-                                <c:choose>
-                                    <c:when test="${user.kichHoat == 1}">
-                                        <button class="btn btn-sm btn-light text-danger border-0" title="Khóa tài khoản"><i class="fas fa-lock"></i></button>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <button class="btn btn-sm btn-light text-success border-0" title="Mở khóa"><i class="fas fa-unlock"></i></button>
-                                    </c:otherwise>
-                                </c:choose>
+                                <button class="btn btn-sm btn-light text-primary border-0 me-1 btn-edit-user"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editUserModal"
+                                        data-id="${user.id}"
+                                        data-hoten="${user.hoTen}"
+                                        data-email="${user.email}"
+                                        data-sdt="${user.soDienThoai}"
+                                        data-vaitro="${user.vaiTro}"
+                                        title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+                                <form action="${pageContext.request.contextPath}/admin/users" method="POST" style="display:inline;">
+                                    <input type="hidden" name="action" value="toggleStatus">
+                                    <input type="hidden" name="id" value="${user.id}">
+                                    <c:choose>
+                                        <c:when test="${user.kichHoat == 1}">
+                                            <input type="hidden" name="status" value="0">
+                                            <button type="submit" class="btn btn-sm btn-light text-danger border-0" title="Khóa tài khoản"><i class="fas fa-lock"></i></button>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <input type="hidden" name="status" value="1">
+                                            <button type="submit" class="btn btn-sm btn-light text-success border-0" title="Mở khóa"><i class="fas fa-unlock"></i></button>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </form>
                             </td>
                         </tr>
                     </c:forEach>
@@ -236,6 +250,51 @@
     </div>
 </div>
 
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Chỉnh sửa tài khoản</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="${pageContext.request.contextPath}/admin/users" method="POST">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="id" id="editUserId">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-medium">Họ và Tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control shadow-none" name="hoTen" id="editHoTen" required placeholder="Nhập họ và tên...">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-medium">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control shadow-none" name="email" id="editEmail" required placeholder="email@example.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-medium">Số điện thoại</label>
+                            <input type="text" class="form-control shadow-none" name="soDienThoai" id="editSoDienThoai" placeholder="09xxxxxxx">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-medium">Vai trò hệ thống <span class="text-danger">*</span></label>
+                        <select class="form-select shadow-none" name="vaiTro" id="editVaiTro" required>
+                            <option value="benh_nhan">Bệnh nhân</option>
+                            <option value="bac_si">Bác sĩ</option>
+                            <option value="y_ta">Y tá / Chuyên viên</option>
+                            <option value="quan_tri_vien">Quản trị viên (Admin)</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-light fw-medium px-4" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary fw-medium px-4" style="background-color: var(--primary-blue); border:none;">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/script.js"></script>
 
@@ -278,8 +337,21 @@
         });
 
         roleSelect.addEventListener("change", doLiveSearch);
-
         statusSelect.addEventListener("change", doLiveSearch);
+
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.btn-edit-user');
+            if (editBtn) {
+                document.getElementById('editUserId').value = editBtn.getAttribute('data-id');
+                document.getElementById('editHoTen').value = editBtn.getAttribute('data-hoten');
+                document.getElementById('editEmail').value = editBtn.getAttribute('data-email');
+
+                let sdt = editBtn.getAttribute('data-sdt');
+                document.getElementById('editSoDienThoai').value = (sdt && sdt !== 'null') ? sdt : '';
+
+                document.getElementById('editVaiTro').value = editBtn.getAttribute('data-vaitro');
+            }
+        });
     });
 </script>
 

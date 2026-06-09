@@ -31,27 +31,26 @@ CREATE TABLE users (
 
 
 CREATE TABLE patients (
-    id                          CHAR(36)        NOT NULL DEFAULT (UUID()),
-    user_id                     CHAR(36)        NOT NULL,
-    bac_si_id                   CHAR(36)        DEFAULT NULL,
-    ngay_sinh                   DATE            NOT NULL,
-    gioi_tinh                   ENUM('nam','nu','khac') DEFAULT NULL,
-    chieu_cao_cm                DECIMAL(5,1)    DEFAULT NULL,
-    dia_chi                     TEXT            DEFAULT NULL,
-    bao_hiem_y_te               VARCHAR(50)     DEFAULT NULL,
-    nghe_nghiep                 VARCHAR(100)    DEFAULT NULL,
-    tien_su_benh                TEXT            DEFAULT NULL,
-    tien_su_gia_dinh            TEXT            DEFAULT NULL,
-    di_ung                      TEXT            DEFAULT NULL,
-    nhom_mau                    VARCHAR(5)      DEFAULT NULL,
-    ngay_chan_doan_tieu_duong   DATE            DEFAULT NULL,
-    loai_tieu_duong             VARCHAR(30)     DEFAULT NULL,
-    ngay_tao                    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ngay_cap_nhat               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_patients_user    FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_patients_bac_si  FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                          id                          CHAR(36)        NOT NULL DEFAULT (UUID()),
+                          user_id                     CHAR(36)        NOT NULL,
+                          bac_si_id                   CHAR(36)        DEFAULT NULL,
+                          ngay_sinh                   DATE            NOT NULL,
+                          gioi_tinh                   ENUM('nam','nu','khac') DEFAULT NULL,
+                          chieu_cao_cm                DECIMAL(5,1)    DEFAULT NULL,
+                          can_nang_kg                 DECIMAL(5,1)    DEFAULT NULL, -- Trường bổ sung để tính BMI
+                          dia_chi                     TEXT            DEFAULT NULL,
+                          bao_hiem_y_te               VARCHAR(50)     DEFAULT NULL,
+                          tien_su_benh                TEXT            DEFAULT NULL,
+                          di_ung                      TEXT            DEFAULT NULL,
+                          nhom_mau                    VARCHAR(5)      DEFAULT NULL,
+                          ngay_chan_doan_tieu_duong   DATE            DEFAULT NULL,
+                          loai_tieu_duong             VARCHAR(30)     DEFAULT NULL,
+                          ngay_tao                    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          ngay_cap_nhat               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                          PRIMARY KEY (id),
+                          CONSTRAINT fk_patients_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
+                          CONSTRAINT fk_patients_bac_si FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=UTF8MB4_UNICODE_CI;
 
 
 CREATE TABLE medical_encounters (
