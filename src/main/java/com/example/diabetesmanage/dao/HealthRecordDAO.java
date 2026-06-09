@@ -13,7 +13,7 @@ import java.util.UUID;
 public class HealthRecordDAO {
 
     public void insertHealthRecord(HealthRecord record) {
-        String sql = "INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, carbs_g, ghi_chu, lieu_luong_insulin_ui, nhip_tim, huyet_ap_tam_thu, huyet_ap_tam_truong, thoi_diem_do_duong) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, carbs_g, ghi_chu, lieu_luong_insulin_ui, nhip_tim, huyet_ap_tam_thu, huyet_ap_tam_truong, thoi_diem_do_duong, chest_pain, dizziness, fatigue) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, UUID.randomUUID().toString());
@@ -48,6 +48,21 @@ public class HealthRecordDAO {
                 ps.setNull(9, java.sql.Types.INTEGER);
                 
             ps.setString(10, record.getThoiDiemDoDuong());
+            
+            if (record.getChestPain() != null)
+                ps.setInt(11, record.getChestPain());
+            else
+                ps.setInt(11, 0);
+
+            if (record.getDizziness() != null)
+                ps.setInt(12, record.getDizziness());
+            else
+                ps.setInt(12, 0);
+
+            if (record.getFatigue() != null)
+                ps.setInt(13, record.getFatigue());
+            else
+                ps.setInt(13, 0);
 
             ps.executeUpdate();
         } catch (Exception e) {

@@ -149,6 +149,9 @@ CREATE TABLE health_records (
     lieu_luong_insulin_ui   INT             DEFAULT NULL COMMENT 'Liều lượng insulin thực tế tiêm (UI)',
     loai_insulin_tiem       VARCHAR(100)    DEFAULT NULL COMMENT 'Loại insulin tiêm thực tế',
     ghi_chu                 TEXT            DEFAULT NULL,
+    chest_pain              TINYINT(1)      DEFAULT 0,
+    dizziness               TINYINT(1)      DEFAULT 0,
+    fatigue                 TINYINT(1)      DEFAULT 0,
     thoi_gian_do            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ngay_tao                DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -279,6 +282,12 @@ CREATE TABLE medical_documents (
     CONSTRAINT fk_doc_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
     CONSTRAINT fk_doc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE health_records
+ADD COLUMN chest_pain TINYINT(1) DEFAULT 0,
+ADD COLUMN dizziness TINYINT(1) DEFAULT 0,
+ADD COLUMN fatigue TINYINT(1) DEFAULT 0;
+
 
 -- ============================================================
 -- 2. KHỞI TẠO VIEW TỔNG HỢP (Dùng cho Dashboard Bác sĩ)
