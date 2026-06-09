@@ -2,8 +2,9 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.*;
-
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +15,10 @@ public class HealthRecordDAO {
         List<HealthRecord> list = new ArrayList<>();
 
         String sql =
-                "SELECT * " +
-                        "FROM health_records " +
+                "SELECT hr.*,p.patient_code " +
+
+                        "FROM health_records hr " +
+                        "JOIN patients p ON hr.patient_id = p.id "+
                         "ORDER BY thoi_gian_do DESC";
 
         try (
@@ -30,6 +33,7 @@ public class HealthRecordDAO {
                 HealthRecord hr = new HealthRecord();
 
                 hr.setId(rs.getString("id"));
+                hr.setHealthRecordId(rs.getString("health_record_code"));
                 hr.setDuongHuyetMgdl(rs.getDouble("duong_huyet_mgdl"));
                 hr.setHba1cPercent(rs.getDouble("hba1c_percent"));
                 hr.setBmi(rs.getDouble("bmi"));
@@ -42,6 +46,25 @@ public class HealthRecordDAO {
                     hr.setThoiGianDo(
                             timestamp.toLocalDateTime()
                     );
+                }
+
+                if (timestamp != null) {
+
+                    LocalDate lastVisitDate =
+                            timestamp.toLocalDateTime().toLocalDate();
+
+                    int daysSinceLastVisit =
+                            (int) ChronoUnit.DAYS.between(
+                                    lastVisitDate,
+                                    LocalDate.now()
+                            );
+
+                    hr.setDaysSinceLastVisit(daysSinceLastVisit);
+                    Patient patient = new Patient();
+                    patient.setPatientCode(
+                            rs.getString("patient_code")
+                    );
+                    hr.setPatient(patient);
                 }
 
                 list.add(hr);
@@ -106,6 +129,7 @@ public class HealthRecordDAO {
         String sql =
         "SELECT hr.*, " +
                 "p.id AS patient_id, " +
+                "p.patient_code," +
                 "u.ho_ten " +
                 "FROM health_records hr " +
                 "JOIN patients p ON hr.patient_id = p.id " +
@@ -126,6 +150,7 @@ public class HealthRecordDAO {
                 HealthRecord hr = new HealthRecord();
 
                 hr.setId(rs.getString("id"));
+                hr.setHealthRecordId(rs.getString("health_record_code"));
 
                 hr.setDuongHuyetMgdl(
                         rs.getDouble("duong_huyet_mgdl")
@@ -201,8 +226,8 @@ public class HealthRecordDAO {
                 }
 
                 Patient patient = new Patient();
-                patient.setId(
-                        rs.getString("patient_id")
+                patient.setPatientCode(
+                        rs.getString("patient_code")
                 );
 
                 User user = new User();
@@ -214,6 +239,8 @@ public class HealthRecordDAO {
 
                 hr.setPatient(patient);
 
+
+
                 return hr;
             }
 
@@ -223,6 +250,77 @@ public class HealthRecordDAO {
         }
 
         return null;
+    }
+
+    public List<HealthRecord> getHealthRecordsByDateRange(
+            String startDate,
+            String endDate) {
+
+        List<HealthRecord> list = new ArrayList<>();
+
+        String sql =
+                "SELECT hr.*, p.patient_code " +
+                        "FROM health_records hr " +
+                        "JOIN patients p ON hr.patient_id = p.id " +
+                        "WHERE DATE(thoi_gian_do) BETWEEN ? AND ? " +
+                        "ORDER BY thoi_gian_do DESC";
+
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, startDate);
+            ps.setString(2, endDate);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                HealthRecord hr = new HealthRecord();
+
+                hr.setId(rs.getString("id"));
+                hr.setHealthRecordId(rs.getString("health_record_code"));
+                hr.setDuongHuyetMgdl(rs.getDouble("duong_huyet_mgdl"));
+                hr.setHba1cPercent(rs.getDouble("hba1c_percent"));
+                hr.setBmi(rs.getDouble("bmi"));
+                hr.setCanNangKg(rs.getDouble("can_nang_kg"));
+
+                Timestamp timestamp =
+                        rs.getTimestamp("thoi_gian_do");
+
+                if (timestamp != null) {
+                    hr.setThoiGianDo(
+                            timestamp.toLocalDateTime()
+                    );
+                }
+
+                if (timestamp != null) {
+
+                    LocalDate lastVisitDate =
+                            timestamp.toLocalDateTime().toLocalDate();
+
+                    int daysSinceLastVisit =
+                            (int) ChronoUnit.DAYS.between(
+                                    lastVisitDate,
+                                    LocalDate.now()
+                            );
+
+                    hr.setDaysSinceLastVisit(daysSinceLastVisit);
+                    Patient patient = new Patient();
+                    patient.setPatientCode(
+                            rs.getString("patient_code")
+                    );
+                    hr.setPatient(patient);
+                }
+
+                list.add(hr);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
     }
 
 }

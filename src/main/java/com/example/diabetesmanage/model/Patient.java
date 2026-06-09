@@ -6,6 +6,7 @@ import java.time.LocalDate;
 public class Patient {
 
     private String id;
+    private String patientCode;
 
     private User user;
     private User doctor;
@@ -213,5 +214,13 @@ public class Patient {
 
     public void setCanhBaoChuaDoc(Integer canhBaoChuaDoc) {
         this.canhBaoChuaDoc = canhBaoChuaDoc;
+    }
+
+    public String getPatientCode() {
+        return patientCode;
+    }
+
+    public void setPatientCode(String patientCode) {
+        this.patientCode = patientCode;
     }
 }

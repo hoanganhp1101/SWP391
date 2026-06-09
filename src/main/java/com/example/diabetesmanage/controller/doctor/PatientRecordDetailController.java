@@ -26,10 +26,11 @@ public class PatientRecordDetailController extends HttpServlet {
 
             response.sendRedirect(
                     request.getContextPath()
-                            + "/doctor/patients"
+                            + "/doctor/patient-records"
             );
             return;
         }
+
 
         HealthRecord record =
                 healthRecordDAO.getHealthRecordRecordById(recordId);

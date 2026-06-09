@@ -475,12 +475,12 @@
 
                     <div class="form-group">
                         <label>Record ID *</label>
-                        <input type="text" value="${record.id}" readonly>
+                        <input type="text" value="${record.healthRecordId}" readonly>
                     </div>
 
                     <div class="form-group">
                         <label>Patient ID *</label>
-                        <input type="text" value="${record.patient.id}" readonly>
+                        <input type="text" value="${record.patient.patientCode}" readonly>
                     </div>
 
                     <div class="form-group">

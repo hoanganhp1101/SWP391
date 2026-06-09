@@ -369,6 +369,52 @@
             color:#dc2626;
         }
 
+        /* ==========================
+RISK FILTER
+========================== */
+
+        .risk-filter{
+            display:flex;
+            gap:12px;
+            padding:14px 26px;
+            border-bottom:1px solid #e5e7eb;
+            flex-wrap:wrap;
+        }
+
+        .filter-btn{
+            border:1px solid #dbe2ea;
+            background:#fff;
+            padding:10px 20px;
+            border-radius:999px;
+            font-size:14px;
+            font-weight:600;
+            cursor:pointer;
+            transition:.2s;
+        }
+
+        .filter-btn.active{
+            background:#eef2ff;
+        }
+
+        .filter-low{
+            border-color:#22c55e;
+            color:#16a34a;
+        }
+
+        .filter-medium{
+            border-color:#f59e0b;
+            color:#d97706;
+        }
+
+        .filter-high{
+            border-color:#f97316;
+            color:#ea580c;
+        }
+
+        .filter-critical{
+            border-color:#ef4444;
+            color:#dc2626;
+        }
     </style>
 
     <link rel="stylesheet"
@@ -513,6 +559,33 @@
 
                 </div>
 
+                <div class="risk-filter">
+
+                    <span>From Date</span>
+                    <form action="${pageContext.request.contextPath}/doctor/patient-records" method="get">
+
+                        <input
+                                type="date"
+                                name="startDate"
+                                value="${param.startDate}"
+                        >
+
+                        <span>To Date</span>
+
+                        <input
+                                type="date"
+                                name="endDate"
+                                value="${param.endDate}"
+                        >
+
+                        <button type="submit" class="filter-btn">
+                            Filter
+                        </button>
+
+                    </form>
+
+                </div>
+
                 <div class="table-wrapper">
 
                     <table class="record-table">
@@ -520,11 +593,13 @@
                         <thead>
                         <tr>
                             <th>RECORD ID</th>
+                            <th>PATIENT ID</th>
                             <th>MEASUREMENT TIME</th>
                             <th>BLOOD GLUCOSE (mg/dL)</th>
                             <th>HbA1c (%)</th>
                             <th>BMI</th>
                             <th>WEIGHT (kg)</th>
+                            <th>Days Since Last Visit</th>
                             <th>ACTION</th>
                         </tr>
                         </thead>
@@ -542,7 +617,11 @@
 
                         <tr>
 
-                            <td><%= record.getId() %></td>
+                            <td>
+                                <%= record.getThoiGianDo() %>
+                            </td>
+
+                            <td><%= record.getPatient().getPatientCode() %></td>
 
                             <td>
                                 <%= record.getThoiGianDo() %>
@@ -563,6 +642,8 @@
                             <td>
                                 <%= record.getCanNangKg() %>
                             </td>
+
+                            <td><%= record.getDaysSinceLastVisit() %></td>
 
                             <td>
 

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class HealthRecord {
 
     private String id;
-
+    private String healthRecordId;
     private Patient patient;
     private User nhapBoi;
 
@@ -34,6 +34,7 @@ public class HealthRecord {
 
     private LocalDateTime thoiGianDo;
     private LocalDateTime ngayTao;
+    private int daysSinceLastVisit;
 
     public HealthRecord() {
     }
@@ -44,6 +45,14 @@ public class HealthRecord {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getHealthRecordId() {
+        return healthRecordId;
+    }
+
+    public void setHealthRecordId(String healthRecordId) {
+        this.healthRecordId = healthRecordId;
     }
 
     public Patient getPatient() {
@@ -205,5 +214,14 @@ public class HealthRecord {
     public void setNgayTao(LocalDateTime ngayTao) {
         this.ngayTao = ngayTao;
     }
-// Getter Setter
+
+    public int getDaysSinceLastVisit() {
+        return daysSinceLastVisit;
+    }
+
+    public void setDaysSinceLastVisit(int daysSinceLastVisit) {
+        this.daysSinceLastVisit = daysSinceLastVisit;
+    }
+
+    // Getter Setter
 }

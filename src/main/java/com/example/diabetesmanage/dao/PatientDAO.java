@@ -28,11 +28,13 @@ public class PatientDAO {
             ps.setString(1, "bacsi@example.com");
             ResultSet rs = ps.executeQuery();
 
+
             while (rs.next()) {
 
                 Patient p = new Patient();
 
-                p.setId(rs.getString("patient_id"));
+                p.setPatientCode(rs.getString("patient_code"));
+                p.setId(rs.getString("id"));
 
                 User user = new User();
                 user.setHoTen(rs.getString("ho_ten"));
@@ -102,7 +104,8 @@ public class PatientDAO {
 
                 Patient p = new Patient();
 
-                p.setId(rs.getString("patient_id"));
+                p.setId(rs.getString("id"));
+                p.setPatientCode(rs.getString("patient_code"));
 
                 User user = new User();
                 user.setHoTen(rs.getString("ho_ten"));
@@ -208,8 +211,7 @@ public class PatientDAO {
                 user.setEmail(rs.getString("email"));
                 user.setSoDienThoai(rs.getString("so_dien_thoai"));
 
-                p.setUser(user);
-
+                p.setPatientCode(rs.getString("patient_code"));
                 p.setTuoi(rs.getInt("tuoi"));
                 p.setNgaySinh(rs.getDate("ngay_sinh").toLocalDate());
                 p.setGioiTinh(rs.getString("gioi_tinh"));

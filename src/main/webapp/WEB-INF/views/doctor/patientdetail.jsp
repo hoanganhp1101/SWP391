@@ -474,7 +474,7 @@
 
                     <div class="form-group">
                         <label>Patient ID</label>
-                        <input type="text" value="${patient.id}" readonly>
+                        <input type="text" value="${patient.patientCode}" readonly>
                     </div>
 
                     <div class="form-group">

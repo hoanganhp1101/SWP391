@@ -712,7 +712,7 @@ RISK FILTER
                         <c:forEach items="${patients}" var="p">
 
                             <tr>
-                                <td>${p.id}</td>
+                                <td>${p.patientCode}</td>
 
                                 <td>${p.user.hoTen}</td>
 
