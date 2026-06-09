@@ -25,7 +25,7 @@ public class UserManagementServlet extends HttpServlet {
         String keyword = request.getParameter("keyword");
 
         int page = 1;
-        int recordsPerPage = 10;
+        int recordsPerPage = 8;
 
         if (request.getParameter("page") != null) {
             try {
@@ -59,6 +59,44 @@ public class UserManagementServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect(request.getContextPath() + "/admin/users");
+
+        request.setCharacterEncoding("UTF-8");
+        String action = request.getParameter("action");
+
+        if ("create".equals(action)) {
+            User u = new User();
+            u.setHoTen(request.getParameter("hoTen"));
+            u.setEmail(request.getParameter("email"));
+            u.setSoDienThoai(request.getParameter("soDienThoai"));
+            u.setVaiTro(request.getParameter("vaiTro"));
+            u.setMatKhauHash(request.getParameter("matKhau"));
+
+            userDAO.addUser(u);
+            response.sendRedirect(request.getContextPath() + "/admin/users");
+
+        } else if ("update".equals(action)) {
+            User u = new User();
+            u.setId(request.getParameter("id"));
+            u.setHoTen(request.getParameter("hoTen"));
+            u.setEmail(request.getParameter("email"));
+            u.setSoDienThoai(request.getParameter("soDienThoai"));
+            u.setVaiTro(request.getParameter("vaiTro"));
+
+            userDAO.updateUser(u);
+            response.sendRedirect(request.getContextPath() + "/admin/users");
+
+        } else if ("toggleStatus".equals(action)) {
+            String id = request.getParameter("id");
+            String statusStr = request.getParameter("status");
+
+            if (id != null && statusStr != null) {
+                int newStatus = Integer.parseInt(statusStr);
+                userDAO.updateUserStatus(id, newStatus);
+            }
+            response.sendRedirect(request.getContextPath() + "/admin/users");
+
+        } else {
+            response.sendRedirect(request.getContextPath() + "/admin/users");
+        }
     }
 }
