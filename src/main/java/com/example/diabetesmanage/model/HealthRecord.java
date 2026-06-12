@@ -22,6 +22,9 @@ public class HealthRecord {
     private String ghiChu;
     private Timestamp thoiGianDo;
     private Timestamp ngayTao;
+    private Integer chestPain;
+    private Integer dizziness;
+    private Integer fatigue;
 
     public HealthRecord() {}
 
@@ -63,4 +66,10 @@ public class HealthRecord {
     public void setCholesterolMmol(Double cholesterolMmol) { this.cholesterolMmol = cholesterolMmol; }
     public Double getTriglycerideMmol() { return triglycerideMmol; }
     public void setTriglycerideMmol(Double triglycerideMmol) { this.triglycerideMmol = triglycerideMmol; }
+    public Integer getChestPain() { return chestPain; }
+    public void setChestPain(Integer chestPain) { this.chestPain = chestPain; }
+    public Integer getDizziness() { return dizziness; }
+    public void setDizziness(Integer dizziness) { this.dizziness = dizziness; }
+    public Integer getFatigue() { return fatigue; }
+    public void setFatigue(Integer fatigue) { this.fatigue = fatigue; }
 }
