@@ -77,53 +77,6 @@ public class HealthRecordDAO {
         return list;
     }
 
-    public HealthRecord getLatestRecord(String patientId) {
-
-        String sql =
-                "SELECT * " +
-                        "FROM health_records " +
-                        "WHERE patient_id = ? " +
-                        "ORDER BY thoi_gian_do DESC " +
-                        "LIMIT 1";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-
-            ps.setString(1, patientId);
-
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-
-                HealthRecord hr = new HealthRecord();
-
-                hr.setId(rs.getString("id"));
-                hr.setDuongHuyetMgdl(rs.getDouble("duong_huyet_mgdl"));
-                hr.setHba1cPercent(rs.getDouble("hba1c_percent"));
-                hr.setBmi(rs.getDouble("bmi"));
-                hr.setCanNangKg(rs.getDouble("can_nang_kg"));
-
-                Timestamp timestamp =
-                        rs.getTimestamp("thoi_gian_do");
-
-                if (timestamp != null) {
-                    hr.setThoiGianDo(
-                            timestamp.toLocalDateTime()
-                    );
-                }
-
-                return hr;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
     public HealthRecord getHealthRecordRecordById(String recordId) {
 
         String sql =
@@ -252,52 +205,112 @@ public class HealthRecordDAO {
         return null;
     }
 
-    public List<HealthRecord> getHealthRecordsByDateRange(
+    public List<HealthRecord> searchHealthRecordRecords(
             String startDate,
-            String endDate) {
+            String endDate,
+            String keyword) {
 
         List<HealthRecord> list = new ArrayList<>();
 
-        String sql =
+        StringBuilder sql = new StringBuilder(
                 "SELECT hr.*, p.patient_code " +
                         "FROM health_records hr " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "WHERE DATE(thoi_gian_do) BETWEEN ? AND ? " +
-                        "ORDER BY thoi_gian_do DESC";
+                        "WHERE 1=1 "
+        );
+
+        // Filter theo ngày
+        if (startDate != null && !startDate.isBlank()
+                && endDate != null && !endDate.isBlank()) {
+
+            sql.append(
+                    "AND DATE(hr.thoi_gian_do) BETWEEN ? AND ? "
+            );
+        }
+
+        // Filter theo keyword
+        if (keyword != null && !keyword.isBlank()) {
+
+            sql.append(
+                    "AND ( " +
+                            "hr.health_record_code LIKE ? " +
+                            "OR p.patient_code LIKE ? " +
+                            ") "
+            );
+        }
+
+        // ORDER BY luôn để cuối
+        sql.append(
+                "ORDER BY hr.thoi_gian_do DESC"
+        );
 
         try (
                 Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
+                PreparedStatement ps =
+                        con.prepareStatement(sql.toString())
         ) {
 
-            ps.setString(1, startDate);
-            ps.setString(2, endDate);
+            int index = 1;
+
+            // Set ngày
+            if (startDate != null && !startDate.isBlank()
+                    && endDate != null && !endDate.isBlank()) {
+
+                ps.setString(index++, startDate);
+                ps.setString(index++, endDate);
+            }
+
+            // Set keyword
+            if (keyword != null && !keyword.isBlank()) {
+
+                String search = "%" + keyword + "%";
+
+                ps.setString(index++, search);
+                ps.setString(index++, search);
+            }
 
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
+
                 HealthRecord hr = new HealthRecord();
 
-                hr.setId(rs.getString("id"));
-                hr.setHealthRecordId(rs.getString("health_record_code"));
-                hr.setDuongHuyetMgdl(rs.getDouble("duong_huyet_mgdl"));
-                hr.setHba1cPercent(rs.getDouble("hba1c_percent"));
-                hr.setBmi(rs.getDouble("bmi"));
-                hr.setCanNangKg(rs.getDouble("can_nang_kg"));
+                hr.setId(
+                        rs.getString("id")
+                );
+
+                hr.setHealthRecordId(
+                        rs.getString("health_record_code")
+                );
+
+                hr.setDuongHuyetMgdl(
+                        rs.getDouble("duong_huyet_mgdl")
+                );
+
+                hr.setHba1cPercent(
+                        rs.getDouble("hba1c_percent")
+                );
+
+                hr.setBmi(
+                        rs.getDouble("bmi")
+                );
+
+                hr.setCanNangKg(
+                        rs.getDouble("can_nang_kg")
+                );
 
                 Timestamp timestamp =
                         rs.getTimestamp("thoi_gian_do");
 
                 if (timestamp != null) {
+
                     hr.setThoiGianDo(
                             timestamp.toLocalDateTime()
                     );
-                }
-
-                if (timestamp != null) {
 
                     LocalDate lastVisitDate =
-                            timestamp.toLocalDateTime().toLocalDate();
+                            timestamp.toLocalDateTime()
+                                    .toLocalDate();
 
                     int daysSinceLastVisit =
                             (int) ChronoUnit.DAYS.between(
@@ -305,18 +318,24 @@ public class HealthRecordDAO {
                                     LocalDate.now()
                             );
 
-                    hr.setDaysSinceLastVisit(daysSinceLastVisit);
-                    Patient patient = new Patient();
-                    patient.setPatientCode(
-                            rs.getString("patient_code")
+                    hr.setDaysSinceLastVisit(
+                            daysSinceLastVisit
                     );
-                    hr.setPatient(patient);
                 }
+
+                Patient patient = new Patient();
+
+                patient.setPatientCode(
+                        rs.getString("patient_code")
+                );
+
+                hr.setPatient(patient);
 
                 list.add(hr);
             }
 
         } catch (Exception e) {
+
             e.printStackTrace();
         }
 

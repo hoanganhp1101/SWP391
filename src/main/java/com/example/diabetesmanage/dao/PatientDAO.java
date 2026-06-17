@@ -34,7 +34,7 @@ public class PatientDAO {
                 Patient p = new Patient();
 
                 p.setPatientCode(rs.getString("patient_code"));
-                p.setId(rs.getString("id"));
+                p.setId(rs.getString("patient_id"));
 
                 User user = new User();
                 user.setHoTen(rs.getString("ho_ten"));
@@ -56,47 +56,74 @@ public class PatientDAO {
 
         return list;
     }
-    public List<Patient> getPatientsByRiskLevel(String riskLevel) {
+    public List<Patient> searchPatients(
+            String keyword,
+            String risk) {
 
         List<Patient> list = new ArrayList<>();
 
-        String condition = "";
-
-        if ("low".equalsIgnoreCase(riskLevel)) {
-
-            condition =
-                    " AND vps.duong_huyet_gan_nhat < 140 ";
-
-        } else if ("medium".equalsIgnoreCase(riskLevel)) {
-
-            condition =
-                    " AND vps.duong_huyet_gan_nhat BETWEEN 140 AND 179 ";
-
-        } else if ("high".equalsIgnoreCase(riskLevel)) {
-
-            condition =
-                    " AND vps.duong_huyet_gan_nhat BETWEEN 180 AND 249 ";
-
-        } else if ("critical".equalsIgnoreCase(riskLevel)) {
-
-            condition =
-                    " AND vps.duong_huyet_gan_nhat >= 250 ";
-        }
-
-        String sql =
+        StringBuilder sql = new StringBuilder(
                 "SELECT vps.* " +
                         "FROM v_patient_summary vps " +
                         "JOIN patients p ON vps.patient_id = p.id " +
                         "JOIN users d ON p.bac_si_id = d.id " +
-                        "WHERE d.email = ? " +
-                        condition;
+                        "WHERE d.email = ? "
+        );
+
+        if (keyword != null && !keyword.isBlank()) {
+
+            sql.append(
+                    "AND ( " +
+                            "vps.ho_ten LIKE ? " +
+                            "OR vps.email LIKE ? " +
+                            "OR vps.patient_code LIKE ? " +
+                            ") "
+            );
+        }
+
+        if ("low".equalsIgnoreCase(risk)) {
+
+            sql.append(
+                    "AND vps.duong_huyet_gan_nhat < 140 "
+            );
+
+        } else if ("medium".equalsIgnoreCase(risk)) {
+
+            sql.append(
+                    "AND vps.duong_huyet_gan_nhat BETWEEN 140 AND 179 "
+            );
+
+        } else if ("high".equalsIgnoreCase(risk)) {
+
+            sql.append(
+                    "AND vps.duong_huyet_gan_nhat BETWEEN 180 AND 249 "
+            );
+
+        } else if ("critical".equalsIgnoreCase(risk)) {
+
+            sql.append(
+                    "AND vps.duong_huyet_gan_nhat >= 250 "
+            );
+        }
 
         try (
                 Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
+                PreparedStatement ps =
+                        con.prepareStatement(sql.toString())
         ) {
 
-            ps.setString(1, "bacsi@example.com");
+            int index = 1;
+
+            ps.setString(index++, "bacsi@example.com");
+
+            if (keyword != null && !keyword.isBlank()) {
+
+                String search = "%" + keyword + "%";
+
+                ps.setString(index++, search);
+                ps.setString(index++, search);
+                ps.setString(index++, search);
+            }
 
             ResultSet rs = ps.executeQuery();
 
@@ -104,19 +131,38 @@ public class PatientDAO {
 
                 Patient p = new Patient();
 
-                p.setId(rs.getString("id"));
-                p.setPatientCode(rs.getString("patient_code"));
+                p.setId(rs.getString("patient_id"));
+                p.setPatientCode(
+                        rs.getString("patient_code")
+                );
 
                 User user = new User();
-                user.setHoTen(rs.getString("ho_ten"));
-                user.setEmail(rs.getString("email"));
+
+                user.setHoTen(
+                        rs.getString("ho_ten")
+                );
+
+                user.setEmail(
+                        rs.getString("email")
+                );
 
                 p.setUser(user);
 
-                p.setTuoi(rs.getInt("tuoi"));
-                p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
-                p.setGioiTinh(rs.getString("gioi_tinh"));
-                p.setNgayCapNhat(rs.getTimestamp("lan_do_cuoi"));
+                p.setTuoi(
+                        rs.getInt("tuoi")
+                );
+
+                p.setGioiTinh(
+                        rs.getString("gioi_tinh")
+                );
+
+                p.setLoaiTieuDuong(
+                        rs.getString("loai_tieu_duong")
+                );
+
+                p.setNgayCapNhat(
+                        rs.getTimestamp("lan_do_cuoi")
+                );
 
                 list.add(p);
             }

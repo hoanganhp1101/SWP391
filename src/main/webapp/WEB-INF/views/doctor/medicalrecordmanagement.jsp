@@ -429,10 +429,10 @@ RISK FILTER
     </div>
 
     <div class="top-nav">
-        <a class="active">Dashboard</a>
-        <a>Patients</a>
-        <a>Records</a>
-        <a>Reports</a>
+        <a class="active">Bảng điều khiển</a>
+        <a>Bệnh nhân</a>
+        <a>Hồ sơ</a>
+        <a>Báo cáo</a>
     </div>
 
     <div class="top-actions">
@@ -441,7 +441,7 @@ RISK FILTER
             <i class="fa-solid fa-magnifying-glass"></i>
             <input
                     type="text"
-                    placeholder="Search medical records..."
+                    placeholder="Tìm kiếm hồ sơ sức khỏe..."
             >
         </div>
 
@@ -457,6 +457,7 @@ RISK FILTER
     </div>
 
 </header>
+
 <div class="layout">
 
     <!-- SIDEBAR -->
@@ -465,8 +466,7 @@ RISK FILTER
         <div class="doctor-profile">
             <img src="https://i.pravatar.cc/60" alt="">
             <div>
-                <h4>Dr. Smith</h4>
-                <p>Chief Surgeon</p>
+                <h4>BS. Smith</h4>
             </div>
         </div>
 
@@ -474,27 +474,27 @@ RISK FILTER
 
             <a class="menu-item active">
                 <i class="fa-solid fa-table-cells"></i>
-                <span>Overview</span>
+                <span>Tổng quan</span>
             </a>
 
             <a href="patientmanagement.html" class="menu-item">
                 <i class="fa-solid fa-users"></i>
-                <span>Patient List</span>
+                <span>Danh sách bệnh nhân</span>
             </a>
 
             <a class="menu-item">
                 <i class="fa-regular fa-bell"></i>
-                <span>Emergency Alerts</span>
+                <span>Cảnh báo khẩn cấp</span>
             </a>
 
             <a href="medicalrecordmanagement.html" class="menu-item">
                 <i class="fa-regular fa-clipboard"></i>
-                <span>Medical History</span>
+                <span>Hồ sơ sức khỏe</span>
             </a>
 
             <a class="menu-item">
                 <i class="fa-solid fa-chart-column"></i>
-                <span>Analytics</span>
+                <span>Phân tích dữ liệu</span>
             </a>
 
         </nav>
@@ -503,17 +503,17 @@ RISK FILTER
 
             <button class="new-record">
                 <i class="fa-solid fa-plus"></i>
-                New Record
+                Tạo hồ sơ mới
             </button>
 
             <a class="bottom-link">
                 <i class="fa-regular fa-circle-question"></i>
-                Support
+                Hỗ trợ
             </a>
 
             <a class="bottom-link">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Sign Out
+                Đăng xuất
             </a>
 
         </div>
@@ -522,11 +522,12 @@ RISK FILTER
 
     <!-- MAIN -->
     <main class="main-content">
+
         <div class="page-content">
 
             <div class="page-header">
-                <h1>Quản lý hồ sơ y tế</h1>
-                <p>Danh sách và quản lý hồ sơ khám bệnh</p>
+                <h1>Quản lý hồ sơ sức khỏe</h1>
+                <p>Danh sách và quản lý hồ sơ theo dõi sức khỏe</p>
             </div>
 
             <div class="card">
@@ -536,19 +537,27 @@ RISK FILTER
                     <div class="record-search-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
 
-                        <input
-                                type="text"
-                                id="searchInput"
-                                placeholder="Tìm kiếm theo tên bệnh nhân, mã BN, bác sĩ..."
-                        >
+                        <form method="get"
+                              action="${pageContext.request.contextPath}/doctor/patient-records">
+
+                            <input
+                                    type="text"
+                                    name="keyword"
+                                    value="${param.keyword}"
+                                    placeholder="Tìm kiếm..."
+                            >
+
+                        </form>
                     </div>
 
                     <div class="actions">
 
-                        <button class="btn btn-outline">
+                        <a href="${pageContext.request.contextPath}/doctor/export-patients?keyword=${param.keyword}&risk=${param.risk}"
+                           class="btn btn-outline">
+
                             <i class="fa-solid fa-download"></i>
                             Xuất Excel
-                        </button>
+                        </a>
 
                         <button class="btn btn-primary">
                             <i class="fa-solid fa-plus"></i>
@@ -561,7 +570,8 @@ RISK FILTER
 
                 <div class="risk-filter">
 
-                    <span>From Date</span>
+                    <span>Từ ngày</span>
+
                     <form action="${pageContext.request.contextPath}/doctor/patient-records" method="get">
 
                         <input
@@ -570,7 +580,7 @@ RISK FILTER
                                 value="${param.startDate}"
                         >
 
-                        <span>To Date</span>
+                        <span>Đến ngày</span>
 
                         <input
                                 type="date"
@@ -579,7 +589,7 @@ RISK FILTER
                         >
 
                         <button type="submit" class="filter-btn">
-                            Filter
+                            Lọc
                         </button>
 
                     </form>
@@ -592,15 +602,15 @@ RISK FILTER
 
                         <thead>
                         <tr>
-                            <th>RECORD ID</th>
-                            <th>PATIENT ID</th>
-                            <th>MEASUREMENT TIME</th>
-                            <th>BLOOD GLUCOSE (mg/dL)</th>
+                            <th>MÃ HỒ SƠ</th>
+                            <th>MÃ BỆNH NHÂN</th>
+                            <th>THỜI GIAN ĐO</th>
+                            <th>ĐƯỜNG HUYẾT (mg/dL)</th>
                             <th>HbA1c (%)</th>
                             <th>BMI</th>
-                            <th>WEIGHT (kg)</th>
-                            <th>Days Since Last Visit</th>
-                            <th>ACTION</th>
+                            <th>CÂN NẶNG (kg)</th>
+                            <th>SỐ NGÀY TỪ LẦN KHÁM GẦN NHẤT</th>
+                            <th>THAO TÁC</th>
                         </tr>
                         </thead>
 
@@ -618,10 +628,12 @@ RISK FILTER
                         <tr>
 
                             <td>
-                                <%= record.getThoiGianDo() %>
+                                <%= record.getHealthRecordId() %>
                             </td>
 
-                            <td><%= record.getPatient().getPatientCode() %></td>
+                            <td>
+                                <%= record.getPatient().getPatientCode() %>
+                            </td>
 
                             <td>
                                 <%= record.getThoiGianDo() %>
@@ -643,7 +655,9 @@ RISK FILTER
                                 <%= record.getCanNangKg() %>
                             </td>
 
-                            <td><%= record.getDaysSinceLastVisit() %></td>
+                            <td>
+                                <%= record.getDaysSinceLastVisit() %>
+                            </td>
 
                             <td>
 
@@ -673,29 +687,8 @@ RISK FILTER
 
         </div>
 
-
     </main>
 
 </div>
-<script>
-
-    document
-        .getElementById("searchInput")
-        .addEventListener("keyup", function () {
-
-            const keyword = this.value.toLowerCase();
-
-            const filtered = medicalRecords.filter(record =>
-                record.patientName.toLowerCase().includes(keyword) ||
-                record.patientId.toLowerCase().includes(keyword) ||
-                record.doctor.toLowerCase().includes(keyword) ||
-                record.diagnosis.toLowerCase().includes(keyword)
-            );
-
-            renderTable(filtered);
-
-        });
-
-</script>
 </body>
 </html>

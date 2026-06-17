@@ -368,10 +368,10 @@
     </div>
 
     <div class="top-nav">
-        <a class="active">Dashboard</a>
-        <a>Patients</a>
-        <a>Records</a>
-        <a>Reports</a>
+        <a class="active">Bảng điều khiển</a>
+        <a>Bệnh nhân</a>
+        <a>Hồ sơ</a>
+        <a>Báo cáo</a>
     </div>
 
     <div class="top-actions">
@@ -380,7 +380,7 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input
                     type="text"
-                    placeholder="Search medical records..."
+                    placeholder="Tìm kiếm hồ sơ sức khỏe..."
             >
         </div>
 
@@ -396,6 +396,7 @@
     </div>
 
 </header>
+
 <div class="layout">
 
     <!-- SIDEBAR -->
@@ -404,8 +405,7 @@
         <div class="doctor-profile">
             <img src="https://i.pravatar.cc/60" alt="">
             <div>
-                <h4>Dr. Smith</h4>
-                <p>Chief Surgeon</p>
+                <h4>BS. Smith</h4>
             </div>
         </div>
 
@@ -413,27 +413,27 @@
 
             <a class="menu-item active">
                 <i class="fa-solid fa-table-cells"></i>
-                <span>Overview</span>
+                <span>Tổng quan</span>
             </a>
 
             <a href="patientmanagement.html" class="menu-item">
                 <i class="fa-solid fa-users"></i>
-                <span>Patient List</span>
+                <span>Danh sách bệnh nhân</span>
             </a>
 
             <a class="menu-item">
                 <i class="fa-regular fa-bell"></i>
-                <span>Emergency Alerts</span>
+                <span>Cảnh báo khẩn cấp</span>
             </a>
 
             <a href="medicalrecordmanagement.html" class="menu-item">
                 <i class="fa-regular fa-clipboard"></i>
-                <span>Medical History</span>
+                <span>Hồ sơ sức khỏe</span>
             </a>
 
             <a class="menu-item">
                 <i class="fa-solid fa-chart-column"></i>
-                <span>Analytics</span>
+                <span>Phân tích dữ liệu</span>
             </a>
 
         </nav>
@@ -442,17 +442,17 @@
 
             <button class="new-record">
                 <i class="fa-solid fa-plus"></i>
-                New Record
+                Tạo hồ sơ mới
             </button>
 
             <a class="bottom-link">
                 <i class="fa-regular fa-circle-question"></i>
-                Support
+                Hỗ trợ
             </a>
 
             <a class="bottom-link">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Sign Out
+                Đăng xuất
             </a>
 
         </div>
@@ -467,38 +467,38 @@
             <div class="patient-card">
 
                 <div class="card-header">
-                    <h2>Patient Information</h2>
+                    <h2>Thông tin bệnh nhân</h2>
                 </div>
 
                 <form class="form-container">
 
                     <div class="form-group">
-                        <label>Patient ID</label>
+                        <label>Mã bệnh nhân</label>
                         <input type="text" value="${patient.patientCode}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Full Name</label>
+                        <label>Họ và tên</label>
                         <input type="text" value="${patient.user.hoTen}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Date of Birth</label>
+                        <label>Ngày sinh</label>
                         <input type="date" value="${patient.ngaySinh}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Age</label>
+                        <label>Tuổi</label>
                         <input type="number" value="${patient.tuoi}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Gender</label>
+                        <label>Giới tính</label>
                         <input type="text" value="${patient.gioiTinh}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Phone Number</label>
+                        <label>Số điện thoại</label>
                         <input type="text" value="${patient.user.soDienThoai}" readonly>
                     </div>
 
@@ -508,44 +508,46 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Address</label>
+                        <label>Địa chỉ</label>
                         <input type="text" value="${patient.diaChi}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Diabetes Type</label>
+                        <label>Loại tiểu đường</label>
                         <input type="text" value="${patient.loaiTieuDuong}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Medical History</label>
+                        <label>Tiền sử bệnh</label>
                         <input type="text" value="${patient.tienSuBenh}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Blood Type</label>
+                        <label>Nhóm máu</label>
                         <input type="text" value="${patient.nhomMau}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Health Insurance</label>
+                        <label>Bảo hiểm y tế</label>
                         <input type="text" value="${patient.baoHiemYTe}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Allergies</label>
+                        <label>Dị ứng</label>
                         <input type="text" value="${patient.diUng}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Diabetes Diagnosis Date</label>
+                        <label>Ngày chẩn đoán tiểu đường</label>
                         <input type="date" value="${patient.ngayChanDoanTieuDuong}" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Last Updated</label>
+                        <label>Cập nhật lần cuối</label>
                         <input type="text" value="${patient.ngayCapNhat}" readonly>
                     </div>
+
+                </form>
 
             </div>
 

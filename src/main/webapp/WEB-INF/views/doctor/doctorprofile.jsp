@@ -1,6 +1,11 @@
+<%--
+  Created by IntelliJ IDEA.
+  User: thanh
+  Date: 17/06/2026
+  Time: 10:10 SA
+  To change this template use File | Settings | File Templates.
+--%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -237,13 +242,6 @@
             border-radius:50%;
             object-fit:cover;
         }
-        .page-content{
-            padding:32px;
-        }
-
-        .page-header{
-            margin-bottom:24px;
-        }
 
         .page-header h1{
             font-size:32px;
@@ -256,33 +254,9 @@
             color:#6b7280;
         }
 
-        .patient-card{
-            background:white;
-            border-radius:20px;
-            border:1px solid #e5e7eb;
-            overflow:hidden;
-        }
-
-        .card-header{
-            padding:24px 32px;
-            border-bottom:1px solid #e5e7eb;
-        }
-
         .card-header h2{
             font-size:22px;
             color:#111827;
-        }
-
-        .form-container{
-            padding:32px;
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:24px;
-        }
-
-        .form-group{
-            display:flex;
-            flex-direction:column;
         }
 
         .form-group label{
@@ -306,55 +280,6 @@
             border-color:#1557d5;
         }
 
-        .full-width{
-            grid-column:span 2;
-        }
-
-        .button-group{
-            margin-top:90px;
-            grid-column:span 2;
-            display:flex;
-            justify-content:flex-end;
-            gap:16px;
-            margin-top:8px;
-        }
-
-        .cancel-btn{
-            height:52px;
-            padding:0 24px;
-            border:1px solid #d1d5db;
-            background:white;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        }
-
-        .submit-btn{
-            height:52px;
-            padding:0 24px;
-            border:none;
-            background:#1557d5;
-            color:white;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        }
-
-        .submit-btn:hover{
-            background:#0f4cc7;
-        }
-
-        @media(max-width:768px){
-
-            .form-container{
-                grid-template-columns:1fr;
-            }
-
-            .full-width,
-            .button-group{
-                grid-column:span 1;
-            }
-        }
     </style>
 
     <link rel="stylesheet"
@@ -460,136 +385,6 @@
 
     </aside>
 
-    <!-- MAIN -->
-    <main class="main-content">
-
-        <div class="page-content">
-
-            <div class="patient-card">
-
-                <div class="card-header">
-                    <h2>Hồ sơ sức khỏe bệnh nhân</h2>
-                </div>
-
-                <form class="form-container">
-
-                    <div class="form-group">
-                        <label>Mã hồ sơ *</label>
-                        <input type="text" value="${record.healthRecordId}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Mã bệnh nhân *</label>
-                        <input type="text" value="${record.patient.patientCode}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Họ và tên bệnh nhân</label>
-                        <input type="text" value="${record.patient.user.hoTen}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Đường huyết (mg/dL)</label>
-                        <input type="number" step="0.01" value="${record.duongHuyetMgdl}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Thời điểm đo đường huyết</label>
-                        <input type="text" value="${record.thoiDiemDoDuong}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Huyết áp tâm thu</label>
-                        <input type="number" value="${record.huyetApTamThu}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Huyết áp tâm trương</label>
-                        <input type="number" value="${record.huyetApTamTruong}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nhịp tim (bpm)</label>
-                        <input type="number" value="${record.nhipTim}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Cân nặng (kg)</label>
-                        <input type="number" step="0.01" value="${record.canNangKg}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Chỉ số BMI</label>
-                        <input type="number" step="0.01" value="${record.bmi}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>HbA1c (%)</label>
-                        <input type="number" step="0.01" value="${record.hba1cPercent}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Cholesterol (mmol/L)</label>
-                        <input type="number" step="0.01" value="${record.cholesterolMmol}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Triglyceride (mmol/L)</label>
-                        <input type="number" step="0.01" value="${record.triglycerideMmol}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Số bước chân</label>
-                        <input type="number" value="${record.soBuocChan}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Lượng carbohydrate (g)</label>
-                        <input type="number" step="0.01" value="${record.carbsG}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Thời gian ngủ (giờ)</label>
-                        <input type="number" step="0.1" value="${record.soGioNgu}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Liều insulin (UI)</label>
-                        <input type="number" value="${record.lieuLuongInsulinUi}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Loại insulin</label>
-                        <input type="text" value="${record.loaiInsulinTiem}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Ghi chú</label>
-                        <textarea rows="3" readonly>${record.ghiChu}</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Thời gian đo</label>
-                        <input type="text" value="${record.thoiGianDo}" readonly>
-                    </div>
-
-                </form>
-
-            </div>
-
-            <div class="button-group">
-                <button type="button" class="cancel-btn">
-                    Hủy
-                </button>
-
-                <button type="submit" class="submit-btn">
-                    Cập nhật hồ sơ sức khỏe
-                </button>
-            </div>
-
-        </div>
-
-    </main>
 
 </div>
 

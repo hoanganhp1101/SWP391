@@ -25,14 +25,21 @@ public class PatientRecordController extends HttpServlet {
 
         String startDate = request.getParameter("startDate");
         String endDate = request.getParameter("endDate");
+        String keyword = request.getParameter("keyword");
 
-        if (startDate != null && endDate != null
-                && !startDate.isEmpty()
-                && !endDate.isEmpty()) {
+        boolean hasDate =
+                startDate != null && !startDate.isBlank()
+                        && endDate != null && !endDate.isBlank();
 
-            records = healthRecordDAO.getHealthRecordsByDateRange(
+        boolean hasKeyword =
+                keyword != null && !keyword.isBlank();
+
+        if (hasDate || hasKeyword) {
+
+            records = healthRecordDAO.searchHealthRecordRecords(
                     startDate,
-                    endDate
+                    endDate,
+                    keyword
             );
 
         } else {

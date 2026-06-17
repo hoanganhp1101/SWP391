@@ -531,10 +531,10 @@ RISK FILTER
     </div>
 
     <div class="top-nav">
-        <a class="active">Dashboard</a>
-        <a>Patients</a>
-        <a>Records</a>
-        <a>Reports</a>
+        <a class="active">Bảng điều khiển</a>
+        <a>Bệnh nhân</a>
+        <a>Hồ sơ</a>
+        <a>Báo cáo</a>
     </div>
 
     <div class="top-actions">
@@ -543,7 +543,7 @@ RISK FILTER
             <i class="fa-solid fa-magnifying-glass"></i>
             <input
                     type="text"
-                    placeholder="Search medical records..."
+                    placeholder="Tìm kiếm hồ sơ sức khỏe..."
             >
         </div>
 
@@ -559,6 +559,7 @@ RISK FILTER
     </div>
 
 </header>
+
 <div class="layout">
 
     <!-- SIDEBAR -->
@@ -567,8 +568,7 @@ RISK FILTER
         <div class="doctor-profile">
             <img src="https://i.pravatar.cc/60" alt="">
             <div>
-                <h4>Dr. Smith</h4>
-                <p>Chief Surgeon</p>
+                <h4>BS. Smith</h4>
             </div>
         </div>
 
@@ -576,27 +576,27 @@ RISK FILTER
 
             <a class="menu-item active">
                 <i class="fa-solid fa-table-cells"></i>
-                <span>Overview</span>
+                <span>Tổng quan</span>
             </a>
 
             <a href="patientmanagement.html" class="menu-item">
                 <i class="fa-solid fa-users"></i>
-                <span>Patient List</span>
+                <span>Danh sách bệnh nhân</span>
             </a>
 
             <a class="menu-item">
                 <i class="fa-regular fa-bell"></i>
-                <span>Emergency Alerts</span>
+                <span>Cảnh báo khẩn cấp</span>
             </a>
 
             <a href="medicalrecordmanagement.html" class="menu-item">
                 <i class="fa-regular fa-clipboard"></i>
-                <span>Medical History</span>
+                <span>Tiền sử bệnh án</span>
             </a>
 
             <a class="menu-item">
                 <i class="fa-solid fa-chart-column"></i>
-                <span>Analytics</span>
+                <span>Phân tích dữ liệu</span>
             </a>
 
         </nav>
@@ -605,17 +605,17 @@ RISK FILTER
 
             <button class="new-record">
                 <i class="fa-solid fa-plus"></i>
-                New Record
+                Thêm bệnh nhân mới
             </button>
 
             <a class="bottom-link">
                 <i class="fa-regular fa-circle-question"></i>
-                Support
+                Hỗ trợ
             </a>
 
             <a class="bottom-link">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Sign Out
+                Đăng xuất
             </a>
 
         </div>
@@ -624,6 +624,7 @@ RISK FILTER
 
     <!-- MAIN -->
     <main class="main-content">
+
         <div class="page-content">
 
             <div class="header">
@@ -638,54 +639,66 @@ RISK FILTER
                     <div class="patient-search-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
 
-                        <input
-                                type="text"
-                                id="searchInput"
-                                placeholder="Tìm kiếm theo tên, email, số điện thoại..."
-                        />
+                        <form method="get"
+                              action="${pageContext.request.contextPath}/doctor/patient-list">
+
+                            <input
+                                    type="text"
+                                    name="keyword"
+                                    value="${param.keyword}"
+                                    placeholder="Tìm kiếm..."
+                            >
+
+                            <input
+                                    type="hidden"
+                                    name="risk"
+                                    value="${param.risk}"
+                            >
+                        </form>
                     </div>
 
                     <div class="table-actions">
+                        <a href="${pageContext.request.contextPath}/doctor/export-patients?keyword=${param.keyword}&risk=${param.risk}"
+                           class="btn btn-outline">
 
-                        <button class="btn btn-outline">
                             <i class="fa-solid fa-download"></i>
                             Xuất Excel
-                        </button>
+                        </a>
 
                         <button class="btn btn-primary">
                             <i class="fa-solid fa-plus"></i>
                             Thêm bệnh nhân
                         </button>
 
-
                     </div>
 
-
                 </div>
+
                 <div class="risk-filter">
 
-                    <a href="${pageContext.request.contextPath}/doctor/patient-list" class="filter-btn ${empty param.risk ? 'active' : ''}">
-                        All
+                    <a href="${pageContext.request.contextPath}/doctor/patient-list"
+                       class="filter-btn ${empty param.risk ? 'active' : ''}">
+                        Tất cả
                     </a>
 
                     <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=low"
                        class="filter-btn filter-low ${param.risk == 'low' ? 'active' : ''}">
-                        Low
+                        Thấp
                     </a>
 
                     <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=medium"
                        class="filter-btn filter-medium ${param.risk == 'medium' ? 'active' : ''}">
-                        Medium
+                        Trung bình
                     </a>
 
                     <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=high"
                        class="filter-btn filter-high ${param.risk == 'high' ? 'active' : ''}">
-                        High
+                        Cao
                     </a>
 
                     <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=critical"
                        class="filter-btn filter-critical ${param.risk == 'critical' ? 'active' : ''}">
-                        Critical
+                        Nghiêm trọng
                     </a>
 
                 </div>
@@ -696,14 +709,14 @@ RISK FILTER
 
                         <thead>
                         <tr>
-                            <th>PATIENT ID</th>
-                            <th>FULL NAME</th>
-                            <th>AGE</th>
-                            <th>GENDER</th>
+                            <th>MÃ BỆNH NHÂN</th>
+                            <th>HỌ VÀ TÊN</th>
+                            <th>TUỔI</th>
+                            <th>GIỚI TÍNH</th>
                             <th>EMAIL</th>
-                            <th>DIABETES TYPE</th>
-                            <th>LAST MEASUREMENT DATE</th>
-                            <th>ACTIONS</th>
+                            <th>LOẠI TIỂU ĐƯỜNG</th>
+                            <th>NGÀY CẬP NHẬT GẦN NHẤT</th>
+                            <th>THAO TÁC</th>
                         </tr>
                         </thead>
 
@@ -724,9 +737,7 @@ RISK FILTER
 
                                 <td>${p.loaiTieuDuong}</td>
 
-                                <td>
-                                        ${p.ngayCapNhat}
-                                </td>
+                                <td>${p.ngayCapNhat}</td>
 
                                 <td>
                                     <div class="action-buttons">
@@ -739,6 +750,7 @@ RISK FILTER
                                         </a>
 
                                     </div>
+
                                 </td>
 
                             </tr>
@@ -755,58 +767,8 @@ RISK FILTER
 
         </div>
 
-
-        <div id="toast" class="toast"></div>
-
-
     </main>
 
 </div>
-<script>
-
-    const searchInput =
-        document.getElementById("searchInput");
-
-    searchInput.addEventListener("keyup", function () {
-
-        const keyword =
-            this.value.toLowerCase();
-
-        const rows =
-            document.querySelectorAll(
-                "#patientTable tr"
-            );
-
-        rows.forEach(row => {
-
-            const text =
-                row.innerText.toLowerCase();
-
-            if (text.includes(keyword)) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
-
-        });
-
-    });
-
-    let selectedRow = null;
-
-    function showToast(message) {
-
-        const toast = document.getElementById("toast");
-
-        toast.innerText = message;
-
-        toast.classList.add("show");
-
-        setTimeout(() => {
-            toast.classList.remove("show");
-        }, 2500);
-    }
-
-</script>
 </body>
 </html>

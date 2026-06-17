@@ -30,6 +30,8 @@ public class PatientListController extends HttpServlet {
 //                        doctor.getId()
 //                );
         String risk = request.getParameter("risk");
+        String keyword =
+                request.getParameter("keyword");
 
         List<Patient> patients;
 
@@ -39,7 +41,10 @@ public class PatientListController extends HttpServlet {
 
         } else {
 
-            patients = patientDAO.getPatientsByRiskLevel(risk);
+            patients = patientDAO.searchPatients(
+                    keyword,
+                    risk
+            );
         }
 
         request.setAttribute("patients", patients);
