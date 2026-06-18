@@ -4,92 +4,124 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý Hồ sơ Bệnh nhân | Diabetes Manage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthAlert | Patient Management</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/styles.css">
+
     <style>
-        .sidebar { min-height: 100vh; background: #212529; color: white; padding-top: 20px; }
-        .nav-item .nav-link { color: #adb5bd; margin-bottom: 5px; }
-        .nav-item .nav-link:hover, .nav-item .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); border-radius: 5px; }
         .table-hover tbody tr:hover { background-color: #f8f9fa; }
-        .modal-profile-header { background: linear-gradient(135deg, #0d6efd, #0dcaf0); color: white; padding: 2rem; text-align: center; }
+        .modal-profile-header { background: linear-gradient(135deg, var(--primary-blue, #0d6efd), #0dcaf0); color: white; padding: 2rem; text-align: center; }
         .info-label { font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: #6c757d; margin-bottom: 2px; }
         .info-value { font-size: 1rem; font-weight: 500; color: #212529; margin-bottom: 15px; }
         .action-btns .btn { padding: 0.25rem 0.5rem; font-size: 0.875rem; margin-right: 3px; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-2 sidebar d-none d-md-block px-3">
-            <h5 class="text-center mb-4 text-uppercase font-weight-bold tracking-wide">Diabetes SysAdmin</h5>
-            <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
-                <hr class="text-secondary my-2">
-                <li class="nav-item"><a class="nav-link active" href="${pageContext.request.contextPath}/patient-manager"><i class="fas fa-notes-medical me-2"></i> Hồ sơ Bệnh nhân</a></li>
-                <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-user-md me-2"></i> Quản lý bác sĩ</a></li>
-            </ul>
+<nav class="top-navbar d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+        <a href="${pageContext.request.contextPath}/" class="brand">HealthAlert</a>
+        <div class="d-flex">
+            <a href="${pageContext.request.contextPath}/dashboard" class="nav-link">Dashboard</a>
+            <a href="${pageContext.request.contextPath}/patient-manager" class="nav-link active">Patients</a>
+            <a href="${pageContext.request.contextPath}/admin/users" class="nav-link">Users</a>
+            <a href="#" class="nav-link">Reports</a>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-3 text-muted">
+        <i class="far fa-bell"></i>
+        <i class="fas fa-cog"></i>
+        <img src="https://ui-avatars.com/api/?name=${not empty sessionScope.loginUser ? sessionScope.loginUser.hoTen : 'Admin'}&background=0D8ABC&color=fff" alt="User" class="rounded-circle" width="28" height="28">
+    </div>
+</nav>
+
+<div class="app-container">
+
+    <jsp:include page="/WEB-INF/views/admin/sidebar.jsp">
+        <jsp:param name="activeMenu" value="patients" />
+    </jsp:include>
+
+    <main class="main-content d-flex flex-column">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="h4 mb-0 fw-bold text-gray-800">Danh sách Bệnh nhân</h2>
+                <p class="text-muted small mb-0">Quản lý và cập nhật hồ sơ bệnh nhân.</p>
+            </div>
+            <button class="btn btn-primary shadow-sm rounded-pill px-4" style="background-color: var(--primary-blue); border:none;" data-bs-toggle="modal" data-bs-target="#formModal" onclick="openAddModal()">
+                <i class="fas fa-plus me-1"></i> Thêm Bệnh nhân
+            </button>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="h3 text-gray-800">Danh sách Bệnh nhân</h2>
-                <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#formModal" onclick="openAddModal()">
-                    <i class="fas fa-plus-circle me-1"></i> Thêm Bệnh nhân
-                </button>
-            </div>
-
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0 align-middle">
-                        <thead class="table-light">
+        <div class="custom-card flex-grow-1 p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover custom-table mb-0 align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Tên Bệnh nhân</th>
+                        <th>Ngày sinh</th>
+                        <th>Liên hệ</th>
+                        <th>Loại Bệnh</th>
+                        <th>Bác sĩ</th>
+                        <th class="text-end pe-4">Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="p" items="${patientList}">
                         <tr>
-                            <th>Tên Bệnh nhân</th>
-                            <th>Ngày sinh</th>
-                            <th>Liên hệ</th>
-                            <th>Loại Bệnh</th>
-                            <th>Bác sĩ</th>
-                            <th class="text-center">Thao tác</th>
+                            <td class="ps-4 fw-bold text-primary">${p.tenBenhNhan}</td>
+                            <td>${p.ngaySinh}</td>
+                            <td>
+                                <div style="font-size: 0.8rem;"><i class="fas fa-phone-alt text-muted me-1"></i> ${p.soDienThoai}</div>
+                                <div style="font-size: 0.8rem;"><i class="fas fa-envelope text-muted me-1"></i> ${p.email}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle rounded-pill px-2">${p.loaiTieuDuong}</span>
+                            </td>
+                            <td>${not empty p.tenBacSi ? p.tenBacSi : '<span class="text-warning fst-italic">Chưa xếp</span>'}</td>
+                            <td class="text-end pe-4 action-btns">
+                                <button class="btn btn-light text-info" title="Xem chi tiết"
+                                        data-bs-toggle="modal" data-bs-target="#patientDetailModal"
+                                        data-id="${p.id}" data-name="${p.tenBenhNhan}" data-dob="${p.ngaySinh}"
+                                        data-phone="${p.soDienThoai}" data-email="${p.email}"
+                                        data-type="${p.loaiTieuDuong}" data-doctor="${not empty p.tenBacSi ? p.tenBacSi : 'Chưa phân công'}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-light text-warning" title="Sửa thông tin"
+                                        data-bs-toggle="modal" data-bs-target="#formModal"
+                                        onclick="openEditModal('${p.id}', '${p.tenBenhNhan}', '${p.email}', '${p.soDienThoai}', '${p.ngaySinh}', '${p.loaiTieuDuong}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-light text-danger" title="Xóa hồ sơ"
+                                        data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        onclick="document.getElementById('deleteId').value = '${p.id}'">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
                         </tr>
-                        </thead>
-                        <tbody>
-                        <c:forEach var="p" items="${patientList}">
-                            <tr>
-                                <td class="fw-bold text-primary">${p.tenBenhNhan}</td>
-                                <td>${p.ngaySinh}</td>
-                                <td>
-                                    <small><i class="fas fa-phone-alt text-muted"></i> ${p.soDienThoai}</small><br>
-                                    <small><i class="fas fa-envelope text-muted"></i> ${p.email}</small>
-                                </td>
-                                <td><span class="badge bg-danger">${p.loaiTieuDuong}</span></td>
-                                <td>${not empty p.tenBacSi ? p.tenBacSi : '<span class="text-warning">Chưa xếp</span>'}</td>
-                                <td class="text-center action-btns">
-                                    <button class="btn btn-outline-info" title="Xem chi tiết"
-                                            data-bs-toggle="modal" data-bs-target="#patientDetailModal"
-                                            data-id="${p.id}" data-name="${p.tenBenhNhan}" data-dob="${p.ngaySinh}"
-                                            data-phone="${p.soDienThoai}" data-email="${p.email}"
-                                            data-type="${p.loaiTieuDuong}" data-doctor="${not empty p.tenBacSi ? p.tenBacSi : 'Chưa phân công'}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-outline-warning" title="Sửa thông tin"
-                                            data-bs-toggle="modal" data-bs-target="#formModal"
-                                            onclick="openEditModal('${p.id}', '${p.tenBenhNhan}', '${p.email}', '${p.soDienThoai}', '${p.ngaySinh}', '${p.loaiTieuDuong}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger" title="Xóa hồ sơ"
-                                            data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                            onclick="document.getElementById('deleteId').value = '${p.id}'">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                        </tbody>
-                    </table>
-                </div>
+                    </c:forEach>
+                    <c:if test="${empty patientList}">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Chưa có hồ sơ bệnh nhân nào.</td>
+                        </tr>
+                    </c:if>
+                    </tbody>
+                </table>
             </div>
         </div>
+
+    </main>
+</div>
+
+<div class="footer-bar mt-auto">
+    <div>
+        <span class="fw-bold" style="color: var(--primary-blue);">HealthAlert</span>
+        <span class="ms-2">© 2026 HealthAlert Systems. All rights reserved.</span>
     </div>
 </div>
 
@@ -121,7 +153,7 @@
                 <input type="hidden" name="action" id="formAction" value="add">
                 <input type="hidden" name="id" id="formId">
 
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header text-white" style="background-color: var(--primary-blue);">
                     <h5 class="modal-title" id="formModalTitle">Thêm Bệnh nhân mới</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -156,7 +188,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary" id="formSubmitBtn">Lưu hồ sơ</button>
+                    <button type="submit" class="btn btn-primary" id="formSubmitBtn" style="background-color: var(--primary-blue); border:none;">Lưu hồ sơ</button>
                 </div>
             </form>
         </div>
@@ -182,6 +214,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/script.js"></script>
 <script>
     const detailModal = document.getElementById('patientDetailModal');
     if (detailModal) {
@@ -194,7 +227,7 @@
             detailModal.querySelector('#modal-phone').textContent = btn.getAttribute('data-phone');
             detailModal.querySelector('#modal-email').textContent = btn.getAttribute('data-email');
             detailModal.querySelector('#modal-type').textContent = btn.getAttribute('data-type');
-            detailModal.querySelector('#modal-avatar').src = `https://ui-avatars.com/api/?name=\${encodeURIComponent(name)}&background=ffffff&color=0d6efd&size=120`;
+            detailModal.querySelector('#modal-avatar').src = `https://ui-avatars.com/api/?name=\${encodeURIComponent(name)}&background=ffffff&color=0D8ABC&size=120`;
         });
     }
 
