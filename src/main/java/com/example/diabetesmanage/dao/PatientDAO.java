@@ -8,8 +8,75 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class PatientDAO {
+
+    public boolean deletePatient(String patientId) {
+        String sql = "DELETE FROM patients WHERE id=?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean updatePatient(Patient p) {
+        String sql = "UPDATE patients SET ho_ten=?, email=?, so_dien_thoai=?, ngay_sinh=?, loai_tieu_duong=? WHERE id=?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, p.getTenBenhNhan());
+            ps.setString(2, p.getEmail());
+            ps.setString(3, p.getSoDienThoai());
+            ps.setDate(4, p.getNgaySinh());
+            ps.setString(5, p.getLoaiTieuDuong());
+            ps.setString(6, p.getId());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean addPatient(Patient p) {
+        String userId = UUID.randomUUID().toString();
+        String patientId = UUID.randomUUID().toString();
+
+        String sqlUser = "INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash) VALUES (?, ?, ?, ?, 'benh_nhan', 'hash_mac_dinh_123')";
+        String sqlPatient = "INSERT INTO patients (id, user_id, ho_ten, email, so_dien_thoai, ngay_sinh, loai_tieu_duong) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false); // Bắt đầu Transaction
+            try (PreparedStatement psUser = conn.prepareStatement(sqlUser);
+                 PreparedStatement psPat = conn.prepareStatement(sqlPatient)) {
+
+                psUser.setString(1, userId);
+                psUser.setString(2, p.getTenBenhNhan());
+                psUser.setString(3, p.getEmail());
+                psUser.setString(4, p.getSoDienThoai());
+                psUser.executeUpdate();
+
+                psPat.setString(1, patientId);
+                psPat.setString(2, userId);
+                psPat.setString(3, p.getTenBenhNhan());
+                psPat.setString(4, p.getEmail());
+                psPat.setString(5, p.getSoDienThoai());
+                psPat.setDate(6, p.getNgaySinh());
+                psPat.setString(7, p.getLoaiTieuDuong());
+                psPat.executeUpdate();
+
+                conn.commit();
+                return true;
+            } catch (Exception ex) {
+                conn.rollback();
+                ex.printStackTrace();
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return false;
+    }
 
     public Patient getPatientByIdAdmin(String id) {
         String sql = "SELECT * FROM patients WHERE id = ?";
