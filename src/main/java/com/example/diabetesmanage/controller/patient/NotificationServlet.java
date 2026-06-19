@@ -41,6 +41,8 @@ public class NotificationServlet extends HttpServlet {
             return;
         }
 
+        List<JsonObject> notifList = new java.util.ArrayList<>();
+
         // 1. Lấy thông báo cảnh báo AI (Alerts)
         AlertDAO alertDAO = new AlertDAO();
         List<Alert> alerts = alertDAO.getRecentAlerts(patientId);
@@ -56,7 +58,8 @@ public class NotificationServlet extends HttpServlet {
                 notif.addProperty("color", "var(--danger)");
                 notif.addProperty("bgColor", "var(--danger-light)");
                 notif.addProperty("link", "patient-dashboard");
-                notifications.add(notif);
+                notif.addProperty("sortTime", alert.getThoiGianTao() != null ? alert.getThoiGianTao().getTime() : 0L);
+                notifList.add(notif);
             }
         }
         
@@ -76,7 +79,8 @@ public class NotificationServlet extends HttpServlet {
                     notif.addProperty("color", "var(--primary)");
                     notif.addProperty("bgColor", "var(--primary-light)");
                     notif.addProperty("link", "patient-prescriptions");
-                    notifications.add(notif);
+                    notif.addProperty("sortTime", System.currentTimeMillis()); // Ưu tiên hiện trên cùng
+                    notifList.add(notif);
                 }
             }
         }
@@ -97,8 +101,17 @@ public class NotificationServlet extends HttpServlet {
                 notif.addProperty("color", "var(--success)");
                 notif.addProperty("bgColor", "var(--success-light)");
                 notif.addProperty("link", "#");
-                notifications.add(notif);
+                // Dùng thời gian hẹn làm mốc sắp xếp (nếu trong tương lai thì sẽ lên đầu)
+                notif.addProperty("sortTime", appt.getThoiGianHen() != null ? appt.getThoiGianHen().getTime() : 0L);
+                notifList.add(notif);
             }
+        }
+
+        // Sắp xếp giảm dần theo thời gian (mới nhất ở trên)
+        notifList.sort((o1, o2) -> Long.compare(o2.get("sortTime").getAsLong(), o1.get("sortTime").getAsLong()));
+
+        for (JsonObject obj : notifList) {
+            notifications.add(obj);
         }
         
         response.getWriter().write(notifications.toString());

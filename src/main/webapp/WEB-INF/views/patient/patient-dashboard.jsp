@@ -1447,14 +1447,15 @@
                         <h3 class="modal-title">Ghi chỉ số sức khỏe</h3>
                         <button class="close-btn" id="closeModalBtn"><i class="fas fa-times"></i></button>
                     </div>
-                    <form action="logData" method="POST">
+                    <form action="logData" method="POST" id="newRecordForm">
+                        <div id="formErrorMsg" style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;"></div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Đường huyết</label>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <input type="number" step="0.1" name="duong_huyet" class="form-control"
+                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet" class="form-control"
                                         placeholder="VD: 110">
-                                    <select name="don_vi_duong_huyet" class="form-control" style="width: 100px;">
+                                    <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control" style="width: 100px;">
                                         <option value="mg/dL">mg/dL</option>
                                         <option value="mmol/L">mmol/L</option>
                                     </select>
@@ -1462,17 +1463,17 @@
                             </div>
                             <div class="form-group">
                                 <label>Nhịp tim (BPM)</label>
-                                <input type="number" name="nhip_tim" class="form-control" placeholder="VD: 75">
+                                <input type="number" name="nhip_tim" id="nhip_tim" class="form-control" placeholder="VD: 75">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>H/áp Tâm thu (mmHg)</label>
-                                <input type="number" name="huyet_ap_thu" class="form-control" placeholder="VD: 120">
+                                <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control" placeholder="VD: 120">
                             </div>
                             <div class="form-group">
                                 <label>H/áp Tâm trương (mmHg)</label>
-                                <input type="number" name="huyet_ap_truong" class="form-control" placeholder="VD: 80">
+                                <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control" placeholder="VD: 80">
                             </div>
                         </div>
                         <div class="form-group">
@@ -1723,6 +1724,8 @@
 
                 function closeModal() {
                     recordModal.classList.remove('active');
+                    const formErrorMsg = document.getElementById('formErrorMsg');
+                    if (formErrorMsg) formErrorMsg.style.display = 'none';
                 }
 
                 if (btnNewRecord) btnNewRecord.addEventListener('click', openModal);
@@ -1735,6 +1738,71 @@
                         closeModal();
                     }
                 });
+
+                // Form validation
+                const newRecordForm = document.getElementById('newRecordForm');
+                const formErrorMsg = document.getElementById('formErrorMsg');
+                
+                if (newRecordForm) {
+                    newRecordForm.addEventListener('submit', function(e) {
+                        const dh = document.getElementById('duong_huyet').value;
+                        const unit = document.getElementById('don_vi_duong_huyet').value;
+                        const hr = document.getElementById('nhip_tim').value;
+                        const sys = document.getElementById('huyet_ap_thu').value;
+                        const dia = document.getElementById('huyet_ap_truong').value;
+                        
+                        let error = '';
+                        
+                        // Rule 1: At least one metric
+                        if (!dh && !hr && !sys && !dia) {
+                            error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
+                        } 
+                        // Rule 2: Blood Pressure logic
+                        else if ((sys && !dia) || (!sys && dia)) {
+                            error = 'Vui lòng nhập đầy đủ cả Huyết áp Tâm thu và Tâm trương.';
+                        }
+                        // Rule 3: Valid BP range
+                        else if (sys && dia) {
+                            if (parseFloat(sys) <= parseFloat(dia)) {
+                                error = 'Huyết áp Tâm thu phải lớn hơn Huyết áp Tâm trương.';
+                            } else if (sys < 60 || sys > 250 || dia < 30 || dia > 150) {
+                                error = 'Chỉ số Huyết áp không hợp lệ. Vui lòng kiểm tra lại.';
+                            }
+                        }
+                        // Rule 4: Valid Heart rate
+                        if (!error && hr && (hr < 30 || hr > 250)) {
+                            error = 'Chỉ số Nhịp tim không hợp lệ.';
+                        }
+                        // Rule 5: Valid Glucose
+                        if (!error && dh) {
+                            let dhVal = parseFloat(dh);
+                            if (dhVal <= 0) {
+                                error = 'Đường huyết phải lớn hơn 0.';
+                            } else if (unit === 'mg/dL' && (dhVal < 10 || dhVal > 1000)) {
+                                error = 'Chỉ số Đường huyết (mg/dL) có vẻ không hợp lệ.';
+                            } else if (unit === 'mmol/L' && (dhVal < 0.5 || dhVal > 55)) {
+                                error = 'Chỉ số Đường huyết (mmol/L) có vẻ không hợp lệ.';
+                            }
+                        }
+                        
+                        if (error) {
+                            e.preventDefault(); // Dừng submit
+                            formErrorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error;
+                            formErrorMsg.style.display = 'block';
+                            
+                            // Lắc nhẹ modal để báo lỗi
+                            const modal = document.querySelector('.modal');
+                            modal.animate([
+                                { transform: 'translateX(0)' },
+                                { transform: 'translateX(-5px)' },
+                                { transform: 'translateX(5px)' },
+                                { transform: 'translateX(0)' }
+                            ], { duration: 300 });
+                        } else {
+                            formErrorMsg.style.display = 'none';
+                        }
+                    });
+                }
 
                 // ==================== AI RECOMMENDATIONS PARSING ====================
                 (function () {
