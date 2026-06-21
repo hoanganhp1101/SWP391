@@ -342,4 +342,113 @@ public class HealthRecordDAO {
         return list;
     }
 
+    public java.util.Map<String, java.util.List<HealthRecord>> getRecentRecordsGroupedByPatient(
+            String doctorEmail,
+            int maxRecordsPerPatient) {
+
+        java.util.Map<String, java.util.List<HealthRecord>> grouped = new java.util.LinkedHashMap<>();
+
+        String sql =
+                "SELECT hr.*, " +
+                        "p.id AS patient_id, " +
+                        "p.patient_code, " +
+                        "p.loai_tieu_duong, " +
+                        "u.ho_ten " +
+                        "FROM health_records hr " +
+                        "JOIN patients p ON hr.patient_id = p.id " +
+                        "JOIN users u ON p.user_id = u.id " +
+                        "JOIN users d ON p.bac_si_id = d.id " +
+                        "WHERE d.email = ? " +
+                        "ORDER BY p.id, hr.thoi_gian_do DESC";
+
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, doctorEmail);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                String patientId = rs.getString("patient_id");
+                java.util.List<HealthRecord> records =
+                        grouped.computeIfAbsent(patientId, k -> new ArrayList<>());
+
+                if (records.size() >= maxRecordsPerPatient) {
+                    continue;
+                }
+
+                HealthRecord hr = mapDetailedHealthRecord(rs);
+                records.add(hr);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return grouped;
+    }
+
+    private HealthRecord mapDetailedHealthRecord(ResultSet rs) throws SQLException {
+
+        HealthRecord hr = new HealthRecord();
+
+        hr.setId(rs.getString("id"));
+        hr.setHealthRecordId(rs.getString("health_record_code"));
+
+        double glucose = rs.getDouble("duong_huyet_mgdl");
+        if (!rs.wasNull()) {
+            hr.setDuongHuyetMgdl(glucose);
+        }
+
+        double hba1c = rs.getDouble("hba1c_percent");
+        if (!rs.wasNull()) {
+            hr.setHba1cPercent(hba1c);
+        }
+
+        double bmi = rs.getDouble("bmi");
+        if (!rs.wasNull()) {
+            hr.setBmi(bmi);
+        }
+
+        int systolic = rs.getInt("huyet_ap_tam_thu");
+        if (!rs.wasNull()) {
+            hr.setHuyetApTamThu(systolic);
+        }
+
+        int diastolic = rs.getInt("huyet_ap_tam_truong");
+        if (!rs.wasNull()) {
+            hr.setHuyetApTamTruong(diastolic);
+        }
+
+        int insulin = rs.getInt("lieu_luong_insulin_ui");
+        if (!rs.wasNull()) {
+            hr.setLieuLuongInsulinUi(insulin);
+        }
+
+        Timestamp timestamp = rs.getTimestamp("thoi_gian_do");
+        if (timestamp != null) {
+            hr.setThoiGianDo(timestamp.toLocalDateTime());
+
+            LocalDate lastVisitDate = timestamp.toLocalDateTime().toLocalDate();
+            hr.setDaysSinceLastVisit(
+                    (int) ChronoUnit.DAYS.between(lastVisitDate, LocalDate.now())
+            );
+        }
+
+        Patient patient = new Patient();
+        patient.setId(rs.getString("patient_id"));
+        patient.setPatientCode(rs.getString("patient_code"));
+        patient.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
+
+        User user = new User();
+        user.setHoTen(rs.getString("ho_ten"));
+        patient.setUser(user);
+
+        hr.setPatient(patient);
+
+        return hr;
+    }
+
 }

@@ -261,7 +261,7 @@
             background:white;
             border:1px solid #e5e7eb;
             border-radius:24px;
-            overflow:hidden;
+            overflow:visible;
         }
 
         .card-top{
@@ -364,57 +364,99 @@
             color:#2563eb;
         }
 
-        .delete-btn{
-            background:#fef2f2;
-            color:#dc2626;
+        .date-range-picker {
+            position: relative;
+            width: 250px;
         }
 
-        /* ==========================
-RISK FILTER
-========================== */
+        .date-display {
+            height: 44px;           /* trước 48 hoặc lớn hơn */
+            padding: 0 14px;
 
-        .risk-filter{
-            display:flex;
-            gap:12px;
-            padding:14px 26px;
-            border-bottom:1px solid #e5e7eb;
-            flex-wrap:wrap;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 22px;
+
+            font-size: 14px;
+            font-weight: 500;
+
+            cursor: pointer;
         }
 
-        .filter-btn{
-            border:1px solid #dbe2ea;
-            background:#fff;
-            padding:10px 20px;
-            border-radius:999px;
-            font-size:14px;
-            font-weight:600;
-            cursor:pointer;
-            transition:.2s;
+        .date-display:hover {
+            border-color: #6c63ff;
         }
 
-        .filter-btn.active{
-            background:#eef2ff;
+        .date-popup {
+            position: absolute;
+            top: 60px;
+            left: 0;
+
+            width: 340px;
+
+            background: white;
+            border-radius: 8px;
+
+            padding: 20px;
+
+            box-shadow: 0 10px 30px rgba(0,0,0,.15);
+
+            display: none;
+            z-index: 999;
         }
 
-        .filter-low{
-            border-color:#22c55e;
-            color:#16a34a;
+        .date-popup.show {
+            display: block;
         }
 
-        .filter-medium{
-            border-color:#f59e0b;
-            color:#d97706;
+        .date-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .filter-high{
-            border-color:#f97316;
-            color:#ea580c;
+        .date-fields label {
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .filter-critical{
-            border-color:#ef4444;
-            color:#dc2626;
+        .date-fields input {
+            height: 40px;
+            padding: 0 12px;
+
+            border: 1px solid #ddd;
+            border-radius: 6px;
         }
+
+        .popup-actions {
+            margin-top: 20px;
+
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .popup-actions button {
+            padding: 8px 16px;
+
+            border: none;
+            border-radius: 4px;
+
+            cursor: pointer;
+        }
+
+        .popup-actions button[type="submit"] {
+            background: #6c63ff;
+            color: white;
+        }
+
+
+
+
     </style>
 
     <link rel="stylesheet"
@@ -570,27 +612,55 @@ RISK FILTER
 
                 <div class="risk-filter">
 
-                    <span>Từ ngày</span>
+                    <form action="${pageContext.request.contextPath}/doctor/patient-records"
+                          method="get">
 
-                    <form action="${pageContext.request.contextPath}/doctor/patient-records" method="get">
+                        <div class="date-range-picker">
 
-                        <input
-                                type="date"
-                                name="startDate"
-                                value="${param.startDate}"
-                        >
+                            <div class="date-display" id="toggleDatePicker">
+                <span id="dateText">
+                    ${not empty param.startDate && not empty param.endDate
+                            ? param.startDate.concat(' - ').concat(param.endDate)
+                            : 'Chọn khoảng ngày'}
+                </span>
+                                <span>▼</span>
+                            </div>
 
-                        <span>Đến ngày</span>
+                            <div class="date-popup" id="datePopup">
 
-                        <input
-                                type="date"
-                                name="endDate"
-                                value="${param.endDate}"
-                        >
+                                <div class="date-fields">
 
-                        <button type="submit" class="filter-btn">
-                            Lọc
-                        </button>
+                                    <label>Từ ngày</label>
+                                    <input
+                                            type="date"
+                                            id="startDate"
+                                            name="startDate"
+                                            value="${param.startDate}"
+                                    >
+
+                                    <label>Đến ngày</label>
+                                    <input
+                                            type="date"
+                                            id="endDate"
+                                            name="endDate"
+                                            value="${param.endDate}"
+                                    >
+
+                                </div>
+
+                                <div class="popup-actions">
+                                    <button type="button" id="cancelBtn">
+                                        Cancel
+                                    </button>
+
+                                    <button type="submit">
+                                        OK
+                                    </button>
+                                </div>
+
+                            </div>
+
+                        </div>
 
                     </form>
 
@@ -691,4 +761,81 @@ RISK FILTER
 
 </div>
 </body>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const toggleDatePicker = document.getElementById("toggleDatePicker");
+        const datePopup = document.getElementById("datePopup");
+        const startDate = document.getElementById("startDate");
+        const endDate = document.getElementById("endDate");
+        const dateText = document.getElementById("dateText");
+        const cancelBtn = document.getElementById("cancelBtn");
+
+        if (!toggleDatePicker || !datePopup) {
+            console.error("Date picker not found");
+            return;
+        }
+
+        toggleDatePicker.onclick = function (e) {
+            e.stopPropagation();
+            datePopup.classList.toggle("show");
+        };
+
+        if (cancelBtn) {
+            cancelBtn.onclick = function () {
+                datePopup.classList.remove("show");
+            };
+        }
+
+        document.addEventListener("click", function (e) {
+
+            if (
+                !datePopup.contains(e.target) &&
+                !toggleDatePicker.contains(e.target)
+            ) {
+                datePopup.classList.remove("show");
+            }
+
+        });
+
+        function formatDate(value) {
+
+            if (!value) return "";
+
+            const date = new Date(value);
+
+            return date.toLocaleDateString("vi-VN");
+        }
+
+        function updateText() {
+
+            if (
+                startDate &&
+                endDate &&
+                startDate.value &&
+                endDate.value
+            ) {
+
+                dateText.textContent =
+                    formatDate(startDate.value) +
+                    " - " +
+                    formatDate(endDate.value);
+
+            } else {
+
+                dateText.textContent = "Chọn khoảng ngày";
+            }
+        }
+
+        if (startDate) {
+            startDate.addEventListener("change", updateText);
+        }
+
+        if (endDate) {
+            endDate.addEventListener("change", updateText);
+        }
+
+        updateText();
+    });
+</script>
 </html>

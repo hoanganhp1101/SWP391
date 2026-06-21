@@ -1,4 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -476,7 +478,7 @@
 
         <img
                 class="topbar-avatar"
-                src="https://i.pravatar.cc/40"
+                src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/40'}"
                 alt=""
         >
 
@@ -489,10 +491,10 @@
     <aside class="sidebar">
 
         <div class="doctor-profile">
-            <img src="https://i.pravatar.cc/60" alt="">
+            <img src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/60'}" alt="">
             <div>
-                <h4>BS. Smith</h4>
-                <p>Trưởng khoa phẫu thuật</p>
+                <h4>${not empty doctor.hoTen ? doctor.hoTen : 'Bác sĩ'}</h4>
+                <p>${not empty doctor.vaiTro ? doctor.vaiTro : 'Bác sĩ điều trị'}</p>
             </div>
         </div>
 
@@ -563,7 +565,7 @@
                     <div class="card-top">
                         <div>
                             <span class="card-title">Tổng số bệnh nhân</span>
-                            <h2>1,248</h2>
+                            <h2><fmt:formatNumber value="${stats.totalPatients}" groupingUsed="true"/></h2>
                         </div>
 
                         <div class="icon blue">
@@ -576,7 +578,7 @@
                     <div class="card-top">
                         <div>
                             <span class="card-title">Cảnh báo đang hoạt động</span>
-                            <h2>23</h2>
+                            <h2><fmt:formatNumber value="${stats.activeAlerts}" groupingUsed="true"/></h2>
                         </div>
 
                         <div class="icon yellow">
@@ -589,7 +591,7 @@
                     <div class="card-top">
                         <div>
                             <span class="card-title">Hồ sơ sức khỏe hôm nay</span>
-                            <h2>156</h2>
+                            <h2><fmt:formatNumber value="${stats.todayHealthRecords}" groupingUsed="true"/></h2>
                         </div>
 
                         <div class="icon green">
@@ -614,7 +616,7 @@
                     <div class="stat-item">
                         <div class="value">
                             <span class="dot low"></span>
-                            642
+                            ${stats.riskLow}
                         </div>
                         <p>Rủi ro thấp</p>
                     </div>
@@ -622,7 +624,7 @@
                     <div class="stat-item">
                         <div class="value">
                             <span class="dot medium"></span>
-                            389
+                            ${stats.riskMedium}
                         </div>
                         <p>Rủi ro trung bình</p>
                     </div>
@@ -630,7 +632,7 @@
                     <div class="stat-item">
                         <div class="value">
                             <span class="dot high"></span>
-                            130
+                            ${stats.riskHigh}
                         </div>
                         <p>Rủi ro cao</p>
                     </div>
@@ -638,7 +640,7 @@
                     <div class="stat-item">
                         <div class="value">
                             <span class="dot critical"></span>
-                            87
+                            ${stats.riskCritical}
                         </div>
                         <p>Rủi ro nghiêm trọng</p>
                     </div>
@@ -657,72 +659,66 @@
 
                         <div class="title">
                             <i class="fa-solid fa-circle-exclamation"></i>
-                            <h2>Cần chú ý khẩn cấp</h2>
+                            <h2>Hồ sơ nguy hiểm</h2>
                         </div>
 
                         <div class="badge">
-                            3 ca ưu tiên mức 1
+                            ${analysisResult.totalDangerousCount} hồ sơ cần xem xét
                         </div>
 
                     </div>
 
-                    <div class="patient-card critical">
+                    <c:choose>
+                        <c:when test="${empty urgentPatients}">
+                            <p style="color:#6b7280;">Không có hồ sơ bệnh án nguy hiểm.</p>
+                        </c:when>
+                        <c:otherwise>
+                            <c:forEach items="${urgentPatients}" var="alert">
+                                <div class="patient-card ${alert.critical ? 'critical' : ''}">
 
-                        <div class="patient-left">
-                            <div class="patient-avatar red">
-                                <i class="fa-solid fa-heart-circle-plus"></i>
-                            </div>
+                                    <div class="patient-left">
+                                        <div class="patient-avatar ${alert.critical ? 'red' : 'blue'}">
+                                            <i class="fa-solid ${alert.critical ? 'fa-heart-circle-plus' : 'fa-notes-medical'}"></i>
+                                        </div>
 
-                            <div>
-                                <h3>Bệnh nhân #001</h3>
-                                <p>Khu điều trị C-12</p>
-                            </div>
-                        </div>
+                                        <div>
+                                            <h3>${alert.patientName} (${alert.patientCode})</h3>
+                                            <p>${not empty alert.loaiTieuDuong ? alert.loaiTieuDuong : 'Chưa có thông tin'}</p>
+                                            <c:if test="${not empty alert.riskReasons}">
+                                                <ul style="margin-top:8px; padding-left:18px; font-size:13px; color:#b42318;">
+                                                    <c:forEach items="${alert.riskReasons}" var="reason">
+                                                        <li>${reason}</li>
+                                                    </c:forEach>
+                                                </ul>
+                                            </c:if>
+                                            <c:if test="${not empty alert.aiSummary}">
+                                                <p style="margin-top:8px; font-size:13px; color:#1e40af;">
+                                                    <i class="fa-solid fa-sparkles"></i> ${alert.aiSummary}
+                                                </p>
+                                            </c:if>
+                                        </div>
+                                    </div>
 
-                        <div class="patient-right">
-                            <div class="vital">
-                                SPO2: 88%
-                            </div>
+                                    <div class="patient-right">
+                                        <div class="vital">
+                                            ${alert.vitalDisplay}
+                                        </div>
 
-                            <div class="time">
-                                Phát hiện cách đây 4 phút
-                            </div>
-                        </div>
+                                        <div class="time">
+                                            ${alert.detectedAgo}
+                                        </div>
+                                    </div>
 
-                        <button class="btn-danger">
-                            Xem chỉ số
-                        </button>
+                                    <a href="${pageContext.request.contextPath}/doctor/record-detail?id=${alert.patientId}"
+                                       class="${alert.critical ? 'btn-danger' : 'btn-outline'}"
+                                       style="text-decoration:none; display:inline-block;">
+                                        Xem hồ sơ
+                                    </a>
 
-                    </div>
-
-                    <div class="patient-card">
-
-                        <div class="patient-left">
-                            <div class="patient-avatar blue">
-                                <i class="fa-solid fa-notes-medical"></i>
-                            </div>
-
-                            <div>
-                                <h3>Bệnh nhân #002</h3>
-                                <p>Khoa Hồi sức tích cực</p>
-                            </div>
-                        </div>
-
-                        <div class="patient-right">
-                            <div class="vital">
-                                Huyết áp: 165/110
-                            </div>
-
-                            <div class="time">
-                                Phát hiện cách đây 12 phút
-                            </div>
-                        </div>
-
-                        <button class="btn-outline">
-                            Xem chỉ số
-                        </button>
-
-                    </div>
+                                </div>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
 
                 </div>
 
@@ -731,25 +727,50 @@
 
                     <div class="title">
                         <i class="fa-solid fa-sparkles"></i>
-                        <h2>Phân tích AI</h2>
+                        <h2>Phân tích AI (Gemini)</h2>
                     </div>
 
-                    <div class="alert-box">
-                        <strong>Cảnh báo:</strong>
-                        Hệ thống phát hiện mối tương quan cao giữa tăng đường huyết buổi sáng
-                        và thời điểm dùng thuốc ở 12 bệnh nhân.
-                    </div>
+                    <c:choose>
+                        <c:when test="${analysisResult.geminiUsed}">
+                            <div class="alert-box">
+                                <strong>Phân tích tổng quan:</strong>
+                                ${not empty analysisResult.aiSummary
+                                    ? analysisResult.aiSummary
+                                    : 'Gemini đã phân tích các hồ sơ nguy hiểm.'}
+                            </div>
+                        </c:when>
+                        <c:when test="${analysisResult.geminiConfigured && not empty analysisResult.geminiError}">
+                            <div class="alert-box" style="background:#fef3f2; color:#b42318;">
+                                <strong>Gemini lỗi:</strong> ${analysisResult.geminiError}
+                            </div>
+                            <p style="font-size:13px; color:#6b7280; margin-top:8px;">
+                                ${analysisResult.geminiConfigInfo}
+                            </p>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="alert-box">
+                                <strong>Lưu ý:</strong>
+                                Chưa cấu hình Gemini API key. Hệ thống đang dùng phân tích theo quy tắc y khoa.
+                                Tạo file <code>src/main/resources/gemini.properties</code>,
+                                điền <code>gemini.api.key</code>, rồi <strong>Rebuild project</strong>
+                                (Maven → Reload / Build → Rebuild Project).
+                            </div>
+                            <c:if test="${not empty analysisResult.geminiError}">
+                                <p style="font-size:13px; color:#b42318; margin-top:8px;">
+                                    ${analysisResult.geminiError}
+                                </p>
+                            </c:if>
+                        </c:otherwise>
+                    </c:choose>
 
                     <ul style="padding-left:20px; line-height:1.8;">
-                        <li>Nguy cơ tái nhập viện tăng khoảng 3% trong tuần này.</li>
-                        <li>Phát hiện nhịp tim bất thường trong dữ liệu lịch sử.</li>
+                        <c:forEach items="${analysisResult.aiInsights}" var="insight">
+                            <li>${insight}</li>
+                        </c:forEach>
+                        <c:if test="${empty analysisResult.aiInsights}">
+                            <li>Phát hiện ${analysisResult.totalDangerousCount} hồ sơ có chỉ số bất thường cần theo dõi.</li>
+                        </c:if>
                     </ul>
-
-                    <br>
-
-                    <button class="analytics-btn">
-                        Xem toàn bộ phân tích
-                    </button>
 
                 </div>
 
@@ -774,7 +795,7 @@
                 'Rủi ro nghiêm trọng'
             ],
             datasets: [{
-                data: [642, 389, 130, 87],
+                data: [${stats.riskLow}, ${stats.riskMedium}, ${stats.riskHigh}, ${stats.riskCritical}],
                 backgroundColor: [
                     '#10b981',
                     '#f59e0b',
