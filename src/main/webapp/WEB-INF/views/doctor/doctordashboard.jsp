@@ -534,7 +534,7 @@
                 <span>Patient List</span>
             </a>
 
-            <a class="menu-item">
+            <a href="${pageContext.request.contextPath}/doctor/alerts" class="menu-item">
                 <i class="fa-regular fa-bell"></i>
                 <span>Emergency Alerts</span>
             </a>
@@ -544,7 +544,7 @@
                 <span>Medical History</span>
             </a>
 
-            <a class="menu-item">
+            <a href="${pageContext.request.contextPath}/doctor/analytics" class="menu-item">
                 <i class="fa-solid fa-chart-column"></i>
                 <span>Analytics</span>
             </a>

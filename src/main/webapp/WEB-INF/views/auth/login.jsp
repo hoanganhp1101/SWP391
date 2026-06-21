@@ -13,7 +13,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login — Diabetes Support System</title>
-        <style>
+         <style>
             * {
                 box-sizing: border-box;
                 margin: 0;
@@ -22,7 +22,8 @@
 
             body {
                 font-family: 'Arial', sans-serif;
-                background: linear-gradient(135deg, #4169e1 0%, #ff7f50 100%);
+                /* Nền xám xanh nhạt rất nhẹ, giúp khối form màu trắng nổi bật hẳn lên */
+                background: #f0f4f8; 
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -31,10 +32,11 @@
             }
 
             .container {
-                background: #fff;
+                background: #ffffff; /* Khối trắng chủ đạo */
                 padding: 2.5rem 2rem;
                 border-radius: 12px;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                /* Đổ bóng nhẹ nhàng hơn để phù hợp với nền sáng */
+                box-shadow: 0 4px 20px rgba(21, 87, 213, 0.08); 
                 max-width: 420px;
                 width: 100%;
                 text-align: center;
@@ -46,7 +48,6 @@
                     opacity: 0;
                     transform: translateY(-20px);
                 }
-
                 to {
                     opacity: 1;
                     transform: translateY(0);
@@ -59,13 +60,14 @@
             }
 
             h1 {
-                color: #333;
+                /* Màu chữ tiêu đề đậm và sắc nét hơn */
+                color: #1a1a1a; 
                 margin-bottom: 4px;
                 font-size: 1.6rem;
             }
 
             .subtitle {
-                color: #777;
+                color: #666;
                 margin-bottom: 1.8rem;
                 font-size: 0.9rem;
             }
@@ -75,35 +77,45 @@
                 width: 100%;
                 padding: 12px 14px;
                 margin-bottom: 6px;
-                border: 1.5px solid #ddd;
+                border: 1.5px solid #e0e4e8;
                 border-radius: 8px;
                 font-size: 1rem;
-                transition: border-color 0.2s;
+                transition: all 0.3s ease;
                 outline: none;
+                background-color: #fafbfc;
             }
 
+            /* Đổi màu viền khi click vào ô nhập liệu thành màu chủ đạo */
             input[type="text"]:focus,
             input[type="password"]:focus {
-                border-color: #4169e1;
+                border-color: #1557d5; 
+                background-color: #ffffff;
+                box-shadow: 0 0 0 3px rgba(21, 87, 213, 0.1);
             }
 
             .login-btn {
                 width: 100%;
                 padding: 12px;
-                background: #4169e1;
-                color: #fff;
+                /* Sử dụng màu chủ đạo cho nút bấm */
+                background: #1557d5; 
+                color: #ffffff;
                 border: none;
                 border-radius: 8px;
                 font-size: 1rem;
                 cursor: pointer;
                 font-weight: bold;
-                transition: background 0.2s;
+                transition: background 0.2s, transform 0.1s;
                 margin-top: 8px;
                 margin-bottom: 12px;
             }
 
+            /* Màu khi di chuột qua nút (đậm hơn #1557d5 một chút) */
             .login-btn:hover {
-                background: #374bb5;
+                background: #1046ab; 
+            }
+            
+            .login-btn:active {
+                transform: scale(0.98);
             }
 
             .error-text {
@@ -128,9 +140,9 @@
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                color: #bbb;
+                color: #999;
                 font-size: 0.85rem;
-                margin: 10px 0;
+                margin: 15px 0;
             }
 
             .divider::before,
@@ -138,19 +150,38 @@
                 content: '';
                 flex: 1;
                 height: 1px;
-                background: #ddd;
+                background: #eaeaea;
             }
 
             .forgot-link {
                 display: block;
-                color: #4169e1;
+                /* Link quên mật khẩu dùng màu chủ đạo */
+                color: #1557d5; 
                 text-decoration: none;
                 font-size: 0.88rem;
                 text-align: right;
                 margin-bottom: 4px;
+                font-weight: 500;
             }
 
             .forgot-link:hover {
+                text-decoration: underline;
+            }
+            
+            .register-link-container {
+                margin-top: 15px; 
+                font-size: 0.9rem; 
+                color: #555;
+            }
+            
+            .register-link-container a {
+                /* Link đăng ký dùng màu chủ đạo */
+                color: #1557d5; 
+                text-decoration: none; 
+                font-weight: bold;
+            }
+            
+            .register-link-container a:hover {
                 text-decoration: underline;
             }
         </style>

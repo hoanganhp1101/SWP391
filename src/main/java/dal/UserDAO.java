@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.User;
+import util.Encode;
 
 public class UserDAO extends DBContext {
 
@@ -74,6 +75,7 @@ public class UserDAO extends DBContext {
     }
 
     public User checkLogin(String email, String hashedPassword) {
+        
         if (email == null || hashedPassword == null) {
 
             return null;
@@ -81,7 +83,8 @@ public class UserDAO extends DBContext {
 
         // 1. Tìm user trong DB theo Email
         User user = getUserByEmail(email);
-
+        Encode encoder = new Encode();
+        String hashedPass = encoder.Encode(user.getMatKhauHash());
         if (user == null) {
 
             return null;
@@ -92,9 +95,16 @@ public class UserDAO extends DBContext {
         if (hashedPassword.trim().equalsIgnoreCase(user.getMatKhauHash().trim())) {
 
             return user;
+        }else if(hashedPassword.trim().equals(hashedPass)){
+            boolean updated = updatePassword(user.getId(), hashedPassword);
+            if (!updated) {
+                System.out.println( "Cập nhật mật khẩu thất bại.");
+            
+        }
+            return user;
         }
 
-        System.out.println("DEBUG: Tìm thấy tài khoản nhưng MẬT KHẨU KHÔNG KHỚP!");
+        
         return null;
     }
 

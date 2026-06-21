@@ -73,12 +73,12 @@ public class LoginController extends HttpServlet {
                 request.setAttribute("passError", "Mật khẩu không được vượt quá 50 ký tự");
                 hasError = true;
             }
-
+            
             if (hasError) {
                 request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
                 return;
             }
-
+            
             Encode encoder = new Encode();
             String hashedPass = encoder.Encode(inputPass);
 
