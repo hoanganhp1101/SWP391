@@ -709,11 +709,20 @@
                                         </div>
                                     </div>
 
-                                    <a href="${pageContext.request.contextPath}/doctor/record-detail?id=${alert.patientId}"
-                                       class="${alert.critical ? 'btn-danger' : 'btn-outline'}"
-                                       style="text-decoration:none; display:inline-block;">
-                                        Xem hồ sơ
-                                    </a>
+                                    <form action="${pageContext.request.contextPath}/doctor/record-detail"
+                                          method="post"
+                                          style="display:inline;">
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="${alert.patientId}" />
+
+                                        <button type="submit"
+                                                class="${alert.critical ? 'btn-danger' : 'btn-outline'}">
+                                            Xem hồ sơ
+                                        </button>
+
+                                    </form>
 
                                 </div>
                             </c:forEach>

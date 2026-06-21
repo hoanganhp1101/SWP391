@@ -53,4 +53,20 @@ public class PatientRecordDetailController extends HttpServlet {
                 "/WEB-INF/views/doctor/medicalrecorddetail.jsp"
         ).forward(request, response);
     }
+    @Override
+    protected void doPost(HttpServletRequest request,
+                          HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String patientId = request.getParameter("id");
+
+        HealthRecord record =
+                healthRecordDAO.getLatestHealthRecordByPatientId(patientId);
+
+        request.setAttribute("record", record);
+
+        request.getRequestDispatcher(
+                "/WEB-INF/views/doctor/medicalrecorddetail.jsp"
+        ).forward(request, response);
+    }
 }

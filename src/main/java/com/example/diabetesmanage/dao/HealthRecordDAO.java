@@ -450,5 +450,39 @@ public class HealthRecordDAO {
 
         return hr;
     }
+    public HealthRecord getLatestHealthRecordByPatientId(String patientId) {
+
+        String sql =
+                "SELECT hr.*, " +
+                        "p.id AS patient_id, " +
+                        "p.patient_code, " +
+                        "p.loai_tieu_duong, " +
+                        "u.ho_ten " +
+                        "FROM health_records hr " +
+                        "JOIN patients p ON hr.patient_id = p.id " +
+                        "JOIN users u ON p.user_id = u.id " +
+                        "WHERE p.id = ? " +
+                        "ORDER BY hr.thoi_gian_do DESC " +
+                        "LIMIT 1";
+
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, patientId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return mapDetailedHealthRecord(rs);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 
 }
