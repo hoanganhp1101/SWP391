@@ -1,0 +1,190 @@
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử khám bệnh - HealthAlert</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0a4aa8;
+            --primary-light: #e6effc;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --bg-body: #f8fafc;
+            --bg-white: #ffffff;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-dark); }
+        .top-nav { display: flex; align-items: center; justify-content: space-between; background-color: var(--bg-white); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 2rem; }
+        .logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+        .nav-links { display: flex; gap: 1.5rem; }
+        .nav-links a { text-decoration: none; color: var(--text-muted); font-weight: 500; font-size: 0.875rem; padding: 1.25rem 0; position: relative; }
+        .nav-links a.active { color: var(--primary); }
+        .nav-links a.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: var(--primary); }
+        .nav-right { display: flex; align-items: center; gap: 1.5rem; color: var(--text-muted); }
+        .avatar-small { width: 32px; height: 32px; border-radius: 50%; background-color: #cbd5e1; background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff"}'); background-size: cover; background-position: center; }
+        .avatar-link { text-decoration: none; color: inherit; display: inline-block; }
+
+        .app-container { display: flex; margin-top: 64px; min-height: calc(100vh - 64px); }
+        .sidebar { width: 280px; background-color: var(--bg-white); border-right: 1px solid var(--border); padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 64px; bottom: 0; overflow-y: auto; }
+        .profile-card { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem; background-color: #cbd5e1; background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff"}'); background-size: cover; background-position: center; border: 2px solid transparent; transition: border-color 0.2s ease, transform 0.2s ease; }
+        .profile-avatar:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .avatar-hint { margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
+        .profile-name { font-weight: 600; font-size: 1.125rem; color: var(--text-dark); }
+        .profile-role { font-size: 0.875rem; color: var(--text-muted); }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
+        .menu-btn { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 8px; color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: all 0.2s; border: none; background: none; width: 100%; cursor: pointer; text-align: left; }
+        .menu-btn i { width: 20px; text-align: center; font-size: 1rem; }
+        .menu-btn:hover { background-color: var(--bg-body); }
+        .menu-btn.active { background-color: var(--primary); color: var(--bg-white); }
+        .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
+
+        .content { margin-left: 280px; padding: 2rem; flex-grow: 1; width: calc(100% - 280px); }
+        .page-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .page-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        th { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        td { font-size: 0.875rem; }
+        .doc-type { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; color: var(--text-dark); }
+        .doc-type i { color: var(--danger); font-size: 1.1rem; }
+        .status-badge { display: inline-flex; padding: 0.25rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+        .status-badge.done { background: var(--success-light); color: var(--success); }
+        .status-badge.pending { background: var(--warning-light); color: var(--warning); }
+        .status-badge.cancelled { background: var(--danger-light); color: var(--danger); }
+        .btn-pdf { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary); color: white; text-decoration: none; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.8125rem; }
+        .btn-disabled { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--bg-body); color: var(--text-muted); padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.8125rem; }
+        .empty-state { color: var(--text-muted); text-align: center; padding: 2rem 1rem; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">HealthAlert</div>
+            <div class="nav-links">
+                <a href="patient-dashboard">Tổng quan</a>
+                <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
+                <a href="patient-appointments">Lịch hẹn</a>
+                <a href="#">Báo cáo</a>
+            </div>
+        </div>
+        <div class="nav-right">
+            <jsp:include page="notifications.jsp" />
+            <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
+                <div class="avatar-small"></div>
+            </a>
+        </div>
+    </nav>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="profile-card">
+                <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
+                    <div class="profile-avatar"></div>
+                </a>
+                <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
+                <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : 'Type 2'}</div>
+                <div class="avatar-hint">Nhấn ảnh đại diện để chỉnh sửa hồ sơ</div>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="patient-dashboard" class="menu-btn"><i class="fas fa-chart-pie"></i> Tổng quan</a>
+                <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
+                <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
+                <a href="patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
+                <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
+                <a href="patient-medical-history" class="menu-btn active"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
+            </nav>
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
+                <a href="${pageContext.request.contextPath}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="content">
+            <h1 class="page-title">Lịch sử khám bệnh</h1>
+            <p class="page-subtitle">Danh sách hồ sơ và PDF bác sĩ đã tải lên, sắp xếp theo thời gian mới nhất.</p>
+            <div class="card">
+                <c:choose>
+                    <c:when test="${not empty medicalDocuments}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ngày khám</th>
+                                    <th>Hồ sơ / PDF</th>
+                                    <th>Bác sĩ</th>
+                                    <th>Thời gian tải lên</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="doc" items="${medicalDocuments}">
+                                    <tr>
+                                        <td>${doc.ngayThucHien}</td>
+                                        <td>
+                                            <div class="doc-type">
+                                                <i class="far fa-file-pdf"></i>
+                                                ${doc.loaiTaiLieu}
+                                            </div>
+                                        </td>
+                                        <td>${not empty doc.bacSiName ? doc.bacSiName : 'Chưa rõ'}</td>
+                                        <td>${doc.ngayTao != null ? doc.ngayTao.toString().substring(0,16) : '--'}</td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${doc.trangThai == 'hoan_thanh'}">
+                                                    <span class="status-badge done">Hoàn thành</span>
+                                                </c:when>
+                                                <c:when test="${doc.trangThai == 'can_xu_ly'}">
+                                                    <span class="status-badge pending">Cần xử lý</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="status-badge cancelled">Hủy bỏ</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${not empty doc.fileUrl && doc.fileUrl != '#'}">
+                                                    <a href="${doc.fileUrl}" class="btn-pdf" target="_blank" rel="noopener">
+                                                        <i class="fas fa-eye"></i> Xem PDF
+                                                    </a>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="btn-disabled"><i class="fas fa-ban"></i> Chưa có PDF</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="empty-state">Chưa có hồ sơ khám bệnh hoặc PDF nào được bác sĩ tải lên.</div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </main>
+    </div>
+
+    <jsp:include page="profile-modal.jsp">
+        <jsp:param name="profileReturnUrl" value="patient-medical-history" />
+    </jsp:include>
+    <jsp:include page="chatbot.jsp" />
+</body>
+</html>

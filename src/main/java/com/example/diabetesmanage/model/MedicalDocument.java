@@ -12,6 +12,7 @@ public class MedicalDocument {
     private String fileUrl;
     private Date ngayThucHien;
     private Timestamp ngayTao;
+    private String bacSiName;
 
     public MedicalDocument() {}
 
@@ -38,4 +39,7 @@ public class MedicalDocument {
 
     public Timestamp getNgayTao() { return ngayTao; }
     public void setNgayTao(Timestamp ngayTao) { this.ngayTao = ngayTao; }
+
+    public String getBacSiName() { return bacSiName; }
+    public void setBacSiName(String bacSiName) { this.bacSiName = bacSiName; }
 }

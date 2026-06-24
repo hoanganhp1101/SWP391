@@ -25,7 +25,6 @@
     </div>
     <div class="d-flex align-items-center gap-3 text-muted">
         <i class="far fa-bell"></i>
-        <i class="fas fa-cog"></i>
         <img src="https://ui-avatars.com/api/?name=${not empty sessionScope.loginUser ? sessionScope.loginUser.hoTen : 'Admin'}&background=0D8ABC&color=fff" alt="User" class="rounded-circle" width="28" height="28">
     </div>
 </nav>

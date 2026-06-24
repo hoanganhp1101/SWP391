@@ -11,6 +11,7 @@ public class Appointment {
     private String diaDiem;
     private String trangThai;
     private Timestamp ngayTao;
+    private String bacSiName;
 
     public Appointment() {}
 
@@ -37,4 +38,7 @@ public class Appointment {
 
     public Timestamp getNgayTao() { return ngayTao; }
     public void setNgayTao(Timestamp ngayTao) { this.ngayTao = ngayTao; }
+
+    public String getBacSiName() { return bacSiName; }
+    public void setBacSiName(String bacSiName) { this.bacSiName = bacSiName; }
 }

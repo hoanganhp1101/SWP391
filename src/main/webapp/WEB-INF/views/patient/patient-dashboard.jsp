@@ -1175,13 +1175,12 @@
                     <div class="nav-links">
                         <a href="patient-dashboard" class="active">Tổng quan</a>
                         <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
-                        <a href="#">Lịch hẹn</a>
+                        <a href="patient-appointments">Lịch hẹn</a>
                         <a href="#">Báo cáo</a>
                     </div>
                 </div>
                 <div class="nav-right">
                     <jsp:include page="notifications.jsp" />
-                    <i class="fas fa-cog"></i>
                     <div class="avatar-small editable" title="Chỉnh sửa hồ sơ" data-open-profile-modal></div>
                 </div>
             </nav>
@@ -1202,16 +1201,16 @@
                             quan</a>
                         <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh
                             án cá nhân</a>
-                        <a href="#" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
+                        <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
                         <a href="patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
                         <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
-                        <a href="#" class="menu-btn"><i class="fas fa-history"></i> Lịch sử cảnh báo</a>
+                        <a href="patient-medical-history" class="menu-btn"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
                     </nav>
 
                     <div class="sidebar-bottom">
                         <button class="btn-new"><i class="fas fa-plus"></i> Thêm bản ghi mới</button>
                         <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
-                        <a href="#" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                        <a href="${pageContext.request.contextPath}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
                     </div>
                 </aside>
 
@@ -1434,7 +1433,7 @@
                                 </c:otherwise>
                             </c:choose>
 
-                            <button class="btn-outline">Xem toàn bộ lịch</button>
+                            <a href="patient-appointments" class="btn-outline" style="display: inline-block; text-align: center; text-decoration: none;">Xem toàn bộ lịch</a>
                         </div>
                     </div>
 
@@ -1517,8 +1516,12 @@
                         <h3 class="modal-title">Cập nhật hồ sơ bệnh nhân</h3>
                         <button class="close-btn" id="closeProfileModalBtn"><i class="fas fa-times"></i></button>
                     </div>
-                    <form action="patient-dashboard" method="POST" id="profileForm">
+                    <form action="patient-dashboard" method="POST" id="profileForm" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="updateProfile">
+                        <input type="hidden" name="currentAnhDaiDien"
+                            value="${patientInfo.anhDaiDien != null ? patientInfo.anhDaiDien : ''}">
+                        <input type="hidden" name="returnUrl"
+                            value="${not empty param.returnUrl ? param.returnUrl : 'patient-dashboard'}">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Họ và tên</label>
@@ -1560,10 +1563,10 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Ảnh đại diện (URL)</label>
-                            <input type="url" class="form-control" name="anhDaiDien"
-                                placeholder="https://... (để trống sẽ dùng avatar mặc định)"
-                                value="${patientInfo.anhDaiDien != null ? patientInfo.anhDaiDien : ''}">
+                            <label>Ảnh đại diện</label>
+                            <input type="file" class="form-control" name="avatarFile" id="avatarFile"
+                                accept="image/png,image/jpeg,image/gif,image/webp">
+                            <div class="profile-help-text">Chọn ảnh từ máy tính (JPG, PNG, GIF hoặc WEBP, tối đa 5MB).</div>
                         </div>
                         <div class="form-group">
                             <label>Địa chỉ</label>
@@ -1675,6 +1678,18 @@
                 }
 
                 document.querySelectorAll('.avatar-small, .profile-avatar').forEach(applyAvatar);
+
+                const avatarFileInput = document.getElementById('avatarFile');
+                if (avatarFileInput) {
+                    avatarFileInput.addEventListener('change', function () {
+                        const file = this.files && this.files[0];
+                        if (!file) return;
+                        const previewUrl = URL.createObjectURL(file);
+                        document.querySelectorAll('.avatar-small, .profile-avatar').forEach(el => {
+                            el.style.backgroundImage = "url('" + previewUrl + "')";
+                        });
+                    });
+                }
 
                 // Chart.js configuration for Health Trends
                 const ctx = document.getElementById('trendsChart').getContext('2d');
@@ -1905,9 +1920,12 @@
                         if (e.target === profileModal) closeProfileModal();
                     });
                 }
-                <c:if test="${param.openProfileModal == '1'}">
-                openProfileModal();
-                </c:if>
+                if ('${param.openProfileModal}' === '1') {
+                    openProfileModal();
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState(null, '', 'patient-dashboard');
+                    }
+                }
 
                 function openModal() {
                     if (recordModal) recordModal.classList.add('active');
