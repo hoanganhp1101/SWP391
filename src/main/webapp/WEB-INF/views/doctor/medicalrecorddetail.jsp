@@ -1,597 +1,271 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthAlert Dashboard</title>
+    <title>Chi tiết hồ sơ sức khỏe - ${detailView.patientName}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:Inter, sans-serif;
-        }
-
-        body{
-            background:#f5f6fa;
-        }
-
-        .layout{
-            display:flex;
-            height:calc(100vh - 80px);
-        }
-
-        .topbar{
-            height:80px;
-            background:white;
-
-            display:flex;
-            align-items:center;
-
-            padding:0 48px;
-
-            border-bottom:1px solid #e5e7eb;
-        }
-
-        .sidebar{
-            width:240px;
-            background:#fff;
-            border-right:1px solid #e5e7eb;
-
-            display:flex;
-            flex-direction:column;
-        }
-
-        .doctor-profile{
-            padding:28px 20px;
-            display:flex;
-            align-items:center;
-            gap:12px;
-        }
-
-        .doctor-profile img{
-            width:42px;
-            height:42px;
-            border-radius:10px;
-            object-fit:cover;
-        }
-
-        .doctor-profile h4{
-            font-size:16px;
-            color:#1554c7;
-        }
-
-        .doctor-profile p{
-            font-size:12px;
-            color:#666;
-        }
-
-        .menu{
-            padding:0 16px;
-        }
-
-        .menu-item{
-            display:flex;
-            align-items:center;
-            gap:14px;
-
-            height:52px;
-
-            margin-bottom:8px;
-            padding:0 16px;
-
-            border-radius:12px;
-
-            color:#374151;
-            text-decoration:none;
-
-            cursor:pointer;
-        }
-
-        .menu-item i{
-            font-size:18px;
-        }
-
-        .menu-item.active{
-            background:#1557d5;
-            color:white;
-            font-weight:600;
-        }
-
-        .sidebar-bottom{
-            margin-top:auto;
-            padding:20px 16px;
-        }
-
-        .new-record{
-            width:100%;
-            height:48px;
-
-            border:none;
-            border-radius:10px;
-
-            background:#0d4bb5;
-            color:white;
-
-            font-size:15px;
-            font-weight:600;
-
-            cursor:pointer;
-        }
-
-        .new-record i{
-            margin-right:8px;
-        }
-
-        .bottom-link{
-            display:flex;
-            align-items:center;
-            gap:12px;
-
-            padding:14px 12px;
-
-            text-decoration:none;
-            color:#374151;
-
-            cursor:pointer;
-        }
-
-        /* ==========================
-           MAIN
-        ========================== */
-
-        .main-content{
-            flex:1;
-        }
-
-        /* ==========================
-           TOPBAR
-        ========================== */
-
-
-        .logo{
-            font-size:20px;
-            font-weight:700;
-            color:#0d4bb5;
-        }
-
-        .top-nav{
-            display:flex;
-            gap:36px;
-
-            margin-left:40px; /* chỉnh số này */
-        }
-
-        .top-actions{
-            display:flex;
-            align-items:center;
-            gap:22px;
-
-            margin-left:auto;
-        }
-
-        .top-nav a{
-            color:#555;
-            cursor:pointer;
-            font-size:16px;
-            text-decoration:none;
-        }
-
-        .top-nav .active{
-            color:#1557d5;
-            font-weight:600;
-            position:relative;
-        }
-
-        .top-nav .active::after{
-            content:"";
-            position:absolute;
-            left:0;
-            bottom:-28px;
-
-            width:100%;
-            height:3px;
-
-            background:#1557d5;
-        }
-
-        .search-box{
-            width:290px;
-            height:42px;
-
-            display:flex;
-            align-items:center;
-
-            padding:0 16px;
-
-            border:1px solid #d1d5db;
-            border-radius:10px;
-
-            background:#fff;
-        }
-
-        .search-box i{
-            color:#777;
-        }
-
-        .search-box input{
-            border:none;
-            outline:none;
-            width:100%;
-            margin-left:10px;
-            font-size:14px;
-        }
-
-        .icon-btn{
-            font-size:22px;
-            color:#4b5563;
-            cursor:pointer;
-        }
-
-        .avatar{
-            width:38px;
-            height:38px;
-            border-radius:50%;
-            object-fit:cover;
-        }
-        .page-content{
-            padding:32px;
-        }
-
-        .page-header{
-            margin-bottom:24px;
-        }
-
-        .page-header h1{
-            font-size:32px;
-            font-weight:700;
-            color:#111827;
-            margin-bottom:8px;
-        }
-
-        .page-header p{
-            color:#6b7280;
-        }
-
-        .patient-card{
-            background:white;
-            border-radius:20px;
-            border:1px solid #e5e7eb;
-            overflow:hidden;
-        }
-
-        .card-header{
-            padding:24px 32px;
-            border-bottom:1px solid #e5e7eb;
-        }
-
-        .card-header h2{
-            font-size:22px;
-            color:#111827;
-        }
-
-        .form-container{
-            padding:32px;
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:24px;
-        }
-
-        .form-group{
-            display:flex;
-            flex-direction:column;
-        }
-
-        .form-group label{
-            margin-bottom:10px;
-            font-weight:600;
-            color:#374151;
-        }
-
-        .form-group input,
-        .form-group select{
-            height:56px;
-            border:1px solid #d1d5db;
-            border-radius:14px;
-            padding:0 18px;
-            font-size:15px;
-            outline:none;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus{
-            border-color:#1557d5;
-        }
-
-        .full-width{
-            grid-column:span 2;
-        }
-
-        .button-group{
-            margin-top:90px;
-            grid-column:span 2;
-            display:flex;
-            justify-content:flex-end;
-            gap:16px;
-            margin-top:8px;
-        }
-
-        .cancel-btn{
-            height:52px;
-            padding:0 24px;
-            border:1px solid #d1d5db;
-            background:white;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        }
-
-        .submit-btn{
-            height:52px;
-            padding:0 24px;
-            border:none;
-            background:#1557d5;
-            color:white;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        }
-
-        .submit-btn:hover{
-            background:#0f4cc7;
-        }
-
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
+        body{background:#f0f4f8;color:#111827;}
+        .page{max-width:1200px;margin:0 auto;padding:24px 20px 48px;}
+        .top-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+        .back-link{color:#2563eb;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;}
+        .export-actions{display:flex;gap:10px;flex-wrap:wrap;}
+        .btn-export{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#1d4ed8;font-weight:600;font-size:13px;text-decoration:none;cursor:pointer;}
+        .btn-export.primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
+        .btn-export:hover{opacity:.92;}
+        .patient-header{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;margin-bottom:24px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+        .patient-header h1{font-size:28px;margin-bottom:8px;}
+        .meta{color:#6b7280;font-size:14px;line-height:1.8;}
+        .meta strong{color:#374151;}
+        .core-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+        .core-metric{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px solid #93c5fd;border-radius:16px;padding:24px;text-align:center;}
+        .core-metric.critical{background:linear-gradient(135deg,#fef2f2,#fee2e2);border-color:#fca5a5;}
+        .core-metric.warning{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fcd34d;}
+        .core-metric .label{font-size:14px;color:#1e40af;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+        .core-metric.critical .label{color:#b91c1c;}
+        .core-metric .value{font-size:42px;font-weight:800;margin:8px 0;color:#1d4ed8;}
+        .core-metric.critical .value{color:#dc2626;}
+        .core-metric .ref{font-size:12px;color:#6b7280;}
+        .alert-banner{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 16px;border-radius:12px;margin-bottom:24px;font-size:14px;}
+        .section{margin-bottom:24px;}
+        .section-title{position:sticky;top:0;z-index:10;background:#f0f4f8;padding:12px 0;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+        .section-title h2{font-size:20px;display:flex;align-items:center;gap:10px;}
+        .section-title .dot{width:10px;height:10px;border-radius:50%;}
+        .dot.blue{background:#3b82f6;}
+        .dot.green{background:#10b981;}
+        .dot.red{background:#ef4444;}
+        .med-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:16px;}
+        .med-card h3{font-size:15px;color:#6b7280;margin-bottom:12px;font-weight:600;}
+        .field-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:16px;}
+        .field-row:last-child{border-bottom:none;}
+        .field-label{color:#6b7280;font-size:14px;flex:1;}
+        .field-value{font-weight:600;font-size:15px;text-align:right;}
+        .field-value.abnormal{color:#dc2626;}
+        .field-value.warning{color:#d97706;}
+        .field-value.core{color:#1d4ed8;font-size:16px;}
+        .field-ref{font-size:11px;color:#9ca3af;display:block;margin-top:2px;}
+        .chip-list{display:flex;flex-wrap:wrap;gap:10px;}
+        .med-chip{background:#eff6ff;color:#1d4ed8;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;}
+        .med-chip span{color:#6b7280;font-weight:500;}
+        .rec-list{padding-left:20px;line-height:1.8;color:#4b5563;font-size:14px;}
+        .lab-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+        .lab-item{background:#f9fafb;border-radius:12px;padding:14px 16px;}
+        .lab-item.abnormal{background:#fef2f2;border:1px solid #fecaca;}
+        .lab-item .name{font-size:13px;color:#6b7280;}
+        .lab-item .val{font-size:20px;font-weight:700;margin-top:4px;}
+        .lab-item.abnormal .val{color:#dc2626;}
+        .lab-item .range{font-size:11px;color:#9ca3af;margin-top:4px;}
+        .bio-group{margin-bottom:16px;}
+        .bio-group h4{font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+        .empty-note{color:#9ca3af;font-size:14px;padding:12px 0;}
         @media(max-width:768px){
-
-            .form-container{
-                grid-template-columns:1fr;
-            }
-
-            .full-width,
-            .button-group{
-                grid-column:span 1;
-            }
+            .core-panel,.lab-grid{grid-template-columns:1fr;}
+            .export-actions{width:100%;}
         }
     </style>
-
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-<!-- TOPBAR -->
-<header class="topbar">
+<div class="page">
 
-    <div class="logo">
-        HealthAlert
-    </div>
-
-    <div class="top-nav">
-        <a class="active">Bảng điều khiển</a>
-        <a>Bệnh nhân</a>
-        <a>Hồ sơ</a>
-        <a>Báo cáo</a>
-    </div>
-
-    <div class="top-actions">
-
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input
-                    type="text"
-                    placeholder="Tìm kiếm hồ sơ sức khỏe..."
-            >
+    <div class="top-bar">
+        <a href="${pageContext.request.contextPath}/doctor/patient-records" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách hồ sơ
+        </a>
+        <div class="export-actions">
+            <a class="btn-export primary"
+               href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=full">
+                <i class="fa-solid fa-file-pdf"></i> Xuất PDF toàn bộ
+            </a>
         </div>
-
-        <i class="fa-regular fa-bell icon-btn"></i>
-        <i class="fa-solid fa-gear icon-btn"></i>
-
-        <img
-                class="avatar"
-                src="https://i.pravatar.cc/40"
-                alt=""
-        >
-
     </div>
 
-</header>
-
-<div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-
-        <div class="doctor-profile">
-            <img src="https://i.pravatar.cc/60" alt="">
-            <div>
-                <h4>BS. Smith</h4>
+    <div class="patient-header">
+        <div>
+            <h1>${detailView.patientName}</h1>
+            <div class="meta">
+                <div><strong>Mã hồ sơ:</strong> ${detailView.recordCode}</div>
+                <div><strong>Mã bệnh nhân:</strong> ${detailView.patientCode}</div>
+                <div><strong>Ngày khám:</strong> ${detailView.examDate}</div>
+                <div><strong>${detailView.department}</strong></div>
             </div>
         </div>
+    </div>
 
-        <nav class="menu">
+    <c:forEach items="${detailView.biochemistry.alerts}" var="alert">
+        <div class="alert-banner">
+            <i class="fa-solid fa-triangle-exclamation"></i> ${alert}
+        </div>
+    </c:forEach>
 
-            <a class="menu-item active">
-                <i class="fa-solid fa-table-cells"></i>
-                <span>Tổng quan</span>
+    <!-- CORE METRICS -->
+    <div class="core-panel">
+        <div class="core-metric ${detailView.biochemistry.glucose.abnormal ? 'critical' : ''}">
+            <div class="label"><i class="fa-solid fa-droplet"></i> Glucose</div>
+            <div class="value">${detailView.biochemistry.glucose.displayValue}</div>
+            <div class="ref">Tham chiếu: ${detailView.biochemistry.glucose.referenceRange}</div>
+        </div>
+        <div class="core-metric ${detailView.biochemistry.hba1c.abnormal ? 'critical' : ''}">
+            <div class="label"><i class="fa-solid fa-chart-line"></i> HbA1c</div>
+            <div class="value">${detailView.biochemistry.hba1c.displayValue}</div>
+            <div class="ref">Tham chiếu: ${detailView.biochemistry.hba1c.referenceRange}</div>
+        </div>
+    </div>
+
+    <!-- A. BỆNH ÁN TÁI KHÁM NỘI TIẾT -->
+    <div class="section" id="section-internal">
+        <div class="section-title">
+            <h2><span class="dot blue"></span> A. Bệnh án tái khám Nội tiết</h2>
+            <a class="btn-export"
+               href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=internal">
+                <i class="fa-solid fa-file-pdf"></i> Export PDF
             </a>
-
-            <a href="patientmanagement.html" class="menu-item">
-                <i class="fa-solid fa-users"></i>
-                <span>Danh sách bệnh nhân</span>
-            </a>
-
-            <a class="menu-item">
-                <i class="fa-regular fa-bell"></i>
-                <span>Cảnh báo khẩn cấp</span>
-            </a>
-
-            <a href="medicalrecordmanagement.html" class="menu-item">
-                <i class="fa-regular fa-clipboard"></i>
-                <span>Hồ sơ sức khỏe</span>
-            </a>
-
-            <a class="menu-item">
-                <i class="fa-solid fa-chart-column"></i>
-                <span>Phân tích dữ liệu</span>
-            </a>
-
-        </nav>
-
-        <div class="sidebar-bottom">
-
-            <button class="new-record">
-                <i class="fa-solid fa-plus"></i>
-                Tạo hồ sơ mới
-            </button>
-
-            <a class="bottom-link">
-                <i class="fa-regular fa-circle-question"></i>
-                Hỗ trợ
-            </a>
-
-            <a class="bottom-link">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Đăng xuất
-            </a>
-
         </div>
 
-    </aside>
-
-    <!-- MAIN -->
-    <main class="main-content">
-
-        <div class="page-content">
-
-            <div class="patient-card">
-
-                <div class="card-header">
-                    <h2>Hồ sơ sức khỏe bệnh nhân</h2>
+        <div class="med-card">
+            <h3><i class="fa-solid fa-stethoscope"></i> Thông tin lâm sàng</h3>
+            <c:forEach items="${detailView.internalMedicine.clinicalInfo}" var="field">
+                <div class="field-row">
+                    <span class="field-label">${field.label}</span>
+                    <span class="field-value ${field.abnormal ? 'abnormal' : ''}">
+                        ${field.displayValue}
+                        <c:if test="${not empty field.referenceRange}">
+                            <span class="field-ref">${field.referenceRange}</span>
+                        </c:if>
+                    </span>
                 </div>
-
-                <form class="form-container">
-
-                    <div class="form-group">
-                        <label>Mã hồ sơ *</label>
-                        <input type="text" value="${record.healthRecordId}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Mã bệnh nhân *</label>
-                        <input type="text" value="${record.patient.patientCode}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Họ và tên bệnh nhân</label>
-                        <input type="text" value="${record.patient.user.hoTen}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Đường huyết (mg/dL)</label>
-                        <input type="number" step="0.01" value="${record.duongHuyetMgdl}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Thời điểm đo đường huyết</label>
-                        <input type="text" value="${record.thoiDiemDoDuong}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Huyết áp tâm thu</label>
-                        <input type="number" value="${record.huyetApTamThu}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Huyết áp tâm trương</label>
-                        <input type="number" value="${record.huyetApTamTruong}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nhịp tim (bpm)</label>
-                        <input type="number" value="${record.nhipTim}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Cân nặng (kg)</label>
-                        <input type="number" step="0.01" value="${record.canNangKg}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Chỉ số BMI</label>
-                        <input type="number" step="0.01" value="${record.bmi}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>HbA1c (%)</label>
-                        <input type="number" step="0.01" value="${record.hba1cPercent}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Cholesterol (mmol/L)</label>
-                        <input type="number" step="0.01" value="${record.cholesterolMmol}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Triglyceride (mmol/L)</label>
-                        <input type="number" step="0.01" value="${record.triglycerideMmol}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Số bước chân</label>
-                        <input type="number" value="${record.soBuocChan}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Lượng carbohydrate (g)</label>
-                        <input type="number" step="0.01" value="${record.carbsG}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Thời gian ngủ (giờ)</label>
-                        <input type="number" step="0.1" value="${record.soGioNgu}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Liều insulin (UI)</label>
-                        <input type="number" value="${record.lieuLuongInsulinUi}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Loại insulin</label>
-                        <input type="text" value="${record.loaiInsulinTiem}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Ghi chú</label>
-                        <textarea rows="3" readonly>${record.ghiChu}</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Thời gian đo</label>
-                        <input type="text" value="${record.thoiGianDo}" readonly>
-                    </div>
-
-                </form>
-
-            </div>
-
-            <div class="button-group">
-                <button type="button" class="cancel-btn">
-                    Hủy
-                </button>
-
-                <button type="submit" class="submit-btn">
-                    Cập nhật hồ sơ sức khỏe
-                </button>
-            </div>
-
+            </c:forEach>
         </div>
 
-    </main>
+        <div class="med-card">
+            <h3><i class="fa-solid fa-diagnoses"></i> Chẩn đoán</h3>
+            <c:forEach items="${detailView.internalMedicine.diagnosisInfo}" var="field">
+                <div class="field-row">
+                    <span class="field-label">${field.label}</span>
+                    <span class="field-value">${field.displayValue}</span>
+                </div>
+            </c:forEach>
+        </div>
+
+        <div class="med-card">
+            <h3><i class="fa-solid fa-pills"></i> Điều trị</h3>
+            <div style="margin-bottom:14px;">
+                <div class="field-label" style="margin-bottom:8px;">Đơn thuốc</div>
+                <div class="chip-list">
+                    <c:forEach items="${detailView.internalMedicine.medications}" var="med">
+                        <span class="med-chip">${med.name} <span>· ${med.dose}</span></span>
+                    </c:forEach>
+                </div>
+            </div>
+            <div>
+                <div class="field-label" style="margin-bottom:8px;">Khuyến nghị</div>
+                <ul class="rec-list">
+                    <c:forEach items="${detailView.internalMedicine.recommendations}" var="rec">
+                        <li>${rec}</li>
+                    </c:forEach>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- B. XÉT NGHIỆM MÁU TỔNG QUÁT -->
+    <div class="section" id="section-blood">
+        <div class="section-title">
+            <h2><span class="dot green"></span> B. Kết quả xét nghiệm máu tổng quát</h2>
+            <a class="btn-export"
+               href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=blood">
+                <i class="fa-solid fa-file-pdf"></i> Export PDF
+            </a>
+        </div>
+
+        <div class="med-card">
+            <c:choose>
+                <c:when test="${detailView.bloodCount.hasData()}">
+                    <div class="lab-grid">
+                        <c:forEach items="${detailView.bloodCount.items}" var="lab">
+                            <div class="lab-item ${lab.abnormal ? 'abnormal' : ''}">
+                                <div class="name">${lab.label}</div>
+                                <div class="val">${lab.displayValue}</div>
+                                <div class="range">${lab.referenceRange}</div>
+                            </div>
+                        </c:forEach>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <p class="empty-note">Chưa có dữ liệu xét nghiệm máu tổng quát cho hồ sơ này.</p>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </div>
+
+    <!-- C. SINH HÓA MÁU -->
+    <div class="section" id="section-bio">
+        <div class="section-title">
+            <h2><span class="dot red"></span> C. Kết quả sinh hóa máu</h2>
+            <a class="btn-export"
+               href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=biochemistry">
+                <i class="fa-solid fa-file-pdf"></i> Export PDF
+            </a>
+        </div>
+
+        <div class="med-card">
+            <div class="bio-group">
+                <h4>Đường huyết</h4>
+                <div class="field-row">
+                    <span class="field-label">${detailView.biochemistry.glucose.label}</span>
+                    <span class="field-value core ${detailView.biochemistry.glucose.abnormal ? 'abnormal' : ''}">
+                        ${detailView.biochemistry.glucose.displayValue}
+                    </span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">${detailView.biochemistry.hba1c.label}</span>
+                    <span class="field-value core ${detailView.biochemistry.hba1c.abnormal ? 'abnormal' : ''}">
+                        ${detailView.biochemistry.hba1c.displayValue}
+                    </span>
+                </div>
+            </div>
+
+            <div class="bio-group">
+                <h4>Mỡ máu</h4>
+                <c:forEach items="${detailView.biochemistry.lipidProfile}" var="field">
+                    <div class="field-row">
+                        <span class="field-label">${field.label}</span>
+                        <span class="field-value ${field.abnormal ? 'abnormal' : ''}">${field.displayValue}
+                            <span class="field-ref">${field.referenceRange}</span>
+                        </span>
+                    </div>
+                </c:forEach>
+            </div>
+
+            <div class="bio-group">
+                <h4>Gan</h4>
+                <c:forEach items="${detailView.biochemistry.liverEnzymes}" var="field">
+                    <div class="field-row">
+                        <span class="field-label">${field.label}</span>
+                        <span class="field-value ${field.abnormal ? 'abnormal' : ''}">${field.displayValue}
+                            <span class="field-ref">${field.referenceRange}</span>
+                        </span>
+                    </div>
+                </c:forEach>
+            </div>
+
+            <div class="bio-group">
+                <h4>Thận</h4>
+                <c:forEach items="${detailView.biochemistry.kidneyFunction}" var="field">
+                    <div class="field-row">
+                        <span class="field-label">${field.label}</span>
+                        <span class="field-value ${field.abnormal ? 'abnormal' : ''}">${field.displayValue}
+                            <span class="field-ref">${field.referenceRange}</span>
+                        </span>
+                    </div>
+                </c:forEach>
+            </div>
+        </div>
+    </div>
 
 </div>
-
 </body>
 </html>

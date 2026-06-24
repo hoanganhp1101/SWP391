@@ -3,7 +3,7 @@ package com.example.diabetesmanage.model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UrgentPatientAlert {
+public class DangerousPatientDetail {
 
     private String patientId;
     private String patientCode;
@@ -11,21 +11,27 @@ public class UrgentPatientAlert {
     private String initials;
     private String loaiTieuDuong;
     private String riskLevel;
+    private int riskScore;
+    private boolean critical;
+    private boolean needsUrgentReview;
+
     private Double duongHuyetGanNhat;
     private Double hba1cGanNhat;
     private Integer huyetApTamThu;
     private Integer huyetApTamTruong;
     private Double bmiGanNhat;
     private Integer insulinGanNhat;
-    private String vitalDisplay;
     private String timeAgo;
-    private String detectedAgo;
-    private boolean critical;
-    private boolean needsUrgentReview;
+
     private List<String> riskReasons = new ArrayList<>();
     private List<PatientMetricTag> metricTags = new ArrayList<>();
+    private List<HealthRecord> recentRecords = new ArrayList<>();
+
     private String aiSummary;
-    private int riskScore;
+    private String aiDetailAnalysis;
+    private List<String> aiRecommendations = new ArrayList<>();
+    private boolean geminiUsed;
+    private String geminiError;
 
     public String getPatientId() {
         return patientId;
@@ -73,6 +79,30 @@ public class UrgentPatientAlert {
 
     public void setRiskLevel(String riskLevel) {
         this.riskLevel = riskLevel;
+    }
+
+    public int getRiskScore() {
+        return riskScore;
+    }
+
+    public void setRiskScore(int riskScore) {
+        this.riskScore = riskScore;
+    }
+
+    public boolean isCritical() {
+        return critical;
+    }
+
+    public void setCritical(boolean critical) {
+        this.critical = critical;
+    }
+
+    public boolean isNeedsUrgentReview() {
+        return needsUrgentReview;
+    }
+
+    public void setNeedsUrgentReview(boolean needsUrgentReview) {
+        this.needsUrgentReview = needsUrgentReview;
     }
 
     public Double getDuongHuyetGanNhat() {
@@ -123,44 +153,12 @@ public class UrgentPatientAlert {
         this.insulinGanNhat = insulinGanNhat;
     }
 
-    public String getVitalDisplay() {
-        return vitalDisplay;
-    }
-
-    public void setVitalDisplay(String vitalDisplay) {
-        this.vitalDisplay = vitalDisplay;
-    }
-
     public String getTimeAgo() {
         return timeAgo;
     }
 
     public void setTimeAgo(String timeAgo) {
         this.timeAgo = timeAgo;
-    }
-
-    public String getDetectedAgo() {
-        return detectedAgo;
-    }
-
-    public void setDetectedAgo(String detectedAgo) {
-        this.detectedAgo = detectedAgo;
-    }
-
-    public boolean isCritical() {
-        return critical;
-    }
-
-    public void setCritical(boolean critical) {
-        this.critical = critical;
-    }
-
-    public boolean isNeedsUrgentReview() {
-        return needsUrgentReview;
-    }
-
-    public void setNeedsUrgentReview(boolean needsUrgentReview) {
-        this.needsUrgentReview = needsUrgentReview;
     }
 
     public List<String> getRiskReasons() {
@@ -179,6 +177,14 @@ public class UrgentPatientAlert {
         this.metricTags = metricTags;
     }
 
+    public List<HealthRecord> getRecentRecords() {
+        return recentRecords;
+    }
+
+    public void setRecentRecords(List<HealthRecord> recentRecords) {
+        this.recentRecords = recentRecords;
+    }
+
     public String getAiSummary() {
         return aiSummary;
     }
@@ -187,11 +193,35 @@ public class UrgentPatientAlert {
         this.aiSummary = aiSummary;
     }
 
-    public int getRiskScore() {
-        return riskScore;
+    public String getAiDetailAnalysis() {
+        return aiDetailAnalysis;
     }
 
-    public void setRiskScore(int riskScore) {
-        this.riskScore = riskScore;
+    public void setAiDetailAnalysis(String aiDetailAnalysis) {
+        this.aiDetailAnalysis = aiDetailAnalysis;
+    }
+
+    public List<String> getAiRecommendations() {
+        return aiRecommendations;
+    }
+
+    public void setAiRecommendations(List<String> aiRecommendations) {
+        this.aiRecommendations = aiRecommendations;
+    }
+
+    public boolean isGeminiUsed() {
+        return geminiUsed;
+    }
+
+    public void setGeminiUsed(boolean geminiUsed) {
+        this.geminiUsed = geminiUsed;
+    }
+
+    public String getGeminiError() {
+        return geminiError;
+    }
+
+    public void setGeminiError(String geminiError) {
+        this.geminiError = geminiError;
     }
 }

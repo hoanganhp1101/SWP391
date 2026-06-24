@@ -3,13 +3,12 @@ package com.example.diabetesmanage.service;
 import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.DangerousPatientAnalysisResult;
+import com.example.diabetesmanage.model.DangerousPatientDetail;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.PatientHealthSnapshot;
 import com.example.diabetesmanage.model.UrgentPatientAlert;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,7 +18,7 @@ public class DangerousPatientService {
 
     private static final int RECORDS_PER_PATIENT = 20;
     private static final int MAX_GEMINI_CANDIDATES = 15;
-    private static final int DISPLAY_LIMIT = 8;
+    private static final int DISPLAY_LIMIT = 20;
 
     private final PatientDAO patientDAO = new PatientDAO();
     private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
@@ -29,36 +28,7 @@ public class DangerousPatientService {
     public DangerousPatientAnalysisResult analyzeDangerousPatients(String doctorEmail) {
 
         DangerousPatientAnalysisResult result = new DangerousPatientAnalysisResult();
-
-        List<Patient> patients = patientDAO.getPatients();
-        Map<String, List<HealthRecord>> recordsByPatient =
-                healthRecordDAO.getRecentRecordsGroupedByPatient(
-                        doctorEmail,
-                        RECORDS_PER_PATIENT
-                );
-
-        List<PatientHealthSnapshot> dangerousSnapshots = new ArrayList<>();
-
-        for (Patient patient : patients) {
-
-            PatientHealthSnapshot snapshot = new PatientHealthSnapshot();
-            snapshot.setPatientId(patient.getId());
-            snapshot.setPatientCode(patient.getPatientCode());
-            snapshot.setPatientName(
-                    patient.getUser() != null ? patient.getUser().getHoTen() : "Không rõ"
-            );
-            snapshot.setLoaiTieuDuong(patient.getLoaiTieuDuong());
-
-            List<HealthRecord> records =
-                    recordsByPatient.getOrDefault(patient.getId(), new ArrayList<>());
-            snapshot.setRecentRecords(records);
-
-            ruleAnalyzer.analyze(snapshot);
-
-            if (snapshot.isDangerous()) {
-                dangerousSnapshots.add(snapshot);
-            }
-        }
+        List<PatientHealthSnapshot> dangerousSnapshots = collectDangerousSnapshots(doctorEmail);
 
         dangerousSnapshots.sort(Comparator
                 .comparingInt(PatientHealthSnapshot::getRiskScore).reversed());
@@ -81,24 +51,138 @@ public class DangerousPatientService {
 
         if (!geminiAnalysis.getInsights().isEmpty()) {
             result.setAiInsights(geminiAnalysis.getInsights());
-        } else {
-            result.setAiInsights(buildFallbackInsights(dangerousSnapshots));
         }
 
         List<UrgentPatientAlert> alerts = new ArrayList<>();
         int displayCount = Math.min(dangerousSnapshots.size(), DISPLAY_LIMIT);
 
         for (int i = 0; i < displayCount; i++) {
-            PatientHealthSnapshot snapshot = dangerousSnapshots.get(i);
-            alerts.add(toUrgentAlert(snapshot, geminiAnalysis));
+            alerts.add(toUrgentAlert(dangerousSnapshots.get(i), geminiAnalysis));
         }
 
-        if (geminiAnalysis.isUsed()) {
-            alerts.sort((a, b) -> Integer.compare(b.getRiskScore(), a.getRiskScore()));
-        }
-
+        alerts.sort((a, b) -> Integer.compare(b.getRiskScore(), a.getRiskScore()));
         result.setDangerousPatients(alerts);
         return result;
+    }
+
+    public DangerousPatientDetail getDangerousPatientDetail(String doctorEmail, String patientId) {
+
+        Map<String, List<HealthRecord>> recordsByPatient =
+                healthRecordDAO.getRecentRecordsGroupedByPatient(
+                        doctorEmail,
+                        RECORDS_PER_PATIENT
+                );
+
+        List<HealthRecord> records = recordsByPatient.getOrDefault(patientId, new ArrayList<>());
+        if (records.isEmpty()) {
+            return null;
+        }
+
+        Patient patient = patientDAO.getPatientByIdAndDoctor(patientId);
+        if (patient == null) {
+            return null;
+        }
+
+        PatientHealthSnapshot snapshot = buildSnapshot(patient, records);
+        ruleAnalyzer.analyze(snapshot);
+
+        if (!snapshot.isDangerous()) {
+            return null;
+        }
+
+        DangerousPatientDetail detail = new DangerousPatientDetail();
+        detail.setPatientId(snapshot.getPatientId());
+        detail.setPatientCode(snapshot.getPatientCode());
+        detail.setPatientName(snapshot.getPatientName());
+        detail.setInitials(PatientAlertBuilder.buildInitials(snapshot.getPatientName()));
+        detail.setLoaiTieuDuong(snapshot.getLoaiTieuDuong());
+        detail.setRiskLevel(PatientAlertBuilder.resolveRiskLevel(snapshot));
+        detail.setRiskScore(snapshot.getRiskScore());
+        detail.setCritical(snapshot.isCritical());
+        detail.setNeedsUrgentReview(snapshot.isCritical());
+        detail.setRiskReasons(snapshot.getRiskReasons());
+        detail.setMetricTags(PatientAlertBuilder.buildMetricTags(records, snapshot.getRiskReasons()));
+        detail.setRecentRecords(records);
+
+        List<HealthRecord> sorted = new ArrayList<>(records);
+        sorted.sort(Comparator.comparing(
+                HealthRecord::getThoiGianDo,
+                Comparator.nullsLast(Comparator.reverseOrder())
+        ));
+        HealthRecord latest = sorted.get(0);
+
+        detail.setDuongHuyetGanNhat(latest.getDuongHuyetMgdl());
+        detail.setHba1cGanNhat(findLatestHba1c(sorted));
+        detail.setHuyetApTamThu(latest.getHuyetApTamThu());
+        detail.setHuyetApTamTruong(latest.getHuyetApTamTruong());
+        detail.setBmiGanNhat(latest.getBmi());
+        detail.setInsulinGanNhat(latest.getLieuLuongInsulinUi());
+        detail.setTimeAgo(PatientAlertBuilder.formatTimeAgo(latest.getThoiGianDo()));
+
+        GeminiHealthAnalysisService.PatientDetailGeminiAnalysis geminiDetail =
+                geminiService.analyzePatientDetail(snapshot);
+
+        detail.setGeminiUsed(geminiDetail.isUsed());
+        detail.setGeminiError(geminiDetail.getError());
+
+        if (geminiDetail.isUsed()) {
+            detail.setAiSummary(geminiDetail.getSummary());
+            detail.setAiDetailAnalysis(geminiDetail.getDetailAnalysis());
+            detail.setAiRecommendations(geminiDetail.getRecommendations());
+            if (geminiDetail.getRiskLevel() != null) {
+                detail.setRiskLevel(geminiDetail.getRiskLevel());
+            }
+            if (geminiDetail.getPriorityScore() > 0) {
+                detail.setRiskScore(Math.max(snapshot.getRiskScore(), geminiDetail.getPriorityScore()));
+            }
+        } else {
+            detail.setAiSummary(buildFallbackSummary(snapshot));
+            detail.setAiDetailAnalysis(buildFallbackDetail(snapshot));
+            detail.setAiRecommendations(buildFallbackRecommendations(snapshot));
+        }
+
+        return detail;
+    }
+
+    private List<PatientHealthSnapshot> collectDangerousSnapshots(String doctorEmail) {
+
+        List<PatientHealthSnapshot> dangerousSnapshots = new ArrayList<>();
+        List<Patient> patients = patientDAO.getPatients();
+        Map<String, List<HealthRecord>> recordsByPatient =
+                healthRecordDAO.getRecentRecordsGroupedByPatient(
+                        doctorEmail,
+                        RECORDS_PER_PATIENT
+                );
+
+        for (Patient patient : patients) {
+            List<HealthRecord> records =
+                    recordsByPatient.getOrDefault(patient.getId(), new ArrayList<>());
+
+            if (records.isEmpty()) {
+                continue;
+            }
+
+            PatientHealthSnapshot snapshot = buildSnapshot(patient, records);
+            ruleAnalyzer.analyze(snapshot);
+
+            if (snapshot.isDangerous()) {
+                dangerousSnapshots.add(snapshot);
+            }
+        }
+
+        return dangerousSnapshots;
+    }
+
+    private PatientHealthSnapshot buildSnapshot(Patient patient, List<HealthRecord> records) {
+        PatientHealthSnapshot snapshot = new PatientHealthSnapshot();
+        snapshot.setPatientId(patient.getId());
+        snapshot.setPatientCode(patient.getPatientCode());
+        snapshot.setPatientName(
+                patient.getUser() != null ? patient.getUser().getHoTen() : "Không rõ"
+        );
+        snapshot.setLoaiTieuDuong(patient.getLoaiTieuDuong());
+        snapshot.setRecentRecords(records);
+        return snapshot;
     }
 
     private UrgentPatientAlert toUrgentAlert(
@@ -114,108 +198,77 @@ public class DangerousPatientService {
         alert.setRiskScore(snapshot.getRiskScore());
         alert.setCritical(snapshot.isCritical());
 
+        PatientAlertBuilder.populateAlertMetrics(alert, snapshot);
+
         GeminiHealthAnalysisService.PatientGeminiInsight geminiInsight =
                 geminiAnalysis.getPatientInsights().get(snapshot.getPatientCode());
 
         if (geminiInsight != null) {
             alert.setAiSummary(geminiInsight.getSummary());
+            if (geminiInsight.getRiskLevel() != null) {
+                alert.setRiskLevel(geminiInsight.getRiskLevel());
+            }
             if ("critical".equalsIgnoreCase(geminiInsight.getRiskLevel())) {
                 alert.setCritical(true);
+                alert.setNeedsUrgentReview(true);
             }
             if (geminiInsight.getPriorityScore() > 0) {
                 alert.setRiskScore(
                         Math.max(snapshot.getRiskScore(), geminiInsight.getPriorityScore())
                 );
             }
-        }
-
-        List<HealthRecord> records = snapshot.getRecentRecords();
-        if (!records.isEmpty()) {
-            HealthRecord latest = records.get(0);
-            alert.setDuongHuyetGanNhat(latest.getDuongHuyetMgdl());
-            alert.setHuyetApTamThu(latest.getHuyetApTamThu());
-            alert.setHuyetApTamTruong(latest.getHuyetApTamTruong());
-            alert.setVitalDisplay(buildVitalDisplay(alert));
-            alert.setDetectedAgo(formatDetectedAgo(latest.getThoiGianDo()));
         } else {
-            alert.setVitalDisplay("Chưa có chỉ số");
-            alert.setDetectedAgo("Chưa có dữ liệu gần đây");
+            alert.setAiSummary(buildFallbackSummary(snapshot));
         }
 
         return alert;
     }
 
-    private List<String> buildFallbackInsights(List<PatientHealthSnapshot> snapshots) {
-
-        List<String> insights = new ArrayList<>();
-
-        long criticalCount = snapshots.stream().filter(PatientHealthSnapshot::isCritical).count();
-        long noMonitoring = snapshots.stream()
-                .filter(s -> s.getRecentRecords().isEmpty())
-                .count();
-
-        if (criticalCount > 0) {
-            insights.add("Phát hiện " + criticalCount + " bệnh nhân có chỉ số nguy hiểm cần can thiệp ngay.");
+    private String buildFallbackSummary(PatientHealthSnapshot snapshot) {
+        if (snapshot.getRiskReasons().isEmpty()) {
+            return "Bệnh nhân có chỉ số cần theo dõi thêm.";
         }
-        if (noMonitoring > 0) {
-            insights.add(noMonitoring + " bệnh nhân chưa có hoặc thiếu hồ sơ theo dõi sức khỏe.");
-        }
-        if (insights.isEmpty() && !snapshots.isEmpty()) {
-            insights.add("Có " + snapshots.size() + " hồ sơ cần bác sĩ xem xét dựa trên chỉ số bất thường.");
-        }
-
-        return insights;
+        return String.join(". ", snapshot.getRiskReasons()) + ".";
     }
 
-    private String buildVitalDisplay(UrgentPatientAlert alert) {
-
-        if (alert.getDuongHuyetGanNhat() != null) {
-            if (alert.getDuongHuyetGanNhat() < 70) {
-                return String.format("Đường huyết thấp: %.0f mg/dL", alert.getDuongHuyetGanNhat());
-            }
-            if (alert.getDuongHuyetGanNhat() >= 180) {
-                return String.format("Đường huyết: %.0f mg/dL", alert.getDuongHuyetGanNhat());
-            }
+    private String buildFallbackDetail(PatientHealthSnapshot snapshot) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Hệ thống ghi nhận ").append(snapshot.getRiskReasons().size())
+                .append(" dấu hiệu bất thường từ ").append(snapshot.getRecentRecords().size())
+                .append(" hồ sơ gần đây. ");
+        if (!snapshot.getRiskReasons().isEmpty()) {
+            sb.append("Các vấn đề chính: ").append(String.join(", ", snapshot.getRiskReasons())).append(".");
         }
-
-        if (alert.getHuyetApTamThu() != null && alert.getHuyetApTamTruong() != null) {
-            return String.format(
-                    "Huyết áp: %d/%d",
-                    alert.getHuyetApTamThu(),
-                    alert.getHuyetApTamTruong()
-            );
-        }
-
-        if (alert.getDuongHuyetGanNhat() != null) {
-            return String.format("Đường huyết: %.0f mg/dL", alert.getDuongHuyetGanNhat());
-        }
-
-        return alert.getRiskReasons().isEmpty()
-                ? "Chỉ số bất thường"
-                : alert.getRiskReasons().get(0);
+        return sb.toString();
     }
 
-    private String formatDetectedAgo(LocalDateTime dateTime) {
-
-        if (dateTime == null) {
-            return "Chưa có dữ liệu gần đây";
+    private List<String> buildFallbackRecommendations(PatientHealthSnapshot snapshot) {
+        List<String> recommendations = new ArrayList<>();
+        for (String reason : snapshot.getRiskReasons()) {
+            if (reason.contains("đường huyết") || reason.contains("Đường huyết")) {
+                recommendations.add("Theo dõi đường huyết nhiều lần trong ngày và điều chỉnh chế độ ăn.");
+            } else if (reason.contains("HbA1c")) {
+                recommendations.add("Đánh giá lại phác đồ điều trị và tăng cường kiểm soát đường huyết dài hạn.");
+            } else if (reason.contains("Huyết áp")) {
+                recommendations.add("Kiểm tra huyết áp định kỳ và cân nhắc can thiệp dược lý.");
+            } else if (reason.contains("Insulin")) {
+                recommendations.add("Xem xét điều chỉnh liều insulin và đánh giá tuân thủ điều trị.");
+            } else if (reason.contains("theo dõi")) {
+                recommendations.add("Nhắc bệnh nhân cập nhật hồ sơ sức khỏe đều đặn hơn.");
+            }
         }
-
-        Duration duration = Duration.between(dateTime, LocalDateTime.now());
-        long minutes = duration.toMinutes();
-
-        if (minutes < 1) {
-            return "Vừa phát hiện";
+        if (recommendations.isEmpty()) {
+            recommendations.add("Theo dõi sát các chỉ số và tái khám sớm nếu triệu chứng xấu đi.");
         }
-        if (minutes < 60) {
-            return "Phát hiện cách đây " + minutes + " phút";
-        }
+        return recommendations;
+    }
 
-        long hours = duration.toHours();
-        if (hours < 24) {
-            return "Phát hiện cách đây " + hours + " giờ";
+    private Double findLatestHba1c(List<HealthRecord> records) {
+        for (HealthRecord record : records) {
+            if (record.getHba1cPercent() != null) {
+                return record.getHba1cPercent();
+            }
         }
-
-        return "Phát hiện cách đây " + duration.toDays() + " ngày";
+        return null;
     }
 }

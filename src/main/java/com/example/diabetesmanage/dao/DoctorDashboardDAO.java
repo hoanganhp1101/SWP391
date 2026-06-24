@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.dao;
 
+import com.example.diabetesmanage.config.AppConstants;
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.DoctorDashboardStats;
 import com.example.diabetesmanage.model.UrgentPatientAlert;
@@ -16,7 +17,7 @@ import java.util.List;
 
 public class DoctorDashboardDAO {
 
-    public static final String DOCTOR_EMAIL = "bacsi@example.com";
+    public static final String DOCTOR_EMAIL = AppConstants.DOCTOR_EMAIL;
 
     public User getDoctorByEmail(String email) {
 
@@ -172,7 +173,7 @@ public class DoctorDashboardDAO {
         String sql =
                 "SELECT " +
                         "vps.patient_id, " +
-                        "vps.patient_code, " +
+                        "p.patient_code, " +
                         "vps.ho_ten, " +
                         "vps.loai_tieu_duong, " +
                         "vps.duong_huyet_gan_nhat, " +
@@ -217,7 +218,7 @@ public class DoctorDashboardDAO {
                 UrgentPatientAlert alert = new UrgentPatientAlert();
 
                 alert.setPatientId(rs.getString("patient_id"));
-                alert.setPatientCode(rs.getString("patient_code"));
+                alert.setPatientCode(RecordCodeHelper.resolve(rs, "patient_code"));
                 alert.setPatientName(rs.getString("ho_ten"));
                 alert.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
 

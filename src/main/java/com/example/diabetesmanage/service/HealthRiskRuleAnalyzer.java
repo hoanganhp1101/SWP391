@@ -29,9 +29,8 @@ public class HealthRiskRuleAnalyzer {
 
         List<HealthRecord> records = snapshot.getRecentRecords();
         if (records == null || records.isEmpty()) {
-            reasons.add("Bệnh nhân không có hồ sơ theo dõi sức khỏe");
-            snapshot.setRiskReasons(reasons);
-            snapshot.setRiskScore(40);
+            snapshot.setRiskReasons(new ArrayList<>());
+            snapshot.setRiskScore(0);
             snapshot.setCritical(false);
             return;
         }

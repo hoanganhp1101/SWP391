@@ -665,11 +665,6 @@ RISK FILTER
                             Xuất Excel
                         </a>
 
-                        <button class="btn btn-primary">
-                            <i class="fa-solid fa-plus"></i>
-                            Thêm bệnh nhân
-                        </button>
-
                     </div>
 
                 </div>

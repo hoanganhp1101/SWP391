@@ -65,6 +65,91 @@ public class GeminiHealthAnalysisService {
         return result;
     }
 
+    public PatientDetailGeminiAnalysis analyzePatientDetail(PatientHealthSnapshot snapshot) {
+
+        PatientDetailGeminiAnalysis result = new PatientDetailGeminiAnalysis();
+        result.setConfigured(config.isConfigured());
+
+        if (!config.isConfigured()) {
+            result.setError("Chưa cấu hình Gemini API key");
+            return result;
+        }
+
+        try {
+            String prompt = buildDetailPrompt(snapshot);
+            String jsonResponse = geminiClient.generateJsonResponse(prompt);
+            parseDetailResponse(jsonResponse, result);
+            result.setUsed(true);
+        } catch (Exception e) {
+            String message = e.getMessage() != null ? e.getMessage() : e.toString();
+            result.setError(message);
+            System.err.println("Gemini phân tích chi tiết thất bại: " + message);
+        }
+
+        return result;
+    }
+
+    private String buildDetailPrompt(PatientHealthSnapshot snapshot) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Bạn là bác sĩ nội tiết chuyên tiểu đường. ");
+        sb.append("Phân tích chi tiết hồ sơ bệnh nhân nguy hiểm và trả về JSON thuần (không markdown).\n\n");
+        sb.append("Schema JSON:\n");
+        sb.append("{\n");
+        sb.append("  \"summary\": \"tóm tắt ngắn 1-2 câu\",\n");
+        sb.append("  \"detailAnalysis\": \"phân tích chi tiết 4-6 câu về xu hướng, nguy cơ, mối liên hệ giữa các chỉ số\",\n");
+        sb.append("  \"riskLevel\": \"critical|high|medium\",\n");
+        sb.append("  \"recommendations\": [\"khuyến nghị 1\", \"khuyến nghị 2\", \"khuyến nghị 3\"],\n");
+        sb.append("  \"priorityScore\": 1-100\n");
+        sb.append("}\n\n");
+        sb.append("Bệnh nhân: ").append(snapshot.getPatientName());
+        sb.append(" (").append(snapshot.getPatientCode()).append(")\n");
+        sb.append("Loại tiểu đường: ").append(nullToDash(snapshot.getLoaiTieuDuong())).append("\n");
+        sb.append("Điểm rủi ro: ").append(snapshot.getRiskScore()).append("\n");
+        sb.append("Lý do nguy hiểm: ").append(String.join("; ", snapshot.getRiskReasons())).append("\n\n");
+        sb.append("Lịch sử đo gần đây:\n");
+
+        int limit = Math.min(10, snapshot.getRecentRecords().size());
+        for (int i = 0; i < limit; i++) {
+            var record = snapshot.getRecentRecords().get(i);
+            sb.append("- ")
+                    .append(record.getThoiGianDo() != null ? record.getThoiGianDo().toLocalDate() : "?")
+                    .append(": DH=").append(format(record.getDuongHuyetMgdl()))
+                    .append(", HbA1c=").append(format(record.getHba1cPercent()))
+                    .append(", HA=").append(formatBp(record))
+                    .append(", BMI=").append(format(record.getBmi()))
+                    .append(", Insulin=").append(formatInt(record.getLieuLuongInsulinUi()))
+                    .append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    private void parseDetailResponse(String jsonResponse, PatientDetailGeminiAnalysis result) {
+        JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
+
+        if (root.has("summary")) {
+            result.setSummary(root.get("summary").getAsString());
+        }
+        if (root.has("detailAnalysis")) {
+            result.setDetailAnalysis(root.get("detailAnalysis").getAsString());
+        }
+        if (root.has("riskLevel")) {
+            result.setRiskLevel(root.get("riskLevel").getAsString());
+        }
+        if (root.has("priorityScore")) {
+            result.setPriorityScore(root.get("priorityScore").getAsInt());
+        }
+        if (root.has("recommendations")) {
+            JsonArray recommendations = root.getAsJsonArray("recommendations");
+            List<String> list = new ArrayList<>();
+            for (JsonElement element : recommendations) {
+                list.add(element.getAsString());
+            }
+            result.setRecommendations(list);
+        }
+    }
+
     private String buildPrompt(List<PatientHealthSnapshot> candidates) {
 
         StringBuilder sb = new StringBuilder();
@@ -81,7 +166,7 @@ public class GeminiHealthAnalysisService {
         sb.append("    {\n");
         sb.append("      \"patientCode\": \"mã\",\n");
         sb.append("      \"riskLevel\": \"critical|high|medium\",\n");
-        sb.append("      \"summary\": \"phân tích ngắn 1-2 câu bằng tiếng Việt\",\n");
+        sb.append("      \"summary\": \"phân tích 2-3 câu bằng tiếng Việt về tình trạng bệnh nhân\",\n");
         sb.append("      \"priorityScore\": 1-100\n");
         sb.append("    }\n");
         sb.append("  ]\n");
@@ -270,6 +355,81 @@ public class GeminiHealthAnalysisService {
 
         public void setPriorityScore(int priorityScore) {
             this.priorityScore = priorityScore;
+        }
+    }
+
+    public static class PatientDetailGeminiAnalysis {
+        private boolean used;
+        private boolean configured;
+        private String error;
+        private String summary;
+        private String detailAnalysis;
+        private String riskLevel;
+        private int priorityScore;
+        private List<String> recommendations = new ArrayList<>();
+
+        public boolean isUsed() {
+            return used;
+        }
+
+        public void setUsed(boolean used) {
+            this.used = used;
+        }
+
+        public boolean isConfigured() {
+            return configured;
+        }
+
+        public void setConfigured(boolean configured) {
+            this.configured = configured;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+
+        public String getSummary() {
+            return summary;
+        }
+
+        public void setSummary(String summary) {
+            this.summary = summary;
+        }
+
+        public String getDetailAnalysis() {
+            return detailAnalysis;
+        }
+
+        public void setDetailAnalysis(String detailAnalysis) {
+            this.detailAnalysis = detailAnalysis;
+        }
+
+        public String getRiskLevel() {
+            return riskLevel;
+        }
+
+        public void setRiskLevel(String riskLevel) {
+            this.riskLevel = riskLevel;
+        }
+
+        public int getPriorityScore() {
+            return priorityScore;
+        }
+
+        public void setPriorityScore(int priorityScore) {
+            this.priorityScore = priorityScore;
+        }
+
+        public List<String> getRecommendations() {
+            return recommendations;
+        }
+
+        public void setRecommendations(List<String> recommendations) {
+            this.recommendations = recommendations;
         }
     }
 }

@@ -22,6 +22,22 @@ public class HealthRecord {
     private Double hba1cPercent;
     private Double cholesterolMmol;
     private Double triglycerideMmol;
+    private Double hdlMmol;
+    private Double ldlMmol;
+
+    private Double wbc;
+    private Double rbc;
+    private Double hgb;
+    private Double hct;
+    private Double plt;
+
+    private Double ast;
+    private Double alt;
+    private Double creatinine;
+
+    private String trieuChung;
+    private String chanDoanChinh;
+    private String khuyenNghi;
 
     private Integer soBuocChan;
     private Double carbsG;
@@ -149,6 +165,110 @@ public class HealthRecord {
 
     public void setTriglycerideMmol(Double triglycerideMmol) {
         this.triglycerideMmol = triglycerideMmol;
+    }
+
+    public Double getHdlMmol() {
+        return hdlMmol;
+    }
+
+    public void setHdlMmol(Double hdlMmol) {
+        this.hdlMmol = hdlMmol;
+    }
+
+    public Double getLdlMmol() {
+        return ldlMmol;
+    }
+
+    public void setLdlMmol(Double ldlMmol) {
+        this.ldlMmol = ldlMmol;
+    }
+
+    public Double getWbc() {
+        return wbc;
+    }
+
+    public void setWbc(Double wbc) {
+        this.wbc = wbc;
+    }
+
+    public Double getRbc() {
+        return rbc;
+    }
+
+    public void setRbc(Double rbc) {
+        this.rbc = rbc;
+    }
+
+    public Double getHgb() {
+        return hgb;
+    }
+
+    public void setHgb(Double hgb) {
+        this.hgb = hgb;
+    }
+
+    public Double getHct() {
+        return hct;
+    }
+
+    public void setHct(Double hct) {
+        this.hct = hct;
+    }
+
+    public Double getPlt() {
+        return plt;
+    }
+
+    public void setPlt(Double plt) {
+        this.plt = plt;
+    }
+
+    public Double getAst() {
+        return ast;
+    }
+
+    public void setAst(Double ast) {
+        this.ast = ast;
+    }
+
+    public Double getAlt() {
+        return alt;
+    }
+
+    public void setAlt(Double alt) {
+        this.alt = alt;
+    }
+
+    public Double getCreatinine() {
+        return creatinine;
+    }
+
+    public void setCreatinine(Double creatinine) {
+        this.creatinine = creatinine;
+    }
+
+    public String getTrieuChung() {
+        return trieuChung;
+    }
+
+    public void setTrieuChung(String trieuChung) {
+        this.trieuChung = trieuChung;
+    }
+
+    public String getChanDoanChinh() {
+        return chanDoanChinh;
+    }
+
+    public void setChanDoanChinh(String chanDoanChinh) {
+        this.chanDoanChinh = chanDoanChinh;
+    }
+
+    public String getKhuyenNghi() {
+        return khuyenNghi;
+    }
+
+    public void setKhuyenNghi(String khuyenNghi) {
+        this.khuyenNghi = khuyenNghi;
     }
 
     public Integer getSoBuocChan() {

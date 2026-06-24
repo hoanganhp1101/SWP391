@@ -336,13 +336,9 @@
 
         .dashboard-row{
             margin-top:30px;
-            display:grid;
-            grid-template-columns:2fr 1fr;
-            gap:24px;
         }
 
-        .urgent-card,
-        .ai-card{
+        .danger-section{
             background:white;
             border:1px solid #e5e7eb;
             border-radius:18px;
@@ -367,62 +363,229 @@
             color:#b42318;
             padding:8px 14px;
             border-radius:999px;
+            font-size:14px;
+            font-weight:600;
         }
 
-        .patient-card{
+        .gemini-status{
+            margin-bottom:20px;
+            padding:14px 16px;
+            border-radius:12px;
+            font-size:14px;
+        }
+
+        .gemini-status.ok{
+            background:#ecfdf3;
+            color:#027a48;
+        }
+
+        .gemini-status.warn{
+            background:#fff7e8;
+            color:#b54708;
+        }
+
+        .gemini-status.error{
+            background:#fef3f2;
+            color:#b42318;
+        }
+
+        .danger-list{
             display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:20px;
-            padding:18px;
-            border:1px solid #d7dce4;
-            border-radius:14px;
-            margin-bottom:18px;
-        }
-
-        .patient-card.critical{
-            background:#fff8f8;
-            border-color:#f1c5c5;
-        }
-
-        .patient-left{
-            display:flex;
-            align-items:center;
+            flex-direction:column;
             gap:16px;
         }
 
-        .patient-avatar{
-            width:50px;
-            height:50px;
+        .danger-card{
+            border:1px solid #e5e7eb;
+            border-left:4px solid #d1d5db;
+            border-radius:16px;
+            padding:20px 22px;
+            background:#fff;
+        }
+
+        .danger-card.critical{
+            border-left-color:#ef4444;
+            background:#fffbfb;
+        }
+
+        .danger-card.high{
+            border-left-color:#f59e0b;
+            background:#fffdf8;
+        }
+
+        .danger-card.medium{
+            border-left-color:#3b82f6;
+        }
+
+        .danger-card-top{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:20px;
+        }
+
+        .danger-patient-info{
+            display:flex;
+            gap:14px;
+            align-items:flex-start;
+        }
+
+        .danger-avatar{
+            width:48px;
+            height:48px;
             border-radius:50%;
             display:flex;
+            align-items:center;
             justify-content:center;
+            font-weight:700;
+            font-size:15px;
+            flex-shrink:0;
+        }
+
+        .danger-card.critical .danger-avatar{
+            background:#fee2e2;
+            color:#dc2626;
+        }
+
+        .danger-card.high .danger-avatar{
+            background:#fef3c7;
+            color:#d97706;
+        }
+
+        .danger-card.medium .danger-avatar{
+            background:#dbeafe;
+            color:#2563eb;
+        }
+
+        .danger-name{
+            font-size:18px;
+            font-weight:700;
+            color:#111827;
+        }
+
+        .danger-code{
+            color:#9ca3af;
+            font-weight:500;
+            font-size:15px;
+            margin-left:8px;
+        }
+
+        .danger-type{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            margin-top:6px;
+            font-size:13px;
+            color:#6b7280;
+        }
+
+        .danger-type .dot{
+            width:8px;
+            height:8px;
+            border-radius:50%;
+            background:#9ca3af;
+        }
+
+        .danger-card.critical .danger-type .dot{background:#ef4444;}
+        .danger-card.high .danger-type .dot{background:#f59e0b;}
+        .danger-card.medium .danger-type .dot{background:#3b82f6;}
+
+        .danger-vital{
+            text-align:right;
+            flex-shrink:0;
+        }
+
+        .danger-vital .value{
+            font-size:28px;
+            font-weight:700;
+            line-height:1.1;
+        }
+
+        .danger-card.critical .danger-vital .value{color:#dc2626;}
+        .danger-card.high .danger-vital .value{color:#d97706;}
+        .danger-card.medium .danger-vital .value{color:#2563eb;}
+
+        .danger-vital .time{
+            margin-top:6px;
+            font-size:13px;
+            color:#9ca3af;
+            display:flex;
+            align-items:center;
+            justify-content:flex-end;
+            gap:6px;
+        }
+
+        .danger-tags{
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            margin-top:16px;
+        }
+
+        .danger-tag{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:8px 12px;
+            border-radius:999px;
+            font-size:13px;
+            font-weight:500;
+            background:#f3f4f6;
+            color:#374151;
+        }
+
+        .danger-tag.glucose{background:#eff6ff;color:#1d4ed8;}
+        .danger-tag.hba1c{background:#f5f3ff;color:#7c3aed;}
+        .danger-tag.bp{background:#fef2f2;color:#b91c1c;}
+        .danger-tag.bmi{background:#fff7ed;color:#c2410c;}
+        .danger-tag.insulin{background:#ecfeff;color:#0e7490;}
+        .danger-tag.warning,.danger-tag.trend{background:#fef3c7;color:#b45309;}
+
+        .danger-ai{
+            margin-top:16px;
+            font-size:14px;
+            line-height:1.7;
+            color:#4b5563;
+        }
+
+        .danger-ai i{
+            color:#2563eb;
+            margin-right:6px;
+        }
+
+        .danger-card-footer{
+            margin-top:16px;
+            padding-top:14px;
+            border-top:1px solid #f3f4f6;
+            display:flex;
+            justify-content:space-between;
             align-items:center;
         }
 
-        .patient-avatar.red{
-            background:#fde8e8;
-            color:#c81e1e;
+        .danger-urgent{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            color:#dc2626;
+            font-size:14px;
+            font-weight:600;
         }
 
-        .patient-avatar.blue{
-            background:#e8efff;
-            color:#1d4ed8;
+        .danger-view-link{
+            color:#2563eb;
+            text-decoration:none;
+            font-weight:600;
+            font-size:14px;
         }
 
-        .btn-danger{
-            background:#d92d20;
-            color:white;
-            border:none;
-            padding:14px 22px;
-            border-radius:10px;
+        .danger-view-link:hover{
+            text-decoration:underline;
         }
 
-        .btn-outline{
-            background:white;
-            border:1px solid #9ca3af;
-            padding:14px 22px;
-            border-radius:10px;
+        .empty-danger{
+            color:#6b7280;
+            padding:24px 0;
+            text-align:center;
         }
 
         .alert-box{
@@ -649,137 +812,122 @@
 
             </div>
 
-            <!-- BOTTOM SECTION -->
+            <!-- DANGEROUS PATIENTS -->
             <div class="dashboard-row">
 
-                <!-- URGENT CARD -->
-                <div class="urgent-card">
+                <div class="danger-section">
 
                     <div class="card-header">
-
                         <div class="title">
                             <i class="fa-solid fa-circle-exclamation"></i>
                             <h2>Hồ sơ nguy hiểm</h2>
                         </div>
-
                         <div class="badge">
                             ${analysisResult.totalDangerousCount} hồ sơ cần xem xét
                         </div>
-
-                    </div>
-
-                    <c:choose>
-                        <c:when test="${empty urgentPatients}">
-                            <p style="color:#6b7280;">Không có hồ sơ bệnh án nguy hiểm.</p>
-                        </c:when>
-                        <c:otherwise>
-                            <c:forEach items="${urgentPatients}" var="alert">
-                                <div class="patient-card ${alert.critical ? 'critical' : ''}">
-
-                                    <div class="patient-left">
-                                        <div class="patient-avatar ${alert.critical ? 'red' : 'blue'}">
-                                            <i class="fa-solid ${alert.critical ? 'fa-heart-circle-plus' : 'fa-notes-medical'}"></i>
-                                        </div>
-
-                                        <div>
-                                            <h3>${alert.patientName} (${alert.patientCode})</h3>
-                                            <p>${not empty alert.loaiTieuDuong ? alert.loaiTieuDuong : 'Chưa có thông tin'}</p>
-                                            <c:if test="${not empty alert.riskReasons}">
-                                                <ul style="margin-top:8px; padding-left:18px; font-size:13px; color:#b42318;">
-                                                    <c:forEach items="${alert.riskReasons}" var="reason">
-                                                        <li>${reason}</li>
-                                                    </c:forEach>
-                                                </ul>
-                                            </c:if>
-                                            <c:if test="${not empty alert.aiSummary}">
-                                                <p style="margin-top:8px; font-size:13px; color:#1e40af;">
-                                                    <i class="fa-solid fa-sparkles"></i> ${alert.aiSummary}
-                                                </p>
-                                            </c:if>
-                                        </div>
-                                    </div>
-
-                                    <div class="patient-right">
-                                        <div class="vital">
-                                            ${alert.vitalDisplay}
-                                        </div>
-
-                                        <div class="time">
-                                            ${alert.detectedAgo}
-                                        </div>
-                                    </div>
-
-                                    <form action="${pageContext.request.contextPath}/doctor/record-detail"
-                                          method="post"
-                                          style="display:inline;">
-
-                                        <input type="hidden"
-                                               name="id"
-                                               value="${alert.patientId}" />
-
-                                        <button type="submit"
-                                                class="${alert.critical ? 'btn-danger' : 'btn-outline'}">
-                                            Xem hồ sơ
-                                        </button>
-
-                                    </form>
-
-                                </div>
-                            </c:forEach>
-                        </c:otherwise>
-                    </c:choose>
-
-                </div>
-
-                <!-- AI CARD -->
-                <div class="ai-card">
-
-                    <div class="title">
-                        <i class="fa-solid fa-sparkles"></i>
-                        <h2>Phân tích AI (Gemini)</h2>
                     </div>
 
                     <c:choose>
                         <c:when test="${analysisResult.geminiUsed}">
-                            <div class="alert-box">
-                                <strong>Phân tích tổng quan:</strong>
-                                ${not empty analysisResult.aiSummary
-                                    ? analysisResult.aiSummary
-                                    : 'Gemini đã phân tích các hồ sơ nguy hiểm.'}
+                            <div class="gemini-status ok">
+                                <i class="fa-solid fa-sparkles"></i>
+                                Gemini đang phân tích từng bệnh nhân có hồ sơ bất thường.
                             </div>
                         </c:when>
                         <c:when test="${analysisResult.geminiConfigured && not empty analysisResult.geminiError}">
-                            <div class="alert-box" style="background:#fef3f2; color:#b42318;">
+                            <div class="gemini-status error">
                                 <strong>Gemini lỗi:</strong> ${analysisResult.geminiError}
                             </div>
-                            <p style="font-size:13px; color:#6b7280; margin-top:8px;">
-                                ${analysisResult.geminiConfigInfo}
-                            </p>
                         </c:when>
                         <c:otherwise>
-                            <div class="alert-box">
-                                <strong>Lưu ý:</strong>
-                                Chưa cấu hình Gemini API key. Hệ thống đang dùng phân tích theo quy tắc y khoa.
-                                Tạo file <code>src/main/resources/gemini.properties</code>,
-                                điền <code>gemini.api.key</code>, rồi <strong>Rebuild project</strong>
-                                (Maven → Reload / Build → Rebuild Project).
+                            <div class="gemini-status warn">
+                                Chưa kết nối Gemini — đang dùng phân tích theo quy tắc y khoa cho từng bệnh nhân.
                             </div>
-                            <c:if test="${not empty analysisResult.geminiError}">
-                                <p style="font-size:13px; color:#b42318; margin-top:8px;">
-                                    ${analysisResult.geminiError}
-                                </p>
-                            </c:if>
                         </c:otherwise>
                     </c:choose>
 
-                    <ul style="padding-left:20px; line-height:1.8;">
-                        <c:forEach items="${analysisResult.aiInsights}" var="insight">
-                            <li>${insight}</li>
-                        </c:forEach>
-                        <c:if test="${empty analysisResult.aiInsights}">
-                            <li>Phát hiện ${analysisResult.totalDangerousCount} hồ sơ có chỉ số bất thường cần theo dõi.</li>
-                        </c:if>
-                    </ul>
+                    <div class="danger-list">
+                        <c:choose>
+                            <c:when test="${empty urgentPatients}">
+                                <div class="empty-danger">
+                                    Không có hồ sơ bệnh án nguy hiểm.
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach items="${urgentPatients}" var="alert">
+                                    <div class="danger-card ${alert.riskLevel}">
+                                        <div class="danger-card-top">
+                                            <div class="danger-patient-info">
+                                                <div class="danger-avatar">${alert.initials}</div>
+                                                <div>
+                                                    <div>
+                                                        <span class="danger-name">${alert.patientName}</span>
+                                                        <span class="danger-code">${alert.patientCode}</span>
+                                                    </div>
+                                                    <div class="danger-type">
+                                                        <span class="dot"></span>
+                                                        <span>${not empty alert.loaiTieuDuong ? alert.loaiTieuDuong : 'Tiểu đường'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="danger-vital">
+                                                <div class="value">${alert.vitalDisplay}</div>
+                                                <div class="time">
+                                                    <i class="fa-regular fa-clock"></i>
+                                                    ${alert.timeAgo}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <c:if test="${not empty alert.metricTags}">
+                                            <div class="danger-tags">
+                                                <c:forEach items="${alert.metricTags}" var="tag">
+                                                    <span class="danger-tag ${tag.type}">
+                                                        <c:if test="${tag.type == 'glucose'}">
+                                                            <i class="fa-solid fa-droplet"></i>
+                                                        </c:if>
+                                                        <c:if test="${tag.type == 'hba1c'}">
+                                                            <i class="fa-solid fa-chart-line"></i>
+                                                        </c:if>
+                                                        <c:if test="${tag.type == 'bp'}">
+                                                            <i class="fa-solid fa-heart-pulse"></i>
+                                                        </c:if>
+                                                        <c:if test="${tag.trending}">
+                                                            <i class="fa-solid fa-arrow-trend-up"></i>
+                                                        </c:if>
+                                                        ${tag.label} · ${tag.value}
+                                                    </span>
+                                                </c:forEach>
+                                            </div>
+                                        </c:if>
+
+                                        <div class="danger-ai">
+                                            <i class="fa-solid fa-sparkles"></i>
+                                            ${not empty alert.aiSummary
+                                                ? alert.aiSummary
+                                                : 'Cần theo dõi thêm các chỉ số sức khỏe của bệnh nhân.'}
+                                        </div>
+
+                                        <div class="danger-card-footer">
+                                            <div>
+                                                <c:if test="${alert.needsUrgentReview}">
+                                                    <span class="danger-urgent">
+                                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                                        Cần xem xét ngay
+                                                    </span>
+                                                </c:if>
+                                            </div>
+                                            <a href="${pageContext.request.contextPath}/doctor/dangerous-patient-analysis?id=${alert.patientId}"
+                                               class="danger-view-link">
+                                                Xem hồ sơ <i class="fa-solid fa-chevron-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
 
                 </div>
 

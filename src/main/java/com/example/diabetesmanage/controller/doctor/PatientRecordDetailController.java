@@ -1,72 +1,66 @@
 package com.example.diabetesmanage.controller.doctor;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.model.medical.MedicalRecordDetailView;
+import com.example.diabetesmanage.service.medical.MedicalRecordLoadService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
 @WebServlet("/doctor/record-detail")
 public class PatientRecordDetailController extends HttpServlet {
 
-    private final HealthRecordDAO healthRecordDAO =
-            new HealthRecordDAO();
+    private final MedicalRecordLoadService loadService = new MedicalRecordLoadService();
 
     @Override
-    protected void doGet(HttpServletRequest request,
-                         HttpServletResponse response)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String recordId = request.getParameter("id");
 
         if (recordId == null || recordId.trim().isEmpty()) {
-
-            response.sendRedirect(
-                    request.getContextPath()
-                            + "/doctor/patient-records"
-            );
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
             return;
         }
 
-
-        HealthRecord record =
-                healthRecordDAO.getHealthRecordRecordById(recordId);
-
+        HealthRecord record = loadService.getRecordById(recordId);
         if (record == null) {
-
-            response.sendError(
-                    HttpServletResponse.SC_NOT_FOUND,
-                    "Record not found"
-            );
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Record not found");
             return;
         }
 
-        request.setAttribute(
-                "record",
-                record
-        );
+        MedicalRecordDetailView detailView = loadService.loadDetailViewByRecordId(recordId);
 
-        request.getRequestDispatcher(
-                "/WEB-INF/views/doctor/medicalrecorddetail.jsp"
-        ).forward(request, response);
+        request.setAttribute("record", record);
+        request.setAttribute("detailView", detailView);
+
+        request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
+                .forward(request, response);
     }
+
     @Override
-    protected void doPost(HttpServletRequest request,
-                          HttpServletResponse response)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String patientId = request.getParameter("id");
 
-        HealthRecord record =
-                healthRecordDAO.getLatestHealthRecordByPatientId(patientId);
+        HealthRecord record = loadService.getLatestRecordByPatientId(patientId);
+        if (record == null) {
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+
+        MedicalRecordDetailView detailView = loadService.loadDetailViewByPatientId(patientId);
 
         request.setAttribute("record", record);
+        request.setAttribute("detailView", detailView);
 
-        request.getRequestDispatcher(
-                "/WEB-INF/views/doctor/medicalrecorddetail.jsp"
-        ).forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
+                .forward(request, response);
     }
 }
