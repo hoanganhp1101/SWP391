@@ -63,7 +63,7 @@
         .nav-links a.active { color: var(--primary); }
         .nav-links a.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: var(--primary); }
         .nav-right { display: flex; align-items: center; gap: 1.5rem; color: var(--text-muted); }
-        .avatar-small { width: 32px; height: 32px; border-radius: 50%; background-color: #cbd5e1; background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff'); background-size: cover; }
+        .avatar-small { width: 32px; height: 32px; border-radius: 50%; background-color: #cbd5e1; background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff'); background-size: cover; background-position: center; }
 
         /* Main Layout */
         .app-container { display: flex; margin-top: 64px; min-height: calc(100vh - 64px); }
@@ -71,7 +71,10 @@
         /* Left Sidebar */
         .sidebar { width: 280px; background-color: var(--bg-white); border-right: 1px solid var(--border); padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 64px; bottom: 0; overflow-y: auto; }
         .profile-card { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem; background-color: #cbd5e1; background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff'); background-size: cover; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem; background-color: #cbd5e1; background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff'); background-size: cover; background-position: center; border: 2px solid transparent; transition: border-color 0.2s ease, transform 0.2s ease; }
+        .profile-avatar:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .avatar-link { text-decoration: none; color: inherit; display: inline-block; }
+        .avatar-hint { margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .profile-name { font-weight: 600; font-size: 1.125rem; color: var(--text-dark); }
         .profile-role { font-size: 0.875rem; color: var(--text-muted); }
         .sidebar-menu { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
@@ -144,7 +147,9 @@
         <div class="nav-right">
             <jsp:include page="notifications.jsp" />
             <i class="fas fa-cog"></i>
-            <div class="avatar-small"></div>
+            <a class="avatar-link" href="patient-dashboard?openProfileModal=1" title="Chỉnh sửa hồ sơ">
+                <div class="avatar-small"></div>
+            </a>
         </div>
     </nav>
 
@@ -152,9 +157,12 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="profile-card">
-                <div class="profile-avatar"></div>
+                <a class="avatar-link" href="patient-dashboard?openProfileModal=1" title="Chỉnh sửa hồ sơ">
+                    <div class="profile-avatar"></div>
+                </a>
                 <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
                 <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : 'Type 2'}</div>
+                <div class="avatar-hint">Nhấn ảnh đại diện để chỉnh sửa hồ sơ</div>
             </div>
 
             <nav class="sidebar-menu">

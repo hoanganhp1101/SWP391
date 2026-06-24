@@ -25,6 +25,7 @@ public class Patient {
     private String email;
     private String soDienThoai;
     private String tenBacSi;
+    private String anhDaiDien;
 
 
     public Patient() {
@@ -188,5 +189,13 @@ public class Patient {
 
     public void setTenBacSi(String tenBacSi) {
         this.tenBacSi = tenBacSi;
+    }
+
+    public String getAnhDaiDien() {
+        return anhDaiDien;
+    }
+
+    public void setAnhDaiDien(String anhDaiDien) {
+        this.anhDaiDien = anhDaiDien;
     }
 }

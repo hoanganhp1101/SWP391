@@ -2,35 +2,71 @@
 -- 1. TẠO TÀI KHOẢN (USER) CHO BỆNH NHÂN
 -- ============================================================
 
-SELECT * FROM v_patient_summary;
+USE diabcare_db;
 
-ALTER TABLE health_records 
-ADD COLUMN lieu_luong_insulin_ui INT DEFAULT NULL COMMENT 'Liều lượng insulin thực tế tiêm (đơn vị UI)' AFTER so_gio_ngu,
-ADD COLUMN loai_insulin_tiem VARCHAR(100) DEFAULT NULL COMMENT 'Tên hoặc loại insulin tiêm thực tế (ví dụ: Lantus)' AFTER lieu_luong_insulin_ui;
-SET @benh_nhan_user_id = UUID();
-
-INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash) 
-VALUES (
-    @benh_nhan_user_id, 
-    'Đỗ Thị L.', 
-    'dothil_quangnam@example.com', 
-    '0981112233', 
-    'benh_nhan', 
-    SHA2('password123', 256)
+-- Cột insulin đã có sẵn trong schema mới (newdb.sql), không ALTER lại ở đây để tránh lỗi cột không tồn tại.
+SET @benh_nhan_email = 'dothil_quangnam@example.com';
+SET @benh_nhan_user_id = (
+    SELECT id
+    FROM users
+    WHERE email COLLATE utf8mb4_unicode_ci = @benh_nhan_email COLLATE utf8mb4_unicode_ci
+    LIMIT 1
 );
+SET @benh_nhan_user_id = IFNULL(@benh_nhan_user_id, UUID());
+
+INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash)
+VALUES (
+    @benh_nhan_user_id,
+    'Đỗ Thị L.',
+    @benh_nhan_email,
+    '0981112233',
+    'benh_nhan',
+    SHA2('password123', 256)
+)
+ON DUPLICATE KEY UPDATE
+    ho_ten = VALUES(ho_ten),
+    so_dien_thoai = VALUES(so_dien_thoai),
+    vai_tro = VALUES(vai_tro),
+    mat_khau_hash = VALUES(mat_khau_hash);
 
 -- ============================================================
 -- 2. TẠO HỒ SƠ BỆNH NHÂN (PATIENT)
 -- (Tự động gán cho Bác sĩ Trần Thị B từ Sample Data cũ)
 -- ============================================================
-SET @patient_id = UUID();
-SET @bac_si_phu_trach_id = (SELECT id FROM users WHERE vai_tro = 'bac_si' LIMIT 1);
+SET @bac_si_phu_trach_id = (
+    SELECT id
+    FROM users
+    WHERE vai_tro COLLATE utf8mb4_unicode_ci = 'bac_si' COLLATE utf8mb4_unicode_ci
+    LIMIT 1
+);
+
+INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash)
+SELECT
+    UUID(),
+    'Bác sĩ mặc định',
+    'bacsi_default@diabcare.vn',
+    '0900000000',
+    'bac_si',
+    SHA2('doctor123', 256)
+WHERE @bac_si_phu_trach_id IS NULL;
+
+SET @bac_si_phu_trach_id = IFNULL(
+    @bac_si_phu_trach_id,
+    (SELECT id FROM users WHERE email = 'bacsi_default@diabcare.vn' LIMIT 1)
+);
+
+SET @patient_id = (
+    SELECT id
+    FROM patients
+    WHERE user_id = @benh_nhan_user_id
+    LIMIT 1
+);
 
 INSERT INTO patients (
     id, user_id, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, 
     dia_chi, tien_su_benh, di_ung, ngay_chan_doan_tieu_duong, loai_tieu_duong
-) VALUES (
-    @patient_id, 
+) SELECT
+    UUID(), 
     @benh_nhan_user_id, 
     @bac_si_phu_trach_id, 
     '1960-01-01', 
@@ -41,19 +77,23 @@ INSERT INTO patients (
     'Chưa ghi nhận tiền căn dị ứng thuốc, thức ăn', 
     '2018-06-01', 
     'Type 2'
+WHERE @patient_id IS NULL;
+
+SET @patient_id = IFNULL(
+    @patient_id,
+    (SELECT id FROM patients WHERE user_id = @benh_nhan_user_id LIMIT 1)
 );
 
 -- ============================================================
 -- 3. CẬP NHẬT CHỈ SỐ SỨC KHỎE (HEALTH RECORD) LÚC NHẬP VIỆN
 -- ============================================================
 INSERT INTO health_records (
-    id, patient_id, nhap_boi, duong_huyet_mgdl, thoi_diem_do_duong, 
+    id, patient_id, duong_huyet_mgdl, thoi_diem_do_duong, 
     huyet_ap_tam_thu, huyet_ap_tam_truong, nhip_tim, can_nang_kg, bmi, 
     hba1c_percent, cholesterol_mmol, triglyceride_mmol, ghi_chu, thoi_gian_do
 ) VALUES (
     UUID(), 
     @patient_id, 
-    @bac_si_phu_trach_id, 
     313.2, 
     'luc_doi', 
     120, 

@@ -117,8 +117,8 @@
                     height: 32px;
                     border-radius: 50%;
                     background-color: #cbd5e1;
-                    background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff');
                     background-size: cover;
+                    background-position: center;
                 }
 
                 /* Main Layout */
@@ -158,8 +158,67 @@
                     border-radius: 50%;
                     margin-bottom: 1rem;
                     background-color: #cbd5e1;
-                    background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff');
                     background-size: cover;
+                    background-position: center;
+                }
+
+                .profile-avatar.editable,
+                .avatar-small.editable {
+                    cursor: pointer;
+                    position: relative;
+                    border: 2px solid transparent;
+                    transition: transform 0.2s ease, border-color 0.2s ease;
+                }
+
+                .profile-avatar.editable:hover,
+                .avatar-small.editable:hover {
+                    transform: translateY(-1px);
+                    border-color: var(--primary);
+                }
+
+                .profile-avatar.editable::after {
+                    content: '\f044';
+                    font-family: 'Font Awesome 6 Free';
+                    font-weight: 900;
+                    position: absolute;
+                    right: -4px;
+                    bottom: -4px;
+                    width: 26px;
+                    height: 26px;
+                    border-radius: 50%;
+                    background: var(--primary);
+                    color: #fff;
+                    border: 2px solid #fff;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.75rem;
+                }
+
+                .profile-help-text {
+                    margin-top: 0.35rem;
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                }
+
+                .profile-message {
+                    margin-bottom: 1rem;
+                    padding: 0.75rem 1rem;
+                    border-radius: 8px;
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                }
+
+                .profile-message.success {
+                    background: var(--success-light);
+                    color: #047857;
+                    border: 1px solid #86efac;
+                }
+
+                .profile-message.error {
+                    background: var(--danger-light);
+                    color: #b91c1c;
+                    border: 1px solid #fca5a5;
                 }
 
                 .profile-name {
@@ -1123,7 +1182,7 @@
                 <div class="nav-right">
                     <jsp:include page="notifications.jsp" />
                     <i class="fas fa-cog"></i>
-                    <div class="avatar-small"></div>
+                    <div class="avatar-small editable" title="Chỉnh sửa hồ sơ" data-open-profile-modal></div>
                 </div>
             </nav>
 
@@ -1131,10 +1190,11 @@
                 <!-- Sidebar -->
                 <aside class="sidebar">
                     <div class="profile-card">
-                        <div class="profile-avatar"></div>
+                        <div class="profile-avatar editable" title="Nhấn để cập nhật hồ sơ" data-open-profile-modal></div>
                         <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
                         <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ?
                             patientInfo.loaiTieuDuong : 'Type 2'}</div>
+                        <div class="profile-help-text">Nhấn vào ảnh đại diện để chỉnh sửa hồ sơ</div>
                     </div>
 
                     <nav class="sidebar-menu">
@@ -1158,6 +1218,16 @@
                 <!-- Main Content -->
                 <main class="content">
                     <h1 class="page-title">Tổng quan sức khỏe</h1>
+                    <c:if test="${param.profileUpdated == '1'}">
+                        <div class="profile-message success">
+                            <i class="fas fa-check-circle"></i> Hồ sơ bệnh nhân đã được cập nhật thành công.
+                        </div>
+                    </c:if>
+                    <c:if test="${param.profileUpdated == '0'}">
+                        <div class="profile-message error">
+                            <i class="fas fa-exclamation-circle"></i> ${not empty param.error ? param.error : 'Cập nhật hồ sơ thất bại.'}
+                        </div>
+                    </c:if>
 
                     <!-- Top Cards -->
                     <div class="row-top">
@@ -1440,6 +1510,86 @@
                 </main>
             </div>
 
+            <!-- Modal chỉnh sửa hồ sơ -->
+            <div class="modal-overlay" id="profileModal">
+                <div class="modal" style="max-width: 720px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Cập nhật hồ sơ bệnh nhân</h3>
+                        <button class="close-btn" id="closeProfileModalBtn"><i class="fas fa-times"></i></button>
+                    </div>
+                    <form action="patient-dashboard" method="POST" id="profileForm">
+                        <input type="hidden" name="action" value="updateProfile">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Họ và tên</label>
+                                <input type="text" class="form-control" name="hoTen" required
+                                    value="${patientInfo.hoTen != null ? patientInfo.hoTen : ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" class="form-control" name="email" required
+                                    value="${patientInfo.email != null ? patientInfo.email : ''}">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Số điện thoại</label>
+                                <input type="text" class="form-control" name="soDienThoai" required
+                                    value="${patientInfo.soDienThoai != null ? patientInfo.soDienThoai : ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Ngày sinh</label>
+                                <input type="date" class="form-control" name="ngaySinh" required
+                                    value="${patientInfo.ngaySinh != null ? patientInfo.ngaySinh : ''}">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Giới tính</label>
+                                <select class="form-control" name="gioiTinh">
+                                    <option value="">-- Chọn giới tính --</option>
+                                    <option value="nam" ${patientInfo.gioiTinh == 'nam' ? 'selected' : ''}>Nam</option>
+                                    <option value="nu" ${patientInfo.gioiTinh == 'nu' ? 'selected' : ''}>Nữ</option>
+                                    <option value="khac" ${patientInfo.gioiTinh == 'khac' ? 'selected' : ''}>Khác</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Loại tiểu đường</label>
+                                <input type="text" class="form-control" name="loaiTieuDuong"
+                                    value="${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : ''}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Ảnh đại diện (URL)</label>
+                            <input type="url" class="form-control" name="anhDaiDien"
+                                placeholder="https://... (để trống sẽ dùng avatar mặc định)"
+                                value="${patientInfo.anhDaiDien != null ? patientInfo.anhDaiDien : ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Địa chỉ</label>
+                            <textarea class="form-control" name="diaChi"
+                                rows="2">${patientInfo.diaChi != null ? patientInfo.diaChi : ''}</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tiền sử bệnh</label>
+                                <textarea class="form-control" name="tienSuBenh"
+                                    rows="2">${patientInfo.tienSuBenh != null ? patientInfo.tienSuBenh : ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Dị ứng</label>
+                                <textarea class="form-control" name="diUng"
+                                    rows="2">${patientInfo.diUng != null ? patientInfo.diUng : ''}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-cancel" id="cancelProfileModalBtn">Hủy</button>
+                            <button type="submit" class="btn btn-save">Lưu hồ sơ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Modal Thêm bản ghi mới -->
             <div class="modal-overlay" id="recordModal">
                 <div class="modal">
@@ -1510,6 +1660,22 @@
             <jsp:include page="chatbot.jsp" />
 
             <script>
+                const fallbackAvatarUrl = 'https://ui-avatars.com/api/?name=${patientInfo.hoTen != null ? patientInfo.hoTen : "Benh+Nhan"}&background=0D8ABC&color=fff';
+                const savedAvatarUrl = '${patientInfo.anhDaiDien != null ? patientInfo.anhDaiDien : ""}';
+
+                function applyAvatar(el) {
+                    if (!el) return;
+                    const finalUrl = savedAvatarUrl && savedAvatarUrl.trim() !== '' ? savedAvatarUrl : fallbackAvatarUrl;
+                    el.style.backgroundImage = "url('" + finalUrl + "')";
+                    const imageChecker = new Image();
+                    imageChecker.onerror = function () {
+                        el.style.backgroundImage = "url('" + fallbackAvatarUrl + "')";
+                    };
+                    imageChecker.src = finalUrl;
+                }
+
+                document.querySelectorAll('.avatar-small, .profile-avatar').forEach(applyAvatar);
+
                 // Chart.js configuration for Health Trends
                 const ctx = document.getElementById('trendsChart').getContext('2d');
 
@@ -1714,16 +1880,41 @@
 
                 // Existing chatbot logic
                 const chatbotFab = document.getElementById('chatbotFab');
+                const profileModal = document.getElementById('profileModal');
+                const openProfileButtons = document.querySelectorAll('[data-open-profile-modal]');
+                const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
+                const cancelProfileModalBtn = document.getElementById('cancelProfileModalBtn');
+                const recordModal = document.getElementById('recordModal');
                 const btnNewRecord = document.querySelector('.btn-new');
                 const closeModalBtn = document.getElementById('closeModalBtn');
                 const cancelModalBtn = document.getElementById('cancelModalBtn');
 
+                function openProfileModal() {
+                    if (profileModal) profileModal.classList.add('active');
+                }
+
+                function closeProfileModal() {
+                    if (profileModal) profileModal.classList.remove('active');
+                }
+
+                openProfileButtons.forEach(btn => btn.addEventListener('click', openProfileModal));
+                if (closeProfileModalBtn) closeProfileModalBtn.addEventListener('click', closeProfileModal);
+                if (cancelProfileModalBtn) cancelProfileModalBtn.addEventListener('click', closeProfileModal);
+                if (profileModal) {
+                    profileModal.addEventListener('click', (e) => {
+                        if (e.target === profileModal) closeProfileModal();
+                    });
+                }
+                <c:if test="${param.openProfileModal == '1'}">
+                openProfileModal();
+                </c:if>
+
                 function openModal() {
-                    recordModal.classList.add('active');
+                    if (recordModal) recordModal.classList.add('active');
                 }
 
                 function closeModal() {
-                    recordModal.classList.remove('active');
+                    if (recordModal) recordModal.classList.remove('active');
                     const formErrorMsg = document.getElementById('formErrorMsg');
                     if (formErrorMsg) formErrorMsg.style.display = 'none';
                 }
@@ -1733,11 +1924,13 @@
                 if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
 
                 // Đóng modal khi bấm ra ngoài
-                recordModal.addEventListener('click', (e) => {
-                    if (e.target === recordModal) {
-                        closeModal();
-                    }
-                });
+                if (recordModal) {
+                    recordModal.addEventListener('click', (e) => {
+                        if (e.target === recordModal) {
+                            closeModal();
+                        }
+                    });
+                }
 
                 // Form validation
                 const newRecordForm = document.getElementById('newRecordForm');

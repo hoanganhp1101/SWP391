@@ -9,7 +9,7 @@ public class DBContext {
     private static final String PORT = "3306";
     private static final String DB_NAME = "diabcare_db";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "123456";
+    private static final String PASSWORD = "Tu262004@";
 
     public static Connection getConnection() {
         try {
@@ -20,16 +20,16 @@ public class DBContext {
             return DriverManager.getConnection(url, USERNAME, PASSWORD);
 
         } catch (Exception e) {
-            System.err.println("Lỗi kết nối CSDL: " + e.getMessage());
+            System.err.println("Lá»—i káº¿t ná»‘i CSDL: " + e.getMessage());
             return null;
         }
     }
 
     public static void main(String[] args) {
         if (DBContext.getConnection() != null) {
-            System.out.println("Kết nối Database thành công rực rỡ!");
+            System.out.println("Káº¿t ná»‘i Database thÃ nh cÃ´ng rá»±c rá»¡!");
         } else {
-            System.out.println("Kết nối thất bại!");
+            System.out.println("Káº¿t ná»‘i tháº¥t báº¡i!");
         }
     }
 }

@@ -146,7 +146,8 @@ public class PatientDAO {
     }
 
     public Patient getPatientById(String patientId) {
-        String sql = "SELECT p.*, u.ho_ten FROM patients p JOIN users u ON p.user_id = u.id WHERE p.id = ?";
+        String sql = "SELECT p.*, u.ho_ten, u.email, u.so_dien_thoai, u.anh_dai_dien " +
+                "FROM patients p JOIN users u ON p.user_id = u.id WHERE p.id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, patientId);
@@ -168,12 +169,42 @@ public class PatientDAO {
                 p.setNhomMau(rs.getString("nhom_mau"));
                 p.setNgayChanDoanTieuDuong(rs.getDate("ngay_chan_doan_tieu_duong"));
                 p.setHoTen(rs.getString("ho_ten"));
+                p.setEmail(rs.getString("email"));
+                p.setSoDienThoai(rs.getString("so_dien_thoai"));
+                p.setAnhDaiDien(rs.getString("anh_dai_dien"));
                 return p;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean updatePatientProfile(Patient p) {
+        String sql = "UPDATE patients pa " +
+                "JOIN users u ON pa.user_id = u.id " +
+                "SET u.ho_ten = ?, u.email = ?, u.so_dien_thoai = ?, u.anh_dai_dien = ?, " +
+                "pa.ngay_sinh = ?, pa.gioi_tinh = ?, pa.dia_chi = ?, pa.loai_tieu_duong = ?, " +
+                "pa.tien_su_benh = ?, pa.di_ung = ? " +
+                "WHERE pa.id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, p.getHoTen());
+            ps.setString(2, p.getEmail());
+            ps.setString(3, p.getSoDienThoai());
+            ps.setString(4, p.getAnhDaiDien());
+            ps.setDate(5, p.getNgaySinh());
+            ps.setString(6, p.getGioiTinh());
+            ps.setString(7, p.getDiaChi());
+            ps.setString(8, p.getLoaiTieuDuong());
+            ps.setString(9, p.getTienSuBenh());
+            ps.setString(10, p.getDiUng());
+            ps.setString(11, p.getId());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public String getDemoPatientId() {
