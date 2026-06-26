@@ -1,6 +1,5 @@
 package com.example.diabetesmanage.dao;
 
-import com.example.diabetesmanage.config.AppConstants;
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
@@ -8,32 +7,100 @@ import com.example.diabetesmanage.model.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class PatientDAO {
 
-    private static final String BASE_SUMMARY_SQL =
-            "SELECT vps.*, p.patient_code " +
-                    "FROM v_patient_summary vps " +
-                    "JOIN patients p ON vps.patient_id = p.id " +
-                    "JOIN users d ON p.bac_si_id = d.id " +
-                    "WHERE d.email = ? ";
-
-    public List<Patient> getPatients() {
-        return queryPatients(BASE_SUMMARY_SQL, AppConstants.DOCTOR_EMAIL, null);
+    public static String resolveCode(ResultSet rs, String codeColumn) throws SQLException {
+        String code = rs.getString(codeColumn);
+        if (code != null && !code.isBlank()) {
+            return code;
+        }
+        String id = rs.getString("id");
+        return id != null && id.length() >= 8 ? id.substring(0, 8).toUpperCase() : "N/A";
     }
 
-    public List<Patient> searchPatients(String keyword, String risk) {
-        StringBuilder sql = new StringBuilder(BASE_SUMMARY_SQL);
+    private static final String SUMMARY_SELECT =
+            "SELECT vps.*, p.patient_code " +
+                    "FROM v_patient_summary vps " +
+                    "JOIN patients p ON vps.patient_id = p.id ";
+
+    public List<Patient> getPatients(String scopeDoctorId) {
+        return searchPatients(null, null, scopeDoctorId);
+    }
+
+    public List<Patient> searchPatients(String keyword, String risk, String scopeDoctorId) {
+        StringBuilder sql = new StringBuilder(SUMMARY_SELECT);
+        sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE p.bac_si_id = ? ");
 
         if (keyword != null && !keyword.isBlank()) {
-            sql.append(
-                    "AND (vps.ho_ten LIKE ? OR vps.email LIKE ? OR p.patient_code LIKE ?) "
-            );
+            sql.append("AND (vps.ho_ten LIKE ? OR vps.email LIKE ? OR p.patient_code LIKE ?) ");
         }
 
         appendRiskFilter(sql, risk);
+        return queryPatients(sql.toString(), scopeDoctorId, keyword);
+    }
 
-        return queryPatients(sql.toString(), AppConstants.DOCTOR_EMAIL, keyword);
+    public boolean exists(String patientId) {
+        String sql = "SELECT 1 FROM patients WHERE id = ? LIMIT 1";
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+            ps.setString(1, patientId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean isAssignedToDoctor(String patientId, String doctorId) {
+        String sql = "SELECT 1 FROM patients WHERE id = ? AND bac_si_id = ? LIMIT 1";
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+            ps.setString(1, patientId);
+            ps.setString(2, doctorId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public Patient getPatientById(String patientId, String scopeDoctorId) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.*, " +
+                        "TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS tuoi, " +
+                        "u.id AS user_id, u.ho_ten, u.email, u.so_dien_thoai " +
+                        "FROM patients p " +
+                        "JOIN users u ON p.user_id = u.id " +
+                        "WHERE p.id = ? "
+        );
+        if (scopeDoctorId != null) {
+            sql.append("AND p.bac_si_id = ? ");
+        }
+
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())
+        ) {
+            ps.setString(1, patientId);
+            if (scopeDoctorId != null) {
+                ps.setString(2, scopeDoctorId);
+            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapDetailPatient(rs);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private void appendRiskFilter(StringBuilder sql, String risk) {
@@ -50,7 +117,7 @@ public class PatientDAO {
         }
     }
 
-    private List<Patient> queryPatients(String sql, String doctorEmail, String keyword) {
+    private List<Patient> queryPatients(String sql, String scopeDoctorId, String keyword) {
         List<Patient> list = new ArrayList<>();
 
         try (
@@ -58,7 +125,9 @@ public class PatientDAO {
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
             int index = 1;
-            ps.setString(index++, doctorEmail);
+            if (scopeDoctorId != null) {
+                ps.setString(index++, scopeDoctorId);
+            }
 
             if (keyword != null && !keyword.isBlank()) {
                 String search = "%" + keyword + "%";
@@ -81,7 +150,7 @@ public class PatientDAO {
     private Patient mapSummaryPatient(ResultSet rs) throws SQLException {
         Patient p = new Patient();
         p.setId(rs.getString("patient_id"));
-        p.setPatientCode(RecordCodeHelper.resolve(rs, "patient_code"));
+        p.setPatientCode(resolveCode(rs, "patient_code"));
         p.setTuoi(rs.getInt("tuoi"));
         p.setGioiTinh(rs.getString("gioi_tinh"));
         p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
@@ -103,95 +172,38 @@ public class PatientDAO {
         return p;
     }
 
-    public List<Patient> getPatientsByDoctor(String doctorId) {
-        List<Patient> list = new ArrayList<>();
+    private Patient mapDetailPatient(ResultSet rs) throws SQLException {
+        Patient p = new Patient();
+        p.setId(rs.getString("id"));
+        p.setPatientCode(resolveCode(rs, "patient_code"));
 
-        String sql =
-                "SELECT p.*, u.ho_ten, u.email " +
-                        "FROM patients p " +
-                        "JOIN users u ON p.user_id = u.id " +
-                        "WHERE p.bac_si_id = ?";
+        User user = new User();
+        user.setId(UUID.fromString(rs.getString("user_id")));
+        user.setHoTen(rs.getString("ho_ten"));
+        user.setEmail(rs.getString("email"));
+        user.setSoDienThoai(rs.getString("so_dien_thoai"));
+        p.setUser(user);
 
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, doctorId);
-            ResultSet rs = ps.executeQuery();
+        p.setTuoi(rs.getInt("tuoi"));
+        if (rs.getDate("ngay_sinh") != null) {
+            p.setNgaySinh(rs.getDate("ngay_sinh").toLocalDate());
+        }
+        p.setGioiTinh(rs.getString("gioi_tinh"));
+        p.setChieuCaoCm(optDouble(rs, "chieu_cao_cm"));
+        p.setDiaChi(rs.getString("dia_chi"));
+        p.setBaoHiemYTe(rs.getString("bao_hiem_y_te"));
+        p.setTienSuBenh(rs.getString("tien_su_benh"));
+        p.setDiUng(rs.getString("di_ung"));
+        p.setNhomMau(rs.getString("nhom_mau"));
+        p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
 
-            while (rs.next()) {
-                Patient p = new Patient();
-                p.setId(rs.getString("id"));
-                p.setPatientCode(RecordCodeHelper.resolve(rs, "patient_code"));
-
-                User user = new User();
-                user.setHoTen(rs.getString("ho_ten"));
-                user.setEmail(rs.getString("email"));
-                p.setUser(user);
-                p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
-                p.setGioiTinh(rs.getString("gioi_tinh"));
-                list.add(p);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        Date diagnosisDate = rs.getDate("ngay_chan_doan_tieu_duong");
+        if (diagnosisDate != null) {
+            p.setNgayChanDoanTieuDuong(diagnosisDate.toLocalDate());
         }
 
-        return list;
-    }
-
-    public Patient getPatientByIdAndDoctor(String patientId) {
-        String sql =
-                "SELECT p.*, " +
-                        "TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS tuoi, " +
-                        "u.id AS user_id, u.ho_ten, u.email, u.so_dien_thoai " +
-                        "FROM patients p " +
-                        "JOIN users u ON p.user_id = u.id " +
-                        "WHERE p.id = ?";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, patientId);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                Patient p = new Patient();
-                p.setId(rs.getString("id"));
-                p.setPatientCode(RecordCodeHelper.resolve(rs, "patient_code"));
-
-                User user = new User();
-                user.setId(rs.getString("user_id"));
-                user.setHoTen(rs.getString("ho_ten"));
-                user.setEmail(rs.getString("email"));
-                user.setSoDienThoai(rs.getString("so_dien_thoai"));
-                p.setUser(user);
-
-                p.setTuoi(rs.getInt("tuoi"));
-                if (rs.getDate("ngay_sinh") != null) {
-                    p.setNgaySinh(rs.getDate("ngay_sinh").toLocalDate());
-                }
-                p.setGioiTinh(rs.getString("gioi_tinh"));
-                p.setDiaChi(rs.getString("dia_chi"));
-                p.setBaoHiemYTe(rs.getString("bao_hiem_y_te"));
-                p.setTienSuBenh(rs.getString("tien_su_benh"));
-                p.setDiUng(rs.getString("di_ung"));
-                p.setNhomMau(rs.getString("nhom_mau"));
-                p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
-
-                Date diagnosisDate = rs.getDate("ngay_chan_doan_tieu_duong");
-                if (diagnosisDate != null) {
-                    p.setNgayChanDoanTieuDuong(diagnosisDate.toLocalDate());
-                }
-
-                p.setNgayCapNhat(rs.getTimestamp("ngay_cap_nhat"));
-                return p;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
+        p.setNgayCapNhat(rs.getTimestamp("ngay_cap_nhat"));
+        return p;
     }
 
     private Double optDouble(ResultSet rs, String col) throws SQLException {
@@ -200,6 +212,19 @@ public class PatientDAO {
             return rs.wasNull() ? null : v;
         } catch (SQLException e) {
             return null;
+        }
+    }
+
+    public void updateLoaiTieuDuong(Connection con, String patientId, String loaiTieuDuong)
+            throws SQLException {
+        if (patientId == null || loaiTieuDuong == null || loaiTieuDuong.isBlank()) {
+            return;
+        }
+        String sql = "UPDATE patients SET loai_tieu_duong = ? WHERE id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, loaiTieuDuong);
+            ps.setString(2, patientId);
+            ps.executeUpdate();
         }
     }
 }

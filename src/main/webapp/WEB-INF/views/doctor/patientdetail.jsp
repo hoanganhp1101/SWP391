@@ -343,6 +343,33 @@
             background:#0f4cc7;
         }
 
+        .encounter-card{
+            background:white;
+            border-radius:20px;
+            border:1px solid #e5e7eb;
+            overflow:hidden;
+            margin-top:24px;
+        }
+
+        .encounter-table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        .encounter-table th,
+        .encounter-table td{
+            padding:14px 24px;
+            text-align:left;
+            border-bottom:1px solid #e5e7eb;
+            font-size:14px;
+        }
+
+        .encounter-table th{
+            background:#f9fafb;
+            font-weight:600;
+            color:#374151;
+        }
+
         @media(max-width:768px){
 
             .form-container{
@@ -464,6 +491,11 @@
 
         <div class="page-content">
 
+            <div class="page-header">
+                <h1>Chi tiết bệnh nhân</h1>
+                <p>${patient.user.hoTen} · ${patient.patientCode}</p>
+            </div>
+
             <div class="patient-card">
 
                 <div class="card-header">
@@ -549,6 +581,48 @@
 
                 </form>
 
+            </div>
+
+            <div class="encounter-card">
+                <div class="card-header">
+                    <h2>Lịch sử khám bệnh</h2>
+                </div>
+                <c:choose>
+                    <c:when test="${empty encounters}">
+                        <div style="padding:32px;color:#6b7280;text-align:center;">
+                            Chưa có hồ sơ khám nào.
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <table class="encounter-table">
+                            <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Ngày khám</th>
+                                <th>Lý do khám</th>
+                                <th>Chẩn đoán chính</th>
+                                <th>Chẩn đoán phụ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <c:forEach var="enc" items="${encounters}">
+                                <tr>
+                                    <td>${enc.displayCode}</td>
+                                    <td>
+                                        <c:if test="${enc.ngayKham != null}">
+                                            ${enc.ngayKham.dayOfMonth}/${enc.ngayKham.monthValue}/${enc.ngayKham.year}
+                                            ${enc.ngayKham.hour}:${enc.ngayKham.minute}
+                                        </c:if>
+                                    </td>
+                                    <td>${enc.lyDoKham}</td>
+                                    <td>${enc.chanDoanChinh}</td>
+                                    <td>${enc.chanDoanPhu != null ? enc.chanDoanPhu : '—'}</td>
+                                </tr>
+                            </c:forEach>
+                            </tbody>
+                        </table>
+                    </c:otherwise>
+                </c:choose>
             </div>
 
         </div>

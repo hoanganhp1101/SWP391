@@ -2,58 +2,62 @@ package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.model.HealthRecord;
-import com.example.diabetesmanage.model.Patient;
+import com.example.diabetesmanage.model.User;
+import com.example.diabetesmanage.util.AuthContext;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet("/doctor/patient-records")
 public class PatientRecordController extends HttpServlet {
 
-    private final HealthRecordDAO healthRecordDAO =
-            new HealthRecordDAO();
+    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
 
     @Override
-    protected void doGet(HttpServletRequest request,
-                         HttpServletResponse response)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<HealthRecord> records;
+        User user = AuthContext.requirePatientDataAccess(request, response);
+        if (user == null) {
+            return;
+        }
 
+        String scopeDoctorId = AuthContext.scopeDoctorId(user);
         String startDate = request.getParameter("startDate");
         String endDate = request.getParameter("endDate");
         String keyword = request.getParameter("keyword");
+        String patientId = request.getParameter("patientId");
 
-        boolean hasDate =
-                startDate != null && !startDate.isBlank()
-                        && endDate != null && !endDate.isBlank();
+        boolean hasDate = startDate != null && !startDate.isBlank()
+                && endDate != null && !endDate.isBlank();
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
 
-        boolean hasKeyword =
-                keyword != null && !keyword.isBlank();
-
+        List<HealthRecord> records;
         if (hasDate || hasKeyword) {
-
             records = healthRecordDAO.searchHealthRecordRecords(
-                    startDate,
-                    endDate,
-                    keyword
-            );
-
+                    startDate, endDate, keyword, scopeDoctorId);
         } else {
-
-            records = healthRecordDAO.getHealthRecord();
+            records = healthRecordDAO.getHealthRecords(scopeDoctorId);
         }
 
-        request.setAttribute(
-                "records",
-                records
-        );
+        if (patientId != null && !patientId.isBlank()) {
+            List<HealthRecord> filtered = new ArrayList<>();
+            for (HealthRecord record : records) {
+                if (record.getPatient() != null && patientId.equals(record.getPatient().getId())) {
+                    filtered.add(record);
+                }
+            }
+            records = filtered;
+        }
 
-        request.getRequestDispatcher(
-                "/WEB-INF/views/doctor/medicalrecordmanagement.jsp"
-        ).forward(request, response);
+        request.setAttribute("records", records);
+        request.setAttribute("patientId", patientId);
+        request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecordmanagement.jsp")
+                .forward(request, response);
     }
 }

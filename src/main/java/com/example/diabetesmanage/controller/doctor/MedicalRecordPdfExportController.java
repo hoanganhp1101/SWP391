@@ -1,9 +1,12 @@
 package com.example.diabetesmanage.controller.doctor;
 
+import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.dao.PatientDAO;
+import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.model.medical.MedicalRecordDetailView;
-import com.example.diabetesmanage.model.medical.PdfExportType;
-import com.example.diabetesmanage.service.medical.MedicalRecordLoadService;
-import com.example.diabetesmanage.service.medical.MedicalRecordPdfExportService;
+import com.example.diabetesmanage.service.medical.MedicalRecordViewService;
+import com.example.diabetesmanage.service.medical.MedicalRecordViewService.PdfExportType;
+import com.example.diabetesmanage.util.AuthContext;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,12 +20,18 @@ import java.io.OutputStream;
 @WebServlet("/doctor/record-export-pdf")
 public class MedicalRecordPdfExportController extends HttpServlet {
 
-    private final MedicalRecordLoadService loadService = new MedicalRecordLoadService();
-    private final MedicalRecordPdfExportService pdfService = new MedicalRecordPdfExportService();
+    private final MedicalRecordViewService viewService = new MedicalRecordViewService();
+    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final PatientDAO patientDAO = new PatientDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        User user = AuthContext.requirePatientDataAccess(request, response);
+        if (user == null) {
+            return;
+        }
 
         String recordId = request.getParameter("id");
         PdfExportType exportType = PdfExportType.fromParam(request.getParameter("type"));
@@ -32,15 +41,19 @@ public class MedicalRecordPdfExportController extends HttpServlet {
             return;
         }
 
-        MedicalRecordDetailView view = loadService.loadDetailViewByRecordId(recordId);
+        if (!AuthContext.ensureRecordAccess(user, patientDAO, healthRecordDAO, recordId, response)) {
+            return;
+        }
+
+        String scopeDoctorId = AuthContext.scopeDoctorId(user);
+        MedicalRecordDetailView view = viewService.loadDetailViewByRecordId(recordId, scopeDoctorId);
         if (view == null || view.getRecordId() == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Record not found");
             return;
         }
 
         try {
-            byte[] pdfBytes = pdfService.generateMedicalRecordPdf(view, exportType);
-
+            byte[] pdfBytes = viewService.generateMedicalRecordPdf(view, exportType);
             String fileName = "ho-so-" + safeFileName(view.getRecordCode()) + "-" + exportType.getParam() + ".pdf";
 
             response.setContentType("application/pdf");

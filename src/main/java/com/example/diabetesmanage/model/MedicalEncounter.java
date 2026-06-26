@@ -11,6 +11,7 @@ public class MedicalEncounter {
     private LocalDateTime ngayKham;
     private String lyDoKham;
     private String quaTrinhBenhLy;
+    private String khamLamSang;
     private String chanDoanChinh;
     private String chanDoanPhu;
     private String huongXuTri;
@@ -69,6 +70,14 @@ public class MedicalEncounter {
 
     public void setQuaTrinhBenhLy(String quaTrinhBenhLy) {
         this.quaTrinhBenhLy = quaTrinhBenhLy;
+    }
+
+    public String getKhamLamSang() {
+        return khamLamSang;
+    }
+
+    public void setKhamLamSang(String khamLamSang) {
+        this.khamLamSang = khamLamSang;
     }
 
     public String getChanDoanChinh() {

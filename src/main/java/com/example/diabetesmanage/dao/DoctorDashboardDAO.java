@@ -1,10 +1,7 @@
 package com.example.diabetesmanage.dao;
 
-import com.example.diabetesmanage.config.AppConstants;
 import com.example.diabetesmanage.context.DBContext;
-import com.example.diabetesmanage.model.DoctorDashboardStats;
 import com.example.diabetesmanage.model.UrgentPatientAlert;
-import com.example.diabetesmanage.model.User;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,44 +14,9 @@ import java.util.List;
 
 public class DoctorDashboardDAO {
 
-    public static final String DOCTOR_EMAIL = AppConstants.DOCTOR_EMAIL;
+    public DashboardStats getDashboardStats(String doctorId) {
 
-    public User getDoctorByEmail(String email) {
-
-        String sql =
-                "SELECT id, ho_ten, email, anh_dai_dien, vai_tro " +
-                        "FROM users " +
-                        "WHERE email = ?";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-
-            ps.setString(1, email);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-
-                User doctor = new User();
-                doctor.setId(rs.getString("id"));
-                doctor.setHoTen(rs.getString("ho_ten"));
-                doctor.setEmail(rs.getString("email"));
-                doctor.setAnhDaiDien(rs.getString("anh_dai_dien"));
-                doctor.setVaiTro(rs.getString("vai_tro"));
-                return doctor;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    public DoctorDashboardStats getDashboardStats(String doctorEmail) {
-
-        DoctorDashboardStats stats = new DoctorDashboardStats();
+        DashboardStats stats = new DashboardStats();
 
         String riskSql =
                 "SELECT " +
@@ -66,15 +28,13 @@ public class DoctorDashboardDAO {
                         "COALESCE(SUM(vps.canh_bao_chua_doc), 0) AS active_alerts " +
                         "FROM v_patient_summary vps " +
                         "JOIN patients p ON vps.patient_id = p.id " +
-                        "JOIN users d ON p.bac_si_id = d.id " +
-                        "WHERE d.email = ?";
+                        "WHERE p.bac_si_id = ?";
 
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(riskSql)
         ) {
-
-            ps.setString(1, doctorEmail);
+            ps.setString(1, doctorId);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -89,10 +49,10 @@ public class DoctorDashboardDAO {
 
         } catch (Exception e) {
             e.printStackTrace();
-            loadStatsWithoutAlertsColumn(doctorEmail, stats);
+            loadStatsWithoutAlertsColumn(doctorId, stats);
         }
 
-        stats.setTodayHealthRecords(countTodayHealthRecords(doctorEmail));
+        stats.setTodayHealthRecords(countTodayHealthRecords(doctorId));
 
         if (stats.getActiveAlerts() == 0) {
             stats.setActiveAlerts(stats.getRiskHigh() + stats.getRiskCritical());
@@ -101,7 +61,7 @@ public class DoctorDashboardDAO {
         return stats;
     }
 
-    private void loadStatsWithoutAlertsColumn(String doctorEmail, DoctorDashboardStats stats) {
+    private void loadStatsWithoutAlertsColumn(String doctorId, DashboardStats stats) {
 
         String riskSql =
                 "SELECT " +
@@ -112,15 +72,13 @@ public class DoctorDashboardDAO {
                         "SUM(CASE WHEN vps.duong_huyet_gan_nhat >= 250 THEN 1 ELSE 0 END) AS risk_critical " +
                         "FROM v_patient_summary vps " +
                         "JOIN patients p ON vps.patient_id = p.id " +
-                        "JOIN users d ON p.bac_si_id = d.id " +
-                        "WHERE d.email = ?";
+                        "WHERE p.bac_si_id = ?";
 
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(riskSql)
         ) {
-
-            ps.setString(1, doctorEmail);
+            ps.setString(1, doctorId);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -137,22 +95,20 @@ public class DoctorDashboardDAO {
         }
     }
 
-    private int countTodayHealthRecords(String doctorEmail) {
+    private int countTodayHealthRecords(String doctorId) {
 
         String sql =
                 "SELECT COUNT(*) AS total " +
                         "FROM health_records hr " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "JOIN users d ON p.bac_si_id = d.id " +
-                        "WHERE d.email = ? " +
+                        "WHERE p.bac_si_id = ? " +
                         "AND DATE(hr.thoi_gian_do) = CURDATE()";
 
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
-
-            ps.setString(1, doctorEmail);
+            ps.setString(1, doctorId);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -166,7 +122,7 @@ public class DoctorDashboardDAO {
         return 0;
     }
 
-    public List<UrgentPatientAlert> getUrgentPatients(String doctorEmail, int limit) {
+    public List<UrgentPatientAlert> getUrgentPatients(String doctorId, int limit) {
 
         List<UrgentPatientAlert> list = new ArrayList<>();
 
@@ -182,7 +138,6 @@ public class DoctorDashboardDAO {
                         "hr.huyet_ap_tam_truong " +
                         "FROM v_patient_summary vps " +
                         "JOIN patients p ON vps.patient_id = p.id " +
-                        "JOIN users d ON p.bac_si_id = d.id " +
                         "LEFT JOIN health_records hr ON hr.id = ( " +
                         "    SELECT hr2.id " +
                         "    FROM health_records hr2 " +
@@ -190,7 +145,7 @@ public class DoctorDashboardDAO {
                         "    ORDER BY hr2.thoi_gian_do DESC " +
                         "    LIMIT 1 " +
                         ") " +
-                        "WHERE d.email = ? " +
+                        "WHERE p.bac_si_id = ? " +
                         "AND ( " +
                         "    vps.duong_huyet_gan_nhat >= 180 " +
                         "    OR hr.huyet_ap_tam_thu >= 140 " +
@@ -208,17 +163,15 @@ public class DoctorDashboardDAO {
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
-
-            ps.setString(1, doctorEmail);
+            ps.setString(1, doctorId);
             ps.setInt(2, limit);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-
                 UrgentPatientAlert alert = new UrgentPatientAlert();
 
                 alert.setPatientId(rs.getString("patient_id"));
-                alert.setPatientCode(RecordCodeHelper.resolve(rs, "patient_code"));
+                alert.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
                 alert.setPatientName(rs.getString("ho_ten"));
                 alert.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
 
@@ -296,5 +249,81 @@ public class DoctorDashboardDAO {
 
         long days = duration.toDays();
         return "Phát hiện cách đây " + days + " ngày";
+    }
+
+    public static class DashboardStats {
+
+        private int totalPatients;
+        private int activeAlerts;
+        private int todayHealthRecords;
+        private int riskLow;
+        private int riskMedium;
+        private int riskHigh;
+        private int riskCritical;
+        private int priorityLevel1Count;
+
+        public int getTotalPatients() {
+            return totalPatients;
+        }
+
+        public void setTotalPatients(int totalPatients) {
+            this.totalPatients = totalPatients;
+        }
+
+        public int getActiveAlerts() {
+            return activeAlerts;
+        }
+
+        public void setActiveAlerts(int activeAlerts) {
+            this.activeAlerts = activeAlerts;
+        }
+
+        public int getTodayHealthRecords() {
+            return todayHealthRecords;
+        }
+
+        public void setTodayHealthRecords(int todayHealthRecords) {
+            this.todayHealthRecords = todayHealthRecords;
+        }
+
+        public int getRiskLow() {
+            return riskLow;
+        }
+
+        public void setRiskLow(int riskLow) {
+            this.riskLow = riskLow;
+        }
+
+        public int getRiskMedium() {
+            return riskMedium;
+        }
+
+        public void setRiskMedium(int riskMedium) {
+            this.riskMedium = riskMedium;
+        }
+
+        public int getRiskHigh() {
+            return riskHigh;
+        }
+
+        public void setRiskHigh(int riskHigh) {
+            this.riskHigh = riskHigh;
+        }
+
+        public int getRiskCritical() {
+            return riskCritical;
+        }
+
+        public void setRiskCritical(int riskCritical) {
+            this.riskCritical = riskCritical;
+        }
+
+        public int getPriorityLevel1Count() {
+            return priorityLevel1Count;
+        }
+
+        public void setPriorityLevel1Count(int priorityLevel1Count) {
+            this.priorityLevel1Count = priorityLevel1Count;
+        }
     }
 }

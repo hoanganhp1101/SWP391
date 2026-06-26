@@ -1,8 +1,12 @@
 package com.example.diabetesmanage.controller.doctor;
 
+import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.model.medical.MedicalRecordDetailView;
-import com.example.diabetesmanage.service.medical.MedicalRecordLoadService;
+import com.example.diabetesmanage.service.medical.MedicalRecordViewService;
+import com.example.diabetesmanage.util.AuthContext;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,30 +19,40 @@ import java.io.IOException;
 @WebServlet("/doctor/record-detail")
 public class PatientRecordDetailController extends HttpServlet {
 
-    private final MedicalRecordLoadService loadService = new MedicalRecordLoadService();
+    private final MedicalRecordViewService viewService = new MedicalRecordViewService();
+    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final PatientDAO patientDAO = new PatientDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String recordId = request.getParameter("id");
+        User user = AuthContext.requirePatientDataAccess(request, response);
+        if (user == null) {
+            return;
+        }
 
+        String recordId = request.getParameter("id");
         if (recordId == null || recordId.trim().isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
             return;
         }
 
-        HealthRecord record = loadService.getRecordById(recordId);
+        if (!AuthContext.ensureRecordAccess(user, patientDAO, healthRecordDAO, recordId, response)) {
+            return;
+        }
+
+        String scopeDoctorId = AuthContext.scopeDoctorId(user);
+        HealthRecord record = viewService.getRecordById(recordId, scopeDoctorId);
         if (record == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Record not found");
             return;
         }
 
-        MedicalRecordDetailView detailView = loadService.loadDetailViewByRecordId(recordId);
+        MedicalRecordDetailView detailView = viewService.loadDetailViewByRecordId(recordId, scopeDoctorId);
 
         request.setAttribute("record", record);
         request.setAttribute("detailView", detailView);
-
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
                 .forward(request, response);
     }
@@ -47,19 +61,27 @@ public class PatientRecordDetailController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String patientId = request.getParameter("id");
+        User user = AuthContext.requirePatientDataAccess(request, response);
+        if (user == null) {
+            return;
+        }
 
-        HealthRecord record = loadService.getLatestRecordByPatientId(patientId);
+        String patientId = request.getParameter("id");
+        if (!AuthContext.ensurePatientAccess(user, patientDAO, patientId, response)) {
+            return;
+        }
+
+        String scopeDoctorId = AuthContext.scopeDoctorId(user);
+        HealthRecord record = viewService.getLatestRecordByPatientId(patientId, scopeDoctorId);
         if (record == null) {
             response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
             return;
         }
 
-        MedicalRecordDetailView detailView = loadService.loadDetailViewByPatientId(patientId);
+        MedicalRecordDetailView detailView = viewService.loadDetailViewByPatientId(patientId, scopeDoctorId);
 
         request.setAttribute("record", record);
         request.setAttribute("detailView", detailView);
-
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
                 .forward(request, response);
     }

@@ -1,10 +1,14 @@
 package com.example.diabetesmanage.model;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
+import java.util.UUID;
 
+/**
+ *
+ * @author iac26
+ */
 public class User {
-
-    private String id;
+    private UUID id;
     private String hoTen;
     private String email;
     private String soDienThoai;
@@ -12,18 +16,35 @@ public class User {
     private String matKhauHash;
     private String anhDaiDien;
     private boolean kichHoat;
-    private LocalDateTime ngayTao;
-    private LocalDateTime ngayCapNhat;
-    private LocalDateTime lanDangNhapCuoi;
+    private Timestamp ngayTao;
+    private Timestamp ngayCapNhat;
+    private Timestamp lanDangNhapCuoi;
+    public User(){
 
-    public User() {
+    }
+    public User(UUID id, String hoTen, String email, String soDienThoai,
+                String vaiTro, String matKhauHash, String anhDaiDien,
+                boolean kichHoat, Timestamp ngayTao,
+                Timestamp ngayCapNhat, Timestamp lanDangNhapCuoi) {
+
+        this.id = id;
+        this.hoTen = hoTen;
+        this.email = email;
+        this.soDienThoai = soDienThoai;
+        this.vaiTro = vaiTro;
+        this.matKhauHash = matKhauHash;
+        this.anhDaiDien = anhDaiDien;
+        this.kichHoat = kichHoat;
+        this.ngayTao = ngayTao;
+        this.ngayCapNhat = ngayCapNhat;
+        this.lanDangNhapCuoi = lanDangNhapCuoi;
     }
 
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -83,28 +104,28 @@ public class User {
         this.kichHoat = kichHoat;
     }
 
-    public LocalDateTime getNgayTao() {
+    public Timestamp getNgayTao() {
         return ngayTao;
     }
 
-    public void setNgayTao(LocalDateTime ngayTao) {
+    public void setNgayTao(Timestamp ngayTao) {
         this.ngayTao = ngayTao;
     }
 
-    public LocalDateTime getNgayCapNhat() {
+    public Timestamp getNgayCapNhat() {
         return ngayCapNhat;
     }
 
-    public void setNgayCapNhat(LocalDateTime ngayCapNhat) {
+    public void setNgayCapNhat(Timestamp ngayCapNhat) {
         this.ngayCapNhat = ngayCapNhat;
     }
 
-    public LocalDateTime getLanDangNhapCuoi() {
+    public Timestamp getLanDangNhapCuoi() {
         return lanDangNhapCuoi;
     }
 
-    public void setLanDangNhapCuoi(LocalDateTime lanDangNhapCuoi) {
+    public void setLanDangNhapCuoi(Timestamp lanDangNhapCuoi) {
         this.lanDangNhapCuoi = lanDangNhapCuoi;
     }
-// Getter Setter
+
 }

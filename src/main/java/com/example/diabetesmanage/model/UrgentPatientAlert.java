@@ -2,6 +2,7 @@ package com.example.diabetesmanage.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class UrgentPatientAlert {
 
@@ -23,7 +24,7 @@ public class UrgentPatientAlert {
     private boolean critical;
     private boolean needsUrgentReview;
     private List<String> riskReasons = new ArrayList<>();
-    private List<PatientMetricTag> metricTags = new ArrayList<>();
+    private List<Map<String, Object>> metricTags = new ArrayList<>();
     private String aiSummary;
     private int riskScore;
 
@@ -171,11 +172,11 @@ public class UrgentPatientAlert {
         this.riskReasons = riskReasons;
     }
 
-    public List<PatientMetricTag> getMetricTags() {
+    public List<Map<String, Object>> getMetricTags() {
         return metricTags;
     }
 
-    public void setMetricTags(List<PatientMetricTag> metricTags) {
+    public void setMetricTags(List<Map<String, Object>> metricTags) {
         this.metricTags = metricTags;
     }
 

@@ -17,6 +17,8 @@
         .btn-export{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#1d4ed8;font-weight:600;font-size:13px;text-decoration:none;cursor:pointer;}
         .btn-export.primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
         .btn-export:hover{opacity:.92;}
+        .btn-delete{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1px solid #fca5a5;background:#fff;color:#dc2626;font-weight:600;font-size:13px;cursor:pointer;}
+        .success-banner{background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 16px;border-radius:12px;margin-bottom:16px;}
         .patient-header{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;margin-bottom:24px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;}
         .patient-header h1{font-size:28px;margin-bottom:8px;}
         .meta{color:#6b7280;font-size:14px;line-height:1.8;}
@@ -80,8 +82,24 @@
                href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=full">
                 <i class="fa-solid fa-file-pdf"></i> Xuất PDF toàn bộ
             </a>
+            <form method="post" action="${pageContext.request.contextPath}/doctor/record-delete"
+                  onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ bệnh án này?');" style="display:inline;">
+                <input type="hidden" name="id" value="${detailView.recordId}">
+                <button type="submit" class="btn-delete">
+                    <i class="fa-solid fa-trash"></i> Xóa hồ sơ
+                </button>
+            </form>
         </div>
     </div>
+
+    <c:if test="${param.success eq '1'}">
+        <div class="success-banner">
+            <i class="fa-solid fa-circle-check"></i> Tạo hồ sơ bệnh án thành công.
+        </div>
+    </c:if>
+    <c:if test="${param.error eq 'delete'}">
+        <div class="alert-banner">Không thể xóa hồ sơ. Vui lòng thử lại sau.</div>
+    </c:if>
 
     <div class="patient-header">
         <div>
@@ -90,6 +108,7 @@
                 <div><strong>Mã hồ sơ:</strong> ${detailView.recordCode}</div>
                 <div><strong>Mã bệnh nhân:</strong> ${detailView.patientCode}</div>
                 <div><strong>Ngày khám:</strong> ${detailView.examDate}</div>
+                <div><strong>Bác sĩ khám:</strong> ${detailView.doctorName}</div>
                 <div><strong>${detailView.department}</strong></div>
             </div>
         </div>

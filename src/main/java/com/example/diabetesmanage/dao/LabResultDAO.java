@@ -2,6 +2,7 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.LabResult;
+import com.example.diabetesmanage.model.form.AddMedicalEncounterForm;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -59,10 +60,73 @@ public class LabResultDAO {
         return null;
     }
 
+    public void insert(Connection con, AddMedicalEncounterForm form, String patientId, String encounterId)
+            throws SQLException {
+        if (!form.hasLabData()) {
+            return;
+        }
+
+        String id = java.util.UUID.randomUUID().toString();
+        String nuocTieuJson = buildNuocTieuJson(form.getLabNuocTieu());
+
+        String sql =
+                "INSERT INTO lab_results " +
+                        "(id, patient_id, encounter_id, glucose_mau, hba1c, cholesterol_tp, triglyceride, " +
+                        "hdl_c, ldl_c, ast, alt, ure, creatinine, hbsag, anti_hcv, nuoc_tieu, ghi_chu, " +
+                        "wbc, rbc, hgb, hct, plt) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, id);
+            ps.setString(2, patientId);
+            ps.setString(3, encounterId);
+            JdbcUtil.setDouble(ps, 4, form.getLabGlucoseMau());
+            JdbcUtil.setDouble(ps, 5, form.getLabHba1c());
+            JdbcUtil.setDouble(ps, 6, form.getLabCholesterol());
+            JdbcUtil.setDouble(ps, 7, form.getLabTriglyceride());
+            JdbcUtil.setDouble(ps, 8, form.getLabHdl());
+            JdbcUtil.setDouble(ps, 9, form.getLabLdl());
+            JdbcUtil.setDouble(ps, 10, form.getLabAst());
+            JdbcUtil.setDouble(ps, 11, form.getLabAlt());
+            JdbcUtil.setDouble(ps, 12, form.getLabUre());
+            JdbcUtil.setDouble(ps, 13, form.getLabCreatinine());
+            JdbcUtil.setString(ps, 14, emptyToNull(form.getLabHbsag()));
+            JdbcUtil.setString(ps, 15, emptyToNull(form.getLabAntiHcv()));
+            JdbcUtil.setString(ps, 16, nuocTieuJson);
+            JdbcUtil.setString(ps, 17, form.getLabGhiChu());
+            JdbcUtil.setDouble(ps, 18, form.getLabWbc());
+            JdbcUtil.setDouble(ps, 19, form.getLabRbc());
+            JdbcUtil.setDouble(ps, 20, form.getLabHgb());
+            JdbcUtil.setDouble(ps, 21, form.getLabHct());
+            JdbcUtil.setDouble(ps, 22, form.getLabPlt());
+            ps.executeUpdate();
+        }
+    }
+
+    public void deleteByEncounterId(Connection con, String encounterId) throws SQLException {
+        String sql = "DELETE FROM lab_results WHERE encounter_id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, encounterId);
+            ps.executeUpdate();
+        }
+    }
+
+    private String buildNuocTieuJson(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String escaped = text.replace("\\", "\\\\").replace("\"", "\\\"");
+        return "{\"ket_qua\":\"" + escaped + "\"}";
+    }
+
+    private String emptyToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
     private LabResult map(ResultSet rs) throws SQLException {
         LabResult lab = new LabResult();
         lab.setId(rs.getString("id"));
-        lab.setDisplayCode(RecordCodeHelper.resolve(rs, "lab_result_code"));
+        lab.setDisplayCode(PatientDAO.resolveCode(rs, "lab_result_code"));
         lab.setPatientId(rs.getString("patient_id"));
         lab.setEncounterId(rs.getString("encounter_id"));
 

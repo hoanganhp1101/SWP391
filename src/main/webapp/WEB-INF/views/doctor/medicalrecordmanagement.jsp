@@ -567,6 +567,19 @@
 
         <div class="page-content">
 
+            <c:if test="${param.success eq '1'}">
+                <div style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:14px 20px;border-radius:12px;margin-bottom:20px;font-weight:500;">
+                    <i class="fa-solid fa-circle-check"></i>
+                    Tạo hồ sơ bệnh án thành công.
+                </div>
+            </c:if>
+            <c:if test="${param.deleted eq '1'}">
+                <div style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:14px 20px;border-radius:12px;margin-bottom:20px;font-weight:500;">
+                    <i class="fa-solid fa-circle-check"></i>
+                    Đã xóa hồ sơ bệnh án.
+                </div>
+            </c:if>
+
             <div class="page-header">
                 <h1>Quản lý hồ sơ sức khỏe</h1>
                 <p>Danh sách và quản lý hồ sơ theo dõi sức khỏe</p>
@@ -601,10 +614,11 @@
                             Xuất Excel
                         </a>
 
-                        <button class="btn btn-primary">
+                        <a class="btn btn-primary"
+                           href="${pageContext.request.contextPath}/medical-encounters/add">
                             <i class="fa-solid fa-plus"></i>
-                            Thêm hồ sơ
-                        </button>
+                            Thêm hồ sơ bệnh án
+                        </a>
 
                     </div>
 
@@ -732,11 +746,21 @@
                             <td>
 
                                 <a class="table-icon-btn edit-btn"
-                                   href="${pageContext.request.contextPath}/doctor/record-detail?id=<%= record.getId() %>">
-
+                                   href="${pageContext.request.contextPath}/doctor/record-detail?id=<%= record.getId() %>"
+                                   title="Xem chi tiết">
                                     <i class="fa-solid fa-eye"></i>
-
                                 </a>
+
+                                <form method="post"
+                                      action="${pageContext.request.contextPath}/doctor/record-delete"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Xóa hồ sơ <%= record.getHealthRecordId() %>?');">
+                                    <input type="hidden" name="id" value="<%= record.getId() %>">
+                                    <button type="submit" class="table-icon-btn"
+                                            style="background:#fef2f2;color:#dc2626;margin-left:6px;" title="Xóa">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
 
                             </td>
 

@@ -1,11 +1,13 @@
 package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.DoctorDashboardDAO;
-import com.example.diabetesmanage.model.DangerousPatientAnalysisResult;
-import com.example.diabetesmanage.model.DoctorDashboardStats;
+import com.example.diabetesmanage.dao.DoctorDashboardDAO.DashboardStats;
+import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.UrgentPatientAlert;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.DangerousPatientService;
+import com.example.diabetesmanage.service.DangerousPatientService.AnalysisResult;
+import com.example.diabetesmanage.util.AuthContext;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -26,15 +28,18 @@ public class DoctorDashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String doctorEmail = DoctorDashboardDAO.DOCTOR_EMAIL;
+        User doctor = AuthContext.requireDoctor(request, response);
+        if (doctor == null) {
+            return;
+        }
 
-        User doctor = dashboardDAO.getDoctorByEmail(doctorEmail);
-        DoctorDashboardStats stats = dashboardDAO.getDashboardStats(doctorEmail);
-        DangerousPatientAnalysisResult analysisResult =
-                dangerousPatientService.analyzeDangerousPatients(doctorEmail);
+        String doctorId = doctor.getId().toString();
+        DashboardStats stats = dashboardDAO.getDashboardStats(doctorId);
+        AnalysisResult analysisResult =
+                dangerousPatientService.analyzeDangerousPatients(doctorId);
 
         if (stats == null) {
-            stats = new DoctorDashboardStats();
+            stats = new DashboardStats();
         }
 
         List<UrgentPatientAlert> dangerousPatients = analysisResult.getDangerousPatients();

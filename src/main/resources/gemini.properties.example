@@ -1,11 +1,4 @@
-gemini.api.key=YOUR_API_KEY_HERE
+gemini.api.key=AQ.Ab8RN6JdzDyFOx9SRp-9iG8T9IXyjsTQkCCMRRQ439zmJAHvRA
 gemini.model=gemini-3.5-flash
 
-# Hướng dẫn:
-# 1. Copy file này thành gemini.properties (cùng thư mục)
-# 2. Điền API key từ https://aistudio.google.com/apikey
-# 3. Rebuild project (Maven → Reload / Build → Rebuild Project)
-# 4. Restart Tomcat
-#
-# Key mới (AQ.xxx) và key cũ (AIzaSy...) đều dùng được.
-# Có thể dùng biến môi trường GEMINI_API_KEY thay cho file này.
+
