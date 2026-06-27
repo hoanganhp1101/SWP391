@@ -2,6 +2,7 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.model.Medication;
 import com.example.diabetesmanage.model.Prescription;
+import com.example.diabetesmanage.model.PrescriptionDetail;
 import com.example.diabetesmanage.util.DBContext;
 
 import java.sql.Connection;
@@ -9,8 +10,50 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class PrescriptionDAO {
+
+    public boolean createPrescription(Prescription prescription, List<PrescriptionDetail> details) {
+        String insertPrescriptionSQL = "INSERT INTO prescriptions (id, patient_id, doctor_id, ghi_chu) VALUES (?, ?, ?, ?)";
+        String insertDetailSQL = "INSERT INTO prescription_details (id, prescription_id, medication_id, lieu_luong, tan_suat) VALUES (?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false); // Bắt đầu Transaction
+
+            try (PreparedStatement psPrescription = conn.prepareStatement(insertPrescriptionSQL);
+                 PreparedStatement psDetail = conn.prepareStatement(insertDetailSQL)) {
+
+                // 1. Lưu thông tin chung của đơn thuốc
+                String prescriptionId = UUID.randomUUID().toString();
+                psPrescription.setString(1, prescriptionId);
+                psPrescription.setString(2, prescription.getPatientId());
+                psPrescription.setString(3, prescription.getBacSiId());
+                psPrescription.executeUpdate();
+
+                // 2. Lưu từng loại thuốc trong đơn
+                for (PrescriptionDetail detail : details) {
+                    psDetail.setString(1, UUID.randomUUID().toString());
+                    psDetail.setString(2, prescriptionId);
+                    psDetail.setString(3, detail.getMedicationId());
+                    psDetail.setString(4, detail.getLieuLuong());
+                    psDetail.setString(5, detail.getTanSuat());
+                    psDetail.addBatch(); // Đưa vào lô để chạy 1 lần cho nhanh
+                }
+
+                psDetail.executeBatch(); // Thực thi lô
+                conn.commit(); // Hoàn tất Transaction
+                return true;
+
+            } catch (Exception e) {
+                conn.rollback(); // Nếu có lỗi thì hoàn tác (không lưu gì cả)
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     public Prescription getNextAppointment(String patientId) {
         String sql = "SELECT p.*, u.ho_ten as bac_si_name " +

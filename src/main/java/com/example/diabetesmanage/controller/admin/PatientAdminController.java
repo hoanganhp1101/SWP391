@@ -1,7 +1,9 @@
 package com.example.diabetesmanage.controller.admin;
 
 import com.example.diabetesmanage.dao.PatientDAO;
+import com.example.diabetesmanage.dao.PrescriptionDAO;
 import com.example.diabetesmanage.model.Patient;
+import com.example.diabetesmanage.model.Prescription;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -19,17 +21,28 @@ public class PatientAdminController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
         PatientDAO patientDAO = new PatientDAO();
+        PrescriptionDAO prescriptionDAO = new PrescriptionDAO(); // Khởi tạo DAO thuốc ở đây
 
         if (action != null && action.equals("view")) {
             try {
                 String id = request.getParameter("id");
+
+                // 1. Lấy thông tin cơ bản của bệnh nhân
                 Patient patient = patientDAO.getPatientByIdAdmin(id);
                 request.setAttribute("patient", patient);
+
+                // 2. ĐỔ DỮ LIỆU ĐƠN THUỐC: Lấy lịch sử đơn thuốc (bao gồm cả mảng details bên trong)
+                List<Prescription> prescriptionList = prescriptionDAO.getPrescriptionsForPatient(id);
+                request.setAttribute("prescriptionList", prescriptionList);
+
+                // Chuyển tiếp sang trang chi tiết hồ sơ
                 request.getRequestDispatcher("/WEB-INF/views/admin/patient-detail.jsp").forward(request, response);
             } catch (Exception e) {
+                e.printStackTrace();
                 response.sendRedirect(request.getContextPath() + "/patient-manager");
             }
         } else {
+            // Hiển thị danh sách bệnh nhân mặc định
             List<Patient> patientList = patientDAO.getAllPatients();
             request.setAttribute("patientList", patientList);
             request.getRequestDispatcher("/WEB-INF/views/admin/patient-manager.jsp").forward(request, response);
