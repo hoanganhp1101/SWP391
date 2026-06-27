@@ -282,6 +282,32 @@ CREATE TABLE medical_documents (
     CONSTRAINT fk_doc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 1. Bảng Từ điển Thuốc
+CREATE TABLE master_medications (
+                                    id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+                                    ten_thuoc       VARCHAR(200)    NOT NULL,
+                                    hoat_chat       VARCHAR(200)    DEFAULT NULL,
+                                    don_vi_tinh     VARCHAR(50)     NOT NULL COMMENT 'Viên, Ống, Lọ, UI...',
+                                    loai_thuoc      VARCHAR(100)    DEFAULT NULL COMMENT 'Insulin, Thuốc uống, Huyết áp...',
+                                    huong_dan_goc   TEXT            DEFAULT NULL,
+                                    trang_thai      TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '1: Đang dùng, 0: Ngưng sử dụng',
+                                    ngay_tao        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Bảng Từ điển Thực phẩm
+CREATE TABLE master_foods (
+                              id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+                              ten_thuc_pham   VARCHAR(200)    NOT NULL,
+                              don_vi_khau_phan VARCHAR(100)   NOT NULL COMMENT '100g, 1 bát, 1 quả...',
+                              carbs_g         DECIMAL(5,2)    NOT NULL COMMENT 'Lượng Carbohydrate',
+                              calo_kcal       DECIMAL(5,2)    DEFAULT NULL,
+                              chi_so_gi       DECIMAL(5,2)    DEFAULT NULL COMMENT 'Chỉ số đường huyết (Glycemic Index)',
+                              trang_thai      TINYINT(1)      NOT NULL DEFAULT 1,
+                              ngay_tao        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                              PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 ALTER TABLE health_records
 ADD COLUMN chest_pain TINYINT(1) DEFAULT 0,
 ADD COLUMN dizziness TINYINT(1) DEFAULT 0,

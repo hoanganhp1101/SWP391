@@ -12,6 +12,34 @@ import java.util.List;
 
 public class UserDAO {
 
+    public List<User> getUsersByRole(String role) {
+        List<User> userList = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE vai_tro = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, role);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getString("id"));
+                    user.setHoTen(rs.getString("ho_ten"));
+                    user.setEmail(rs.getString("email"));
+                    // Đừng quên ánh xạ các trường khác nếu Model User của bạn có
+                    // Ví dụ: user.setSoDienThoai(rs.getString("so_dien_thoai"));
+                    user.setVaiTro(rs.getString("vai_tro"));
+
+                    userList.add(user);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return userList;
+    }
+
     public User authenticateAdmin(String email, String rawPassword) {
         String sql = "SELECT * FROM users WHERE email = ? AND mat_khau_hash = ? AND vai_tro = 'quan_tri_vien' AND kich_hoat = 1";
 
