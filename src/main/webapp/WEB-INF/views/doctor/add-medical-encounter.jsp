@@ -155,44 +155,27 @@
 <body>
 
 <header class="topbar">
-
-    <div class="logo">
-        HealthAlert
-    </div>
-
+    <div class="logo">HealthAlert</div>
     <div class="top-nav">
-        <a class="active">Bảng điều khiển</a>
-        <a>Bệnh nhân</a>
-        <a>Hồ sơ</a>
+        <a href="${pageContext.request.contextPath}/doctor-dashboard">Bảng điều khiển</a>
+        <a href="${pageContext.request.contextPath}/doctor/patient-list">Bệnh nhân</a>
+        <a class="active" href="${pageContext.request.contextPath}/doctor/patient-records">Hồ sơ</a>
         <a>Báo cáo</a>
     </div>
-
     <div class="top-actions">
-
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input
-                    type="text"
-                    placeholder="Tìm kiếm hồ sơ y tế..."
-            >
+            <input type="text" placeholder="Tìm kiếm hồ sơ sức khỏe...">
         </div>
-
         <i class="fa-regular fa-bell icon-btn"></i>
         <i class="fa-solid fa-gear icon-btn"></i>
-
-        <img
-                class="topbar-avatar"
-                src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/40'}"
-                alt=""
-        >
-
+        <img class="avatar"
+             src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/40'}" alt="">
     </div>
-
 </header>
 
 <div class="layout">
     <aside class="sidebar">
-
         <div class="doctor-profile">
             <img src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/60'}" alt="">
             <div>
@@ -200,55 +183,26 @@
                 <p>${not empty doctor.vaiTro ? doctor.vaiTro : 'Bác sĩ điều trị'}</p>
             </div>
         </div>
-
         <nav class="menu">
-
-            <a class="menu-item active">
-                <i class="fa-solid fa-table-cells"></i>
-                <span>Tổng quan</span>
+            <a href="${pageContext.request.contextPath}/doctor-dashboard" class="menu-item">
+                <i class="fa-solid fa-table-cells"></i><span>Tổng quan</span>
             </a>
-
             <a href="${pageContext.request.contextPath}/doctor/patient-list" class="menu-item">
-                <i class="fa-solid fa-users"></i>
-                <span>Danh sách bệnh nhân</span>
+                <i class="fa-solid fa-users"></i><span>Danh sách bệnh nhân</span>
             </a>
-
-            <a class="menu-item">
-                <i class="fa-regular fa-bell"></i>
-                <span>Cảnh báo khẩn cấp</span>
+            <a class="menu-item"><i class="fa-regular fa-bell"></i><span>Cảnh báo khẩn cấp</span></a>
+            <a href="${pageContext.request.contextPath}/doctor/patient-records" class="menu-item active">
+                <i class="fa-regular fa-clipboard"></i><span>Hồ sơ sức khỏe</span>
             </a>
-
-            <a href="${pageContext.request.contextPath}/doctor/patient-records" class="menu-item">
-                <i class="fa-regular fa-clipboard"></i>
-                <span>Tiền sử bệnh án</span>
-            </a>
-
-            <a class="menu-item">
-                <i class="fa-solid fa-chart-column"></i>
-                <span>Phân tích dữ liệu</span>
-            </a>
-
+            <a class="menu-item"><i class="fa-solid fa-chart-column"></i><span>Phân tích dữ liệu</span></a>
         </nav>
-
         <div class="sidebar-bottom">
-
-            <button class="new-record">
-                <i class="fa-solid fa-plus"></i>
-                Tạo hồ sơ mới
-            </button>
-
-            <a class="bottom-link">
-                <i class="fa-regular fa-circle-question"></i>
-                Hỗ trợ
+            <a href="${pageContext.request.contextPath}/medical-encounters/add" class="new-record" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">
+                <i class="fa-solid fa-plus"></i> Tạo hồ sơ mới
             </a>
-
-            <a class="bottom-link">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Đăng xuất
-            </a>
-
+            <a class="bottom-link"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
+            <a class="bottom-link"><i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất</a>
         </div>
-
     </aside>
 
     <main class="main-content">
@@ -305,7 +259,11 @@
                             </div>
                             <div class="form-group">
                                 <label>Khoa khám</label>
-                                <input type="text" readonly value="Khoa nội tiết">
+                                <select name="khoaKham">
+                                    <option value="Khoa Nội tiết" ${form.khoaKham eq 'Khoa Nội tiết' ? 'selected' : ''}>Khoa Nội tiết</option>
+                                    <option value="Khoa Nội tổng quát" ${form.khoaKham eq 'Khoa Nội tổng quát' ? 'selected' : ''}>Khoa Nội tổng quát</option>
+                                    <option value="Khoa Tim mạch" ${form.khoaKham eq 'Khoa Tim mạch' ? 'selected' : ''}>Khoa Tim mạch</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Bác sĩ khám</label>

@@ -15,6 +15,8 @@ public class HealthRecord {
     private Integer huyetApTamThu;
     private Integer huyetApTamTruong;
     private Integer nhipTim;
+    private Double nhietDoC;
+    private Integer nhipTho;
 
     private Double canNangKg;
     private Double bmi;
@@ -47,6 +49,10 @@ public class HealthRecord {
     private String loaiInsulinTiem;
 
     private String ghiChu;
+
+    private Boolean chestPain;
+    private Boolean dizziness;
+    private Boolean fatigue;
 
     private LocalDateTime thoiGianDo;
     private LocalDateTime ngayTao;
@@ -125,6 +131,22 @@ public class HealthRecord {
 
     public void setNhipTim(Integer nhipTim) {
         this.nhipTim = nhipTim;
+    }
+
+    public Double getNhietDoC() {
+        return nhietDoC;
+    }
+
+    public void setNhietDoC(Double nhietDoC) {
+        this.nhietDoC = nhietDoC;
+    }
+
+    public Integer getNhipTho() {
+        return nhipTho;
+    }
+
+    public void setNhipTho(Integer nhipTho) {
+        this.nhipTho = nhipTho;
     }
 
     public Double getCanNangKg() {
@@ -317,6 +339,30 @@ public class HealthRecord {
 
     public void setGhiChu(String ghiChu) {
         this.ghiChu = ghiChu;
+    }
+
+    public Boolean getChestPain() {
+        return chestPain;
+    }
+
+    public void setChestPain(Boolean chestPain) {
+        this.chestPain = chestPain;
+    }
+
+    public Boolean getDizziness() {
+        return dizziness;
+    }
+
+    public void setDizziness(Boolean dizziness) {
+        this.dizziness = dizziness;
+    }
+
+    public Boolean getFatigue() {
+        return fatigue;
+    }
+
+    public void setFatigue(Boolean fatigue) {
+        this.fatigue = fatigue;
     }
 
     public LocalDateTime getThoiGianDo() {

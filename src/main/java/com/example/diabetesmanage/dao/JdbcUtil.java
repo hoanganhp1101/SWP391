@@ -32,4 +32,12 @@ final class JdbcUtil {
             ps.setInt(index, value);
         }
     }
+
+    static void setBoolean(PreparedStatement ps, int index, Boolean value) throws SQLException {
+        if (value == null) {
+            ps.setNull(index, Types.BOOLEAN);
+        } else {
+            ps.setBoolean(index, value);
+        }
+    }
 }
