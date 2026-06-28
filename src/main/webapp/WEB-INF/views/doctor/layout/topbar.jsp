@@ -1,0 +1,36 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty doctor}">
+    <c:set var="doctor" value="${sessionScope.user}"/>
+</c:if>
+<c:if test="${empty activeTopNav}">
+    <c:set var="activeTopNav" value="${activeMenu}"/>
+</c:if>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+
+<header class="topbar">
+    <div class="logo">HealthAlert</div>
+
+    <div class="top-nav">
+        <a href="${ctx}/doctor-dashboard"
+           class="${activeTopNav == 'dashboard' ? 'active' : ''}">Bảng điều khiển</a>
+        <a href="${ctx}/doctor/patient-list"
+           class="${activeTopNav == 'patients' ? 'active' : ''}">Bệnh nhân</a>
+        <a href="${ctx}/doctor/patient-records"
+           class="${activeTopNav == 'records' ? 'active' : ''}">Hồ sơ</a>
+        <a href="${ctx}/doctor-dashboard#danger-section"
+           class="${activeTopNav == 'reports' ? 'active' : ''}">Báo cáo</a>
+    </div>
+
+    <div class="top-actions">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Tìm kiếm hồ sơ y tế...">
+        </div>
+        <i class="fa-regular fa-bell icon-btn"></i>
+        <i class="fa-solid fa-gear icon-btn"></i>
+        <img class="topbar-avatar avatar"
+             src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/40'}"
+             alt="">
+    </div>
+</header>

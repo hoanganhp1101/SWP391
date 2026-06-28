@@ -15,6 +15,12 @@ public class MedicalEncounter {
     private String chanDoanChinh;
     private String chanDoanPhu;
     private String huongXuTri;
+    private String loaiEncounter;
+    private String patientCode;
+    private String patientName;
+    private String doctorName;
+    private LocalDateTime ngayTao;
+    private String trangThai;
 
     public String getId() {
         return id;
@@ -102,5 +108,79 @@ public class MedicalEncounter {
 
     public void setHuongXuTri(String huongXuTri) {
         this.huongXuTri = huongXuTri;
+    }
+
+    public String getPatientCode() {
+        return patientCode;
+    }
+
+    public void setPatientCode(String patientCode) {
+        this.patientCode = patientCode;
+    }
+
+    public String getPatientName() {
+        return patientName;
+    }
+
+    public void setPatientName(String patientName) {
+        this.patientName = patientName;
+    }
+
+    public String getDoctorName() {
+        return doctorName;
+    }
+
+    public void setDoctorName(String doctorName) {
+        this.doctorName = doctorName;
+    }
+
+    public LocalDateTime getNgayTao() {
+        return ngayTao;
+    }
+
+    public void setNgayTao(LocalDateTime ngayTao) {
+        this.ngayTao = ngayTao;
+    }
+
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public String getLoaiEncounter() {
+        return loaiEncounter;
+    }
+
+    public void setLoaiEncounter(String loaiEncounter) {
+        this.loaiEncounter = loaiEncounter;
+    }
+
+    public EncounterType getEncounterType() {
+        return EncounterType.fromCode(loaiEncounter);
+    }
+
+    public String getEncounterTypeLabel() {
+        return getEncounterType().getLabel();
+    }
+
+    public String getStatusLabel() {
+        if (trangThai == null || trangThai.isBlank()) {
+            return "Đã khám";
+        }
+        switch (trangThai) {
+            case "cho_kham":
+                return "Chờ khám";
+            case "da_kham":
+            case "hoan_thanh":
+                return "Đã khám";
+            case "da_huy":
+            case "huy":
+                return "Đã hủy";
+            default:
+                return trangThai;
+        }
     }
 }

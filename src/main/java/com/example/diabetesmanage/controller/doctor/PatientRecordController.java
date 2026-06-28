@@ -1,9 +1,10 @@
 package com.example.diabetesmanage.controller.doctor;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
-import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.dao.MedicalEncounterDAO;
+import com.example.diabetesmanage.model.MedicalEncounter;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -16,7 +17,7 @@ import java.util.List;
 @WebServlet("/doctor/patient-records")
 public class PatientRecordController extends HttpServlet {
 
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -37,24 +38,25 @@ public class PatientRecordController extends HttpServlet {
                 && endDate != null && !endDate.isBlank();
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
-        List<HealthRecord> records;
+        List<MedicalEncounter> records;
         if (hasDate || hasKeyword) {
-            records = healthRecordDAO.searchHealthRecordRecords(
+            records = encounterDAO.searchEncounters(
                     startDate, endDate, keyword, scopeDoctorId);
         } else {
-            records = healthRecordDAO.getHealthRecords(scopeDoctorId);
+            records = encounterDAO.getEncounters(scopeDoctorId);
         }
 
         if (patientId != null && !patientId.isBlank()) {
-            List<HealthRecord> filtered = new ArrayList<>();
-            for (HealthRecord record : records) {
-                if (record.getPatient() != null && patientId.equals(record.getPatient().getId())) {
+            List<MedicalEncounter> filtered = new ArrayList<>();
+            for (MedicalEncounter record : records) {
+                if (patientId.equals(record.getPatientId())) {
                     filtered.add(record);
                 }
             }
             records = filtered;
         }
 
+        DoctorLayoutHelper.prepare(request, user, "records");
         request.setAttribute("records", records);
         request.setAttribute("patientId", patientId);
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecordmanagement.jsp")

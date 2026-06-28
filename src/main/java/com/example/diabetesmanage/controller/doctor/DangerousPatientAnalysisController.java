@@ -5,6 +5,7 @@ import com.example.diabetesmanage.model.DangerousPatientDetail;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.DangerousPatientService;
 import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -49,6 +50,7 @@ public class DangerousPatientAnalysisController extends HttpServlet {
             return;
         }
 
+        DoctorLayoutHelper.prepare(request, doctor, "alerts");
         request.setAttribute("detail", detail);
         request.getRequestDispatcher("/WEB-INF/views/doctor/dangerouspatientanalysis.jsp")
                 .forward(request, response);

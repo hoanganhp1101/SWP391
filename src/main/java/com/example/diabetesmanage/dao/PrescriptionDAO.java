@@ -1,6 +1,6 @@
 package com.example.diabetesmanage.dao;
 
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,7 +11,7 @@ public class PrescriptionDAO {
     /**
      * Tạo đơn thuốc mới gắn với lần khám.
      */
-    public String insert(Connection con, AddMedicalEncounterForm form, String patientId,
+    public String insert(Connection con, EncounterCreateRequest form, String patientId,
                          String doctorId, String encounterId) throws SQLException {
         String id = java.util.UUID.randomUUID().toString();
 

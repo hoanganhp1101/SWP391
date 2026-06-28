@@ -121,4 +121,23 @@ public final class AuthContext {
         String patientId = healthRecordDAO.getPatientIdByRecordId(recordId);
         return ensurePatientAccess(user, patientDAO, patientId, response);
     }
+
+    public static boolean ensureEncounterAccess(
+            User user,
+            PatientDAO patientDAO,
+            com.example.diabetesmanage.dao.MedicalEncounterDAO encounterDAO,
+            String encounterId,
+            HttpServletResponse response
+    ) throws IOException {
+        if (encounterId == null || encounterId.isBlank()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thieu ma lan kham");
+            return false;
+        }
+        if (!encounterDAO.encounterExists(encounterId)) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Khong tim thay lan kham");
+            return false;
+        }
+        String patientId = encounterDAO.getPatientIdByEncounterId(encounterId);
+        return ensurePatientAccess(user, patientDAO, patientId, response);
+    }
 }

@@ -1,9 +1,9 @@
 package com.example.diabetesmanage.controller.doctor;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.User;
-import com.example.diabetesmanage.model.medical.MedicalRecordDetailView;
+import com.example.diabetesmanage.service.medical.EncounterDetail;
 import com.example.diabetesmanage.service.medical.MedicalRecordViewService;
 import com.example.diabetesmanage.service.medical.MedicalRecordViewService.PdfExportType;
 import com.example.diabetesmanage.util.AuthContext;
@@ -21,7 +21,7 @@ import java.io.OutputStream;
 public class MedicalRecordPdfExportController extends HttpServlet {
 
     private final MedicalRecordViewService viewService = new MedicalRecordViewService();
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
     private final PatientDAO patientDAO = new PatientDAO();
 
     @Override
@@ -33,20 +33,20 @@ public class MedicalRecordPdfExportController extends HttpServlet {
             return;
         }
 
-        String recordId = request.getParameter("id");
+        String encounterId = request.getParameter("id");
         PdfExportType exportType = PdfExportType.fromParam(request.getParameter("type"));
 
-        if (recordId == null || recordId.isBlank()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing record id");
+        if (encounterId == null || encounterId.isBlank()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing encounter id");
             return;
         }
 
-        if (!AuthContext.ensureRecordAccess(user, patientDAO, healthRecordDAO, recordId, response)) {
+        if (!AuthContext.ensureEncounterAccess(user, patientDAO, encounterDAO, encounterId, response)) {
             return;
         }
 
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
-        MedicalRecordDetailView view = viewService.loadDetailViewByRecordId(recordId, scopeDoctorId);
+        EncounterDetail view = viewService.loadDetailViewByEncounterId(encounterId, scopeDoctorId);
         if (view == null || view.getRecordId() == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Record not found");
             return;
@@ -54,7 +54,7 @@ public class MedicalRecordPdfExportController extends HttpServlet {
 
         try {
             byte[] pdfBytes = viewService.generateMedicalRecordPdf(view, exportType);
-            String fileName = "ho-so-" + safeFileName(view.getRecordCode()) + "-" + exportType.getParam() + ".pdf";
+            String fileName = "ho-so-kham-" + safeFileName(view.getRecordCode()) + "-" + exportType.getParam() + ".pdf";
 
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
@@ -73,7 +73,7 @@ public class MedicalRecordPdfExportController extends HttpServlet {
 
     private String safeFileName(String value) {
         if (value == null || value.isBlank()) {
-            return "medical-record";
+            return "medical-encounter";
         }
         return value.replaceAll("[^a-zA-Z0-9_-]", "_");
     }

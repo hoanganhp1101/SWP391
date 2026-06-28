@@ -1,7 +1,9 @@
-<%@ page import="com.example.diabetesmanage.model.MedicalEncounter" %>
+<%@ page import="com.example.diabetesmanage.model.Appointment" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.Locale" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -364,6 +366,55 @@
             color:#2563eb;
         }
 
+        .status-tabs{
+            display:flex;
+            gap:10px;
+            margin-bottom:24px;
+            flex-wrap:wrap;
+        }
+
+        .status-tab{
+            padding:10px 18px;
+            border-radius:999px;
+            border:1px solid #e5e7eb;
+            background:#fff;
+            color:#374151;
+            text-decoration:none;
+            font-size:14px;
+            font-weight:500;
+        }
+
+        .status-tab.active{
+            background:#1554c7;
+            color:#fff;
+            border-color:#1554c7;
+        }
+
+        .status-badge{
+            display:inline-block;
+            padding:6px 12px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:600;
+        }
+
+        .status-cho_kham{ background:#fef3c7; color:#92400e; }
+        .status-da_kham{ background:#d1fae5; color:#065f46; }
+        .status-huy, .status-da_huy{ background:#fee2e2; color:#991b1b; }
+
+        .btn-status{
+            padding:8px 12px;
+            border-radius:8px;
+            border:none;
+            font-size:12px;
+            font-weight:600;
+            cursor:pointer;
+            margin-right:6px;
+        }
+
+        .btn-complete{ background:#059669; color:#fff; }
+        .btn-cancel{ background:#fef2f2; color:#dc2626; }
+
         .date-range-picker {
             position: relative;
             width: 250px;
@@ -476,22 +527,23 @@
 
         <div class="page-content">
 
-            <c:if test="${param.success eq '1'}">
+            <c:if test="${param.updated eq '1'}">
                 <div style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:14px 20px;border-radius:12px;margin-bottom:20px;font-weight:500;">
                     <i class="fa-solid fa-circle-check"></i>
-                    Tạo hồ sơ khám bệnh thành công.
-                </div>
-            </c:if>
-            <c:if test="${param.deleted eq '1'}">
-                <div style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:14px 20px;border-radius:12px;margin-bottom:20px;font-weight:500;">
-                    <i class="fa-solid fa-circle-check"></i>
-                    Đã xóa hồ sơ khám bệnh.
+                    <c:choose>
+                        <c:when test="${param.encounterCreated eq '1'}">
+                            Đã đánh dấu đã khám và tạo hồ sơ lần khám mới.
+                        </c:when>
+                        <c:otherwise>
+                            Đã cập nhật trạng thái lịch khám.
+                        </c:otherwise>
+                    </c:choose>
                 </div>
             </c:if>
 
             <div class="page-header">
-                <h1>Quản lý hồ sơ khám bệnh</h1>
-                <p>Danh sách và quản lý medical encounter</p>
+                <h1>Quản lý lịch khám</h1>
+                <p>Danh sách lịch hẹn và cập nhật trạng thái khám</p>
             </div>
 
             <div class="card">
@@ -502,84 +554,39 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
 
                         <form method="get"
-                              action="${pageContext.request.contextPath}/doctor/patient-records">
+                              action="${pageContext.request.contextPath}/doctor/medical-encounters">
+
+                            <input type="hidden" name="status" value="${param.status}">
 
                             <input
                                     type="text"
                                     name="keyword"
                                     value="${param.keyword}"
-                                    placeholder="Tìm kiếm..."
+                                    placeholder="Tìm kiếm bệnh nhân, nội dung khám..."
                             >
 
                         </form>
                     </div>
 
-                    <div class="actions">
-
-                        <a class="btn btn-primary"
-                           href="${pageContext.request.contextPath}/medical-encounters/add">
-                            <i class="fa-solid fa-plus"></i>
-                            Thêm hồ sơ khám bệnh
-                        </a>
-
-                    </div>
-
                 </div>
 
-                <div class="risk-filter">
-
-                    <form action="${pageContext.request.contextPath}/doctor/patient-records"
-                          method="get">
-
-                        <div class="date-range-picker">
-
-                            <div class="date-display" id="toggleDatePicker">
-                <span id="dateText">
-                    ${not empty param.startDate && not empty param.endDate
-                            ? param.startDate.concat(' - ').concat(param.endDate)
-                            : 'Chọn khoảng ngày'}
-                </span>
-                                <span>▼</span>
-                            </div>
-
-                            <div class="date-popup" id="datePopup">
-
-                                <div class="date-fields">
-
-                                    <label>Từ ngày</label>
-                                    <input
-                                            type="date"
-                                            id="startDate"
-                                            name="startDate"
-                                            value="${param.startDate}"
-                                    >
-
-                                    <label>Đến ngày</label>
-                                    <input
-                                            type="date"
-                                            id="endDate"
-                                            name="endDate"
-                                            value="${param.endDate}"
-                                    >
-
-                                </div>
-
-                                <div class="popup-actions">
-                                    <button type="button" id="cancelBtn">
-                                        Cancel
-                                    </button>
-
-                                    <button type="submit">
-                                        OK
-                                    </button>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </form>
-
+                <div class="status-tabs">
+                    <a class="status-tab ${empty param.status ? 'active' : ''}"
+                       href="${pageContext.request.contextPath}/doctor/medical-encounters?keyword=${param.keyword}">
+                        Tất cả
+                    </a>
+                    <a class="status-tab ${param.status eq 'cho_kham' ? 'active' : ''}"
+                       href="${pageContext.request.contextPath}/doctor/medical-encounters?status=cho_kham&keyword=${param.keyword}">
+                        Chờ khám
+                    </a>
+                    <a class="status-tab ${param.status eq 'da_kham' ? 'active' : ''}"
+                       href="${pageContext.request.contextPath}/doctor/medical-encounters?status=da_kham&keyword=${param.keyword}">
+                        Đã khám
+                    </a>
+                    <a class="status-tab ${param.status eq 'da_huy' or param.status eq 'huy' ? 'active' : ''}"
+                       href="${pageContext.request.contextPath}/doctor/medical-encounters?status=da_huy&keyword=${param.keyword}">
+                        Hủy
+                    </a>
                 </div>
 
                 <div class="table-wrapper">
@@ -588,13 +595,11 @@
 
                         <thead>
                         <tr>
-                            <th>MÃ ENCOUNTER</th>
-                            <th>LOẠI HỒ SƠ</th>
-                            <th>BỆNH NHÂN</th>
-                            <th>BÁC SĨ</th>
-                            <th>NGÀY KHÁM</th>
+                            <th>TÊN BỆNH NHÂN</th>
+                            <th>NỘI DUNG KHÁM</th>
+                            <th>THỜI GIAN HẸN</th>
+                            <th>ĐỊA ĐIỂM</th>
                             <th>TRẠNG THÁI</th>
-                            <th>THỜI GIAN TẠO</th>
                             <th>THAO TÁC</th>
                         </tr>
                         </thead>
@@ -602,53 +607,57 @@
                         <tbody>
 
                         <%
-                            List<MedicalEncounter> records =
-                                    (List<MedicalEncounter>) request.getAttribute("records");
-                            DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                            List<Appointment> appointments =
+                                    (List<Appointment>) request.getAttribute("appointments");
+                            DateTimeFormatter timeFmt =
+                                    DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a", Locale.US);
 
-                            if(records != null){
-                                for(var record : records){
+                            if (appointments != null) {
+                                for (Appointment appt : appointments) {
+                                    String statusClass = "status-" + appt.getTrangThai();
+                                    String timeText = appt.getThoiGianHen() != null
+                                            ? appt.getThoiGianHen().format(timeFmt)
+                                            : "—";
                         %>
 
                         <tr>
 
+                            <td><%= appt.getPatientName() %></td>
+                            <td><%= appt.getNoiDungKham() %></td>
+                            <td><%= timeText %></td>
+                            <td><%= appt.getDiaDiem() %></td>
                             <td>
-                                <%= record.getDisplayCode() %>
+                                <span class="status-badge <%= statusClass %>">
+                                    <%= appt.getTrangThaiLabel() %>
+                                </span>
                             </td>
-
                             <td>
-                                <%= record.getEncounterTypeLabel() %>
-                            </td>
-
-                            <td>
-                                <%= record.getPatientName() != null ? record.getPatientName() : record.getPatientCode() %>
-                            </td>
-
-                            <td>
-                                <%= record.getDoctorName() != null ? record.getDoctorName() : "—" %>
-                            </td>
-
-                            <td>
-                                <%= record.getNgayKham() != null ? record.getNgayKham().format(dateFmt) : "—" %>
-                            </td>
-
-                            <td>
-                                <%= record.getStatusLabel() %>
-                            </td>
-
-                            <td>
-                                <%= record.getNgayTao() != null ? record.getNgayTao().format(dateFmt)
-                                        : (record.getNgayKham() != null ? record.getNgayKham().format(dateFmt) : "—") %>
-                            </td>
-
-                            <td>
-
-                                <a class="table-icon-btn edit-btn"
-                                   href="${pageContext.request.contextPath}/doctor/record-detail?id=<%= record.getId() %>"
-                                   title="Xem chi tiết">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-
+                                <% if (Appointment.STATUS_CHO_KHAM.equals(appt.getTrangThai())) { %>
+                                <form method="post"
+                                      action="${pageContext.request.contextPath}/doctor/appointments/status"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Đánh dấu đã khám và tạo hồ sơ lần khám?');">
+                                    <input type="hidden" name="id" value="<%= appt.getId() %>">
+                                    <input type="hidden" name="status" value="da_kham">
+                                    <input type="hidden" name="filterStatus" value="${param.status}">
+                                    <button type="submit" class="btn-status btn-complete">
+                                        Đánh dấu đã khám
+                                    </button>
+                                </form>
+                                <form method="post"
+                                      action="${pageContext.request.contextPath}/doctor/appointments/status"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Hủy lịch hẹn này?');">
+                                    <input type="hidden" name="id" value="<%= appt.getId() %>">
+                                    <input type="hidden" name="status" value="da_huy">
+                                    <input type="hidden" name="filterStatus" value="${param.status}">
+                                    <button type="submit" class="btn-status btn-cancel">
+                                        Hủy lịch
+                                    </button>
+                                </form>
+                                <% } else { %>
+                                —
+                                <% } %>
                             </td>
 
                         </tr>
@@ -671,81 +680,4 @@
 </div>
 
 </body>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-        const toggleDatePicker = document.getElementById("toggleDatePicker");
-        const datePopup = document.getElementById("datePopup");
-        const startDate = document.getElementById("startDate");
-        const endDate = document.getElementById("endDate");
-        const dateText = document.getElementById("dateText");
-        const cancelBtn = document.getElementById("cancelBtn");
-
-        if (!toggleDatePicker || !datePopup) {
-            console.error("Date picker not found");
-            return;
-        }
-
-        toggleDatePicker.onclick = function (e) {
-            e.stopPropagation();
-            datePopup.classList.toggle("show");
-        };
-
-        if (cancelBtn) {
-            cancelBtn.onclick = function () {
-                datePopup.classList.remove("show");
-            };
-        }
-
-        document.addEventListener("click", function (e) {
-
-            if (
-                !datePopup.contains(e.target) &&
-                !toggleDatePicker.contains(e.target)
-            ) {
-                datePopup.classList.remove("show");
-            }
-
-        });
-
-        function formatDate(value) {
-
-            if (!value) return "";
-
-            const date = new Date(value);
-
-            return date.toLocaleDateString("vi-VN");
-        }
-
-        function updateText() {
-
-            if (
-                startDate &&
-                endDate &&
-                startDate.value &&
-                endDate.value
-            ) {
-
-                dateText.textContent =
-                    formatDate(startDate.value) +
-                    " - " +
-                    formatDate(endDate.value);
-
-            } else {
-
-                dateText.textContent = "Chọn khoảng ngày";
-            }
-        }
-
-        if (startDate) {
-            startDate.addEventListener("change", updateText);
-        }
-
-        if (endDate) {
-            endDate.addEventListener("change", updateText);
-        }
-
-        updateText();
-    });
-</script>
 </html>

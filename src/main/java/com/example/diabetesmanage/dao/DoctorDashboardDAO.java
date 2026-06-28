@@ -52,7 +52,7 @@ public class DoctorDashboardDAO {
             loadStatsWithoutAlertsColumn(doctorId, stats);
         }
 
-        stats.setTodayHealthRecords(countTodayHealthRecords(doctorId));
+        stats.setTodayHealthRecords(countTodayEncounters(doctorId));
 
         if (stats.getActiveAlerts() == 0) {
             stats.setActiveAlerts(stats.getRiskHigh() + stats.getRiskCritical());
@@ -95,14 +95,14 @@ public class DoctorDashboardDAO {
         }
     }
 
-    private int countTodayHealthRecords(String doctorId) {
+    private int countTodayEncounters(String doctorId) {
 
         String sql =
                 "SELECT COUNT(*) AS total " +
-                        "FROM health_records hr " +
-                        "JOIN patients p ON hr.patient_id = p.id " +
+                        "FROM medical_encounters me " +
+                        "JOIN patients p ON me.patient_id = p.id " +
                         "WHERE p.bac_si_id = ? " +
-                        "AND DATE(hr.thoi_gian_do) = CURDATE()";
+                        "AND DATE(COALESCE(me.ngay_tao, me.ngay_kham)) = CURDATE()";
 
         try (
                 Connection con = DBContext.getConnection();
@@ -138,13 +138,7 @@ public class DoctorDashboardDAO {
                         "hr.huyet_ap_tam_truong " +
                         "FROM v_patient_summary vps " +
                         "JOIN patients p ON vps.patient_id = p.id " +
-                        "LEFT JOIN health_records hr ON hr.id = ( " +
-                        "    SELECT hr2.id " +
-                        "    FROM health_records hr2 " +
-                        "    WHERE hr2.patient_id = p.id " +
-                        "    ORDER BY hr2.thoi_gian_do DESC " +
-                        "    LIMIT 1 " +
-                        ") " +
+                        "LEFT JOIN health_records hr ON hr.patient_id = p.id " +
                         "WHERE p.bac_si_id = ? " +
                         "AND ( " +
                         "    vps.duong_huyet_gan_nhat >= 180 " +

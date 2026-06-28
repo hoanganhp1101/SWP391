@@ -35,6 +35,12 @@ public class LoginController extends HttpServlet {
             return;
         }
 
+        if (service.equals("logout")) {
+            session.invalidate();
+            response.sendRedirect(request.getContextPath() + "/Logincontroller");
+            return;
+        }
+
         // Redirect sau khi login thành công (dùng bởi JS timeout)
         if (service.equals("admin")) {
             request.getRequestDispatcher(ADMIN_VIEW).forward(request, response);

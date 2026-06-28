@@ -1,10 +1,12 @@
-package com.example.diabetesmanage.model.medical;
+package com.example.diabetesmanage.service.medical;
+
+import com.example.diabetesmanage.model.EncounterType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MedicalRecordDetailView {
+public class EncounterDetail {
 
     private String recordId;
     private String recordCode;
@@ -13,10 +15,14 @@ public class MedicalRecordDetailView {
     private String examDate;
     private String department = "Khoa Nội tiết";
     private String doctorName = "Bác sĩ phụ trách";
+    private String encounterType;
+    private String encounterTypeLabel;
 
     private InternalMedicineSection internalMedicine = new InternalMedicineSection();
+    private PrescriptionDetailSection prescriptionDetail = new PrescriptionDetailSection();
     private BloodCountSection bloodCount = new BloodCountSection();
     private BiochemistrySection biochemistry = new BiochemistrySection();
+    private UltrasoundSection ultrasound = new UltrasoundSection();
 
     public String getRecordId() {
         return recordId;
@@ -74,12 +80,52 @@ public class MedicalRecordDetailView {
         this.doctorName = doctorName;
     }
 
+    public String getEncounterType() {
+        return encounterType;
+    }
+
+    public void setEncounterType(String encounterType) {
+        this.encounterType = encounterType;
+    }
+
+    public String getEncounterTypeLabel() {
+        return encounterTypeLabel;
+    }
+
+    public void setEncounterTypeLabel(String encounterTypeLabel) {
+        this.encounterTypeLabel = encounterTypeLabel;
+    }
+
+    public EncounterType resolveEncounterType() {
+        return EncounterType.fromCode(encounterType);
+    }
+
+    public boolean isTaiKhamNoiTiet() {
+        return resolveEncounterType().isTaiKhamNoiTiet();
+    }
+
+    public boolean isMauTongQuat() {
+        return resolveEncounterType().isMauTongQuat();
+    }
+
+    public boolean isSinhHoaMau() {
+        return resolveEncounterType().isSinhHoaMau();
+    }
+
     public InternalMedicineSection getInternalMedicine() {
         return internalMedicine;
     }
 
     public void setInternalMedicine(InternalMedicineSection internalMedicine) {
         this.internalMedicine = internalMedicine;
+    }
+
+    public PrescriptionDetailSection getPrescriptionDetail() {
+        return prescriptionDetail;
+    }
+
+    public void setPrescriptionDetail(PrescriptionDetailSection prescriptionDetail) {
+        this.prescriptionDetail = prescriptionDetail;
     }
 
     public BloodCountSection getBloodCount() {
@@ -98,10 +144,20 @@ public class MedicalRecordDetailView {
         this.biochemistry = biochemistry;
     }
 
+    public UltrasoundSection getUltrasound() {
+        return ultrasound;
+    }
+
+    public void setUltrasound(UltrasoundSection ultrasound) {
+        this.ultrasound = ultrasound;
+    }
+
     public static class InternalMedicineSection {
 
         private List<Map<String, Object>> clinicalInfo = new ArrayList<>();
+        private List<Map<String, Object>> healthMetrics = new ArrayList<>();
         private List<Map<String, Object>> diagnosisInfo = new ArrayList<>();
+        private List<Map<String, Object>> recommendationFields = new ArrayList<>();
         private List<Map<String, String>> medications = new ArrayList<>();
         private List<String> recommendations = new ArrayList<>();
 
@@ -110,7 +166,15 @@ public class MedicalRecordDetailView {
         }
 
         public void setClinicalInfo(List<Map<String, Object>> clinicalInfo) {
-            this.clinicalInfo = clinicalInfo;
+            this.clinicalInfo = clinicalInfo != null ? clinicalInfo : new ArrayList<>();
+        }
+
+        public List<Map<String, Object>> getHealthMetrics() {
+            return healthMetrics;
+        }
+
+        public void setHealthMetrics(List<Map<String, Object>> healthMetrics) {
+            this.healthMetrics = healthMetrics != null ? healthMetrics : new ArrayList<>();
         }
 
         public List<Map<String, Object>> getDiagnosisInfo() {
@@ -118,7 +182,15 @@ public class MedicalRecordDetailView {
         }
 
         public void setDiagnosisInfo(List<Map<String, Object>> diagnosisInfo) {
-            this.diagnosisInfo = diagnosisInfo;
+            this.diagnosisInfo = diagnosisInfo != null ? diagnosisInfo : new ArrayList<>();
+        }
+
+        public List<Map<String, Object>> getRecommendationFields() {
+            return recommendationFields;
+        }
+
+        public void setRecommendationFields(List<Map<String, Object>> recommendationFields) {
+            this.recommendationFields = recommendationFields != null ? recommendationFields : new ArrayList<>();
         }
 
         public List<Map<String, String>> getMedications() {
@@ -136,6 +208,31 @@ public class MedicalRecordDetailView {
         public void setRecommendations(List<String> recommendations) {
             this.recommendations = recommendations;
         }
+
+        public boolean hasData() {
+            return !clinicalInfo.isEmpty()
+                    || !healthMetrics.isEmpty()
+                    || !diagnosisInfo.isEmpty()
+                    || !recommendationFields.isEmpty()
+                    || (recommendations != null && !recommendations.isEmpty());
+        }
+    }
+
+    public static class PrescriptionDetailSection {
+
+        private List<Map<String, String>> items = new ArrayList<>();
+
+        public List<Map<String, String>> getItems() {
+            return items;
+        }
+
+        public void setItems(List<Map<String, String>> items) {
+            this.items = items;
+        }
+
+        public boolean hasData() {
+            return items != null && !items.isEmpty();
+        }
     }
 
     public static class BloodCountSection {
@@ -151,10 +248,10 @@ public class MedicalRecordDetailView {
         }
 
         public boolean hasData() {
-            return items.stream().anyMatch(item -> {
-                Object val = item.get("value");
-                return val != null && !val.toString().isBlank() && !"—".equals(val.toString());
-            });
+            if (items == null || items.isEmpty()) {
+                return false;
+            }
+            return items.stream().anyMatch(EncounterDetail::hasLabFieldValue);
         }
     }
 
@@ -212,7 +309,51 @@ public class MedicalRecordDetailView {
         }
 
         public void setAlerts(List<String> alerts) {
-            this.alerts = alerts;
+            this.alerts = alerts != null ? alerts : new ArrayList<>();
         }
+
+        public boolean hasData() {
+            return hasLabFieldValue(glucose)
+                    || hasLabFieldValue(hba1c)
+                    || hasFieldListData(lipidProfile)
+                    || hasFieldListData(liverEnzymes)
+                    || hasFieldListData(kidneyFunction);
+        }
+    }
+
+    public static class UltrasoundSection {
+
+        private List<Map<String, String>> fields = new ArrayList<>();
+
+        public List<Map<String, String>> getFields() {
+            return fields;
+        }
+
+        public void setFields(List<Map<String, String>> fields) {
+            this.fields = fields;
+        }
+
+        public boolean hasData() {
+            return fields != null && !fields.isEmpty();
+        }
+    }
+
+    private static boolean hasFieldListData(List<Map<String, Object>> fields) {
+        if (fields == null || fields.isEmpty()) {
+            return false;
+        }
+        return fields.stream().anyMatch(EncounterDetail::hasLabFieldValue);
+    }
+
+    private static boolean hasLabFieldValue(Map<String, Object> field) {
+        if (field == null || field.isEmpty()) {
+            return false;
+        }
+        Object display = field.get("displayValue");
+        if (display != null && !display.toString().isBlank() && !"—".equals(display.toString())) {
+            return true;
+        }
+        Object value = field.get("value");
+        return value != null && !value.toString().isBlank() && !"—".equals(value.toString());
     }
 }

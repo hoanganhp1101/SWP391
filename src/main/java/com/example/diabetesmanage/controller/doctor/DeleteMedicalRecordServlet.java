@@ -1,6 +1,6 @@
 package com.example.diabetesmanage.controller.doctor;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.medical.MedicalRecordDeleteService;
@@ -19,7 +19,7 @@ import java.sql.SQLException;
 public class DeleteMedicalRecordServlet extends HttpServlet {
 
     private final MedicalRecordDeleteService deleteService = new MedicalRecordDeleteService();
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
     private final PatientDAO patientDAO = new PatientDAO();
 
     @Override
@@ -33,18 +33,18 @@ public class DeleteMedicalRecordServlet extends HttpServlet {
             return;
         }
 
-        String recordId = request.getParameter("id");
-        if (!AuthContext.ensureRecordAccess(user, patientDAO, healthRecordDAO, recordId, response)) {
+        String encounterId = request.getParameter("id");
+        if (!AuthContext.ensureEncounterAccess(user, patientDAO, encounterDAO, encounterId, response)) {
             return;
         }
 
         try {
-            deleteService.deleteByHealthRecordId(recordId, AuthContext.scopeDoctorId(user));
+            deleteService.deleteByEncounterId(encounterId, AuthContext.scopeDoctorId(user));
             response.sendRedirect(request.getContextPath() + "/doctor/patient-records?deleted=1");
         } catch (SQLException ex) {
             ex.printStackTrace();
             response.sendRedirect(request.getContextPath()
-                    + "/doctor/record-detail?id=" + recordId + "&error=delete");
+                    + "/doctor/record-detail?id=" + encounterId + "&error=delete");
         }
     }
 }

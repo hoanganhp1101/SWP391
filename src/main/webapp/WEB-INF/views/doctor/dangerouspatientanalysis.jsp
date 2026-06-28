@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phân tích hồ sơ nguy hiểm - ${detail.patientName}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/doctor-layout.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
         body{background:#f5f7fb;color:#111827;}
@@ -53,6 +54,15 @@
     </style>
 </head>
 <body>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty doctor}">
+    <c:set var="doctor" value="${sessionScope.user}"/>
+</c:if>
+<jsp:include page="/WEB-INF/views/doctor/layout/topbar.jsp"/>
+<div class="layout">
+    <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
+    <main class="main-content">
 <div class="page">
 
     <a href="${pageContext.request.contextPath}/doctor-dashboard" class="back-link">
@@ -195,6 +205,8 @@
         </div>
     </div>
 
+</div>
+</main>
 </div>
 </body>
 </html>

@@ -4,6 +4,7 @@ import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -37,6 +38,8 @@ public class PatientListController extends HttpServlet {
             patients = patientDAO.searchPatients(keyword, risk, scopeDoctorId);
         }
 
+        String activeMenu = "critical".equalsIgnoreCase(risk) ? "analytics" : "patients";
+        DoctorLayoutHelper.prepare(request, user, activeMenu);
         request.setAttribute("patients", patients);
         request.getRequestDispatcher("/WEB-INF/views/doctor/patientmanagement.jsp")
                 .forward(request, response);

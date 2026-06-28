@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -523,107 +522,16 @@ RISK FILTER
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-<!-- TOPBAR -->
-<header class="topbar">
-
-    <div class="logo">
-        HealthAlert
-    </div>
-
-    <div class="top-nav">
-        <a class="active">Bảng điều khiển</a>
-        <a>Bệnh nhân</a>
-        <a>Hồ sơ</a>
-        <a>Báo cáo</a>
-    </div>
-
-    <div class="top-actions">
-
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input
-                    type="text"
-                    placeholder="Tìm kiếm hồ sơ sức khỏe..."
-            >
-        </div>
-
-        <i class="fa-regular fa-bell icon-btn"></i>
-        <i class="fa-solid fa-gear icon-btn"></i>
-
-        <img
-                class="avatar"
-                src="https://i.pravatar.cc/40"
-                alt=""
-        >
-
-    </div>
-
-</header>
-
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty doctor}">
+    <c:set var="doctor" value="${sessionScope.user}"/>
+</c:if>
+<jsp:include page="/WEB-INF/views/doctor/layout/topbar.jsp"/>
 <div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-
-        <div class="doctor-profile">
-            <img src="https://i.pravatar.cc/60" alt="">
-            <div>
-                <h4>BS. Smith</h4>
-            </div>
-        </div>
-
-        <nav class="menu">
-
-            <a class="menu-item active">
-                <i class="fa-solid fa-table-cells"></i>
-                <span>Tổng quan</span>
-            </a>
-
-            <a href="patientmanagement.html" class="menu-item">
-                <i class="fa-solid fa-users"></i>
-                <span>Danh sách bệnh nhân</span>
-            </a>
-
-            <a class="menu-item">
-                <i class="fa-regular fa-bell"></i>
-                <span>Cảnh báo khẩn cấp</span>
-            </a>
-
-            <a href="medicalrecordmanagement.html" class="menu-item">
-                <i class="fa-regular fa-clipboard"></i>
-                <span>Tiền sử bệnh án</span>
-            </a>
-
-            <a class="menu-item">
-                <i class="fa-solid fa-chart-column"></i>
-                <span>Phân tích dữ liệu</span>
-            </a>
-
-        </nav>
-
-        <div class="sidebar-bottom">
-
-            <button class="new-record">
-                <i class="fa-solid fa-plus"></i>
-                Thêm bệnh nhân mới
-            </button>
-
-            <a class="bottom-link">
-                <i class="fa-regular fa-circle-question"></i>
-                Hỗ trợ
-            </a>
-
-            <a class="bottom-link">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                Đăng xuất
-            </a>
-
-        </div>
-
-    </aside>
-
-    <!-- MAIN -->
+    <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
     <main class="main-content">
+
 
         <div class="page-content">
 
@@ -656,18 +564,7 @@ RISK FILTER
                             >
                         </form>
                     </div>
-
-                    <div class="table-actions">
-                        <a href="${pageContext.request.contextPath}/doctor/export-patients?keyword=${param.keyword}&risk=${param.risk}"
-                           class="btn btn-outline">
-
-                            <i class="fa-solid fa-download"></i>
-                            Xuất Excel
-                        </a>
-
-                    </div>
-
-                </div>
+</div>
 
                 <div class="risk-filter">
 
@@ -761,9 +658,8 @@ RISK FILTER
             </div>
 
         </div>
-
-    </main>
-
+</main>
 </div>
+
 </body>
 </html>

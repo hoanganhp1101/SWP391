@@ -1,5 +1,6 @@
-package com.example.diabetesmanage.model.form;
+package com.example.diabetesmanage.service.medical;
 
+import com.example.diabetesmanage.model.EncounterType;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDate;
@@ -9,7 +10,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddMedicalEncounterForm {
+public class EncounterCreateRequest {
+
+    private String encounterType = EncounterType.TAI_KHAM_NOI_TIET.getCode();
 
     private String patientId;
 
@@ -68,11 +71,12 @@ public class AddMedicalEncounterForm {
     private Double labHct;
     private Double labPlt;
 
-    private List<MedicationFormItem> medications = new ArrayList<>();
+    private List<MedicationLineItem> medications = new ArrayList<>();
 
-    public static AddMedicalEncounterForm fromRequest(HttpServletRequest request) {
-        AddMedicalEncounterForm form = new AddMedicalEncounterForm();
+    public static EncounterCreateRequest fromRequest(HttpServletRequest request) {
+        EncounterCreateRequest form = new EncounterCreateRequest();
         form.setPatientId(trim(request.getParameter("patientId")));
+        form.setEncounterType(trim(request.getParameter("encounterType")));
         form.setNgayKham(trim(request.getParameter("ngayKham")));
         form.setKhoaKham(trim(request.getParameter("khoaKham")));
 
@@ -134,8 +138,8 @@ public class AddMedicalEncounterForm {
         return form;
     }
 
-    private static List<MedicationFormItem> parseMedications(HttpServletRequest request) {
-        List<MedicationFormItem> list = new ArrayList<>();
+    private static List<MedicationLineItem> parseMedications(HttpServletRequest request) {
+        List<MedicationLineItem> list = new ArrayList<>();
         String[] tenThuoc = request.getParameterValues("medTenThuoc");
         if (tenThuoc == null) {
             return list;
@@ -151,7 +155,7 @@ public class AddMedicalEncounterForm {
         String[] ghiChu = defaultArray(request.getParameterValues("medGhiChu"), tenThuoc.length);
 
         for (int i = 0; i < tenThuoc.length; i++) {
-            MedicationFormItem item = new MedicationFormItem();
+            MedicationLineItem item = new MedicationLineItem();
             item.setTenThuoc(trim(tenThuoc[i]));
             item.setHoatChat(trim(hoatChat[i]));
             item.setLieuLuong(trim(lieuLuong[i]));
@@ -198,6 +202,19 @@ public class AddMedicalEncounterForm {
         }
     }
 
+    /** Chuẩn hóa field lab → field health_record trước khi PATCH snapshot. */
+    public void prepareSnapshotPatch() {
+        calculateBmiIfNeeded();
+        syncLabToHealthMetrics();
+        if (isTaiKhamNoiTiet()) {
+            String symptoms = firstNonBlank(trim(trieuChung), trim(lyDoKham));
+            if (symptoms != null) {
+                trieuChung = symptoms;
+                lyDoKham = symptoms;
+            }
+        }
+    }
+
     public LocalDateTime resolveNgayKham() {
         if (ngayKham != null && !ngayKham.isBlank()) {
             try {
@@ -239,7 +256,30 @@ public class AddMedicalEncounterForm {
     }
 
     public boolean hasMedications() {
-        return medications.stream().anyMatch(MedicationFormItem::hasContent);
+        return medications.stream().anyMatch(MedicationLineItem::hasContent);
+    }
+
+    public EncounterType resolveEncounterType() {
+        return EncounterType.fromCode(encounterType);
+    }
+
+    public boolean isTaiKhamNoiTiet() {
+        return resolveEncounterType().isTaiKhamNoiTiet();
+    }
+
+    public boolean isMauTongQuat() {
+        return resolveEncounterType().isMauTongQuat();
+    }
+
+    public boolean isSinhHoaMau() {
+        return resolveEncounterType().isSinhHoaMau();
+    }
+
+    public boolean hasBiochemistryData() {
+        return labGlucoseMau != null || labHba1c != null || labCholesterol != null
+                || labTriglyceride != null || labHdl != null || labLdl != null
+                || labAst != null || labAlt != null || labUre != null || labCreatinine != null
+                || (labGhiChu != null && !labGhiChu.isBlank());
     }
 
     private static String trim(String value) {
@@ -250,7 +290,7 @@ public class AddMedicalEncounterForm {
         if (value == null || value.isBlank()) {
             return null;
         }
-        return Double.parseDouble(value.replace(",", "."));
+        return Double.parseDouble(value.trim().replace(",", "."));
     }
 
     private static Integer parseInteger(String value) {
@@ -281,6 +321,14 @@ public class AddMedicalEncounterForm {
 
     public void setPatientId(String patientId) {
         this.patientId = patientId;
+    }
+
+    public String getEncounterType() {
+        return encounterType;
+    }
+
+    public void setEncounterType(String encounterType) {
+        this.encounterType = encounterType;
     }
 
     public String getKhoaKham() {
@@ -675,15 +723,15 @@ public class AddMedicalEncounterForm {
         this.labGhiChu = labGhiChu;
     }
 
-    public List<MedicationFormItem> getMedications() {
+    public List<MedicationLineItem> getMedications() {
         return medications;
     }
 
-    public void setMedications(List<MedicationFormItem> medications) {
+    public void setMedications(List<MedicationLineItem> medications) {
         this.medications = medications;
     }
 
-    public static class MedicationFormItem {
+    public static class MedicationLineItem {
 
         private String tenThuoc;
         private String hoatChat;

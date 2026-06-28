@@ -2,7 +2,8 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.LabResult;
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm;
+import com.example.diabetesmanage.model.EncounterType;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -60,7 +61,78 @@ public class LabResultDAO {
         return null;
     }
 
-    public void insert(Connection con, AddMedicalEncounterForm form, String patientId, String encounterId)
+    public void insert(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
+            throws SQLException {
+        EncounterType type = form.resolveEncounterType();
+        if (type.isMauTongQuat()) {
+            insertBloodCount(con, form, patientId, encounterId);
+        } else if (type.isSinhHoaMau()) {
+            insertBiochemistry(con, form, patientId, encounterId);
+        } else if (form.hasLabData()) {
+            insertAll(con, form, patientId, encounterId);
+        }
+    }
+
+    public void insertBloodCount(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
+            throws SQLException {
+        if (!form.hasBloodCountData()) {
+            return;
+        }
+        String id = java.util.UUID.randomUUID().toString();
+        String sql =
+                "INSERT INTO lab_results " +
+                        "(id, patient_id, encounter_id, ngay_xet_nghiem, ngay_tao, wbc, rbc, hgb, hct, plt) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, id);
+            ps.setString(2, patientId);
+            ps.setString(3, encounterId);
+            Timestamp visitTime = Timestamp.valueOf(form.resolveNgayKham());
+            ps.setTimestamp(4, visitTime);
+            ps.setTimestamp(5, visitTime);
+            JdbcUtil.setNullableDouble(ps, 6, form.getLabWbc());
+            JdbcUtil.setNullableDouble(ps, 7, form.getLabRbc());
+            JdbcUtil.setNullableDouble(ps, 8, form.getLabHgb());
+            JdbcUtil.setNullableDouble(ps, 9, form.getLabHct());
+            JdbcUtil.setNullableDouble(ps, 10, form.getLabPlt());
+            ps.executeUpdate();
+        }
+    }
+
+    public void insertBiochemistry(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
+            throws SQLException {
+        if (!form.hasBiochemistryData()) {
+            return;
+        }
+        String id = java.util.UUID.randomUUID().toString();
+        String sql =
+                "INSERT INTO lab_results " +
+                        "(id, patient_id, encounter_id, ngay_xet_nghiem, ngay_tao, glucose_mau, hba1c, cholesterol_tp, triglyceride, " +
+                        "hdl_c, ldl_c, ast, alt, ure, creatinine, ghi_chu) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, id);
+            ps.setString(2, patientId);
+            ps.setString(3, encounterId);
+            Timestamp visitTime = Timestamp.valueOf(form.resolveNgayKham());
+            ps.setTimestamp(4, visitTime);
+            ps.setTimestamp(5, visitTime);
+            JdbcUtil.setDouble(ps, 6, form.getLabGlucoseMau());
+            JdbcUtil.setDouble(ps, 7, form.getLabHba1c());
+            JdbcUtil.setDouble(ps, 8, form.getLabCholesterol());
+            JdbcUtil.setDouble(ps, 9, form.getLabTriglyceride());
+            JdbcUtil.setDouble(ps, 10, form.getLabHdl());
+            JdbcUtil.setDouble(ps, 11, form.getLabLdl());
+            JdbcUtil.setDouble(ps, 12, form.getLabAst());
+            JdbcUtil.setDouble(ps, 13, form.getLabAlt());
+            JdbcUtil.setDouble(ps, 14, form.getLabUre());
+            JdbcUtil.setDouble(ps, 15, form.getLabCreatinine());
+            JdbcUtil.setString(ps, 16, form.getLabGhiChu());
+            ps.executeUpdate();
+        }
+    }
+
+    private void insertAll(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
             throws SQLException {
         if (!form.hasLabData()) {
             return;
@@ -94,11 +166,11 @@ public class LabResultDAO {
             JdbcUtil.setString(ps, 15, emptyToNull(form.getLabAntiHcv()));
             JdbcUtil.setString(ps, 16, nuocTieuJson);
             JdbcUtil.setString(ps, 17, form.getLabGhiChu());
-            JdbcUtil.setDouble(ps, 18, form.getLabWbc());
-            JdbcUtil.setDouble(ps, 19, form.getLabRbc());
-            JdbcUtil.setDouble(ps, 20, form.getLabHgb());
-            JdbcUtil.setDouble(ps, 21, form.getLabHct());
-            JdbcUtil.setDouble(ps, 22, form.getLabPlt());
+            JdbcUtil.setNullableDouble(ps, 18, form.getLabWbc());
+            JdbcUtil.setNullableDouble(ps, 19, form.getLabRbc());
+            JdbcUtil.setNullableDouble(ps, 20, form.getLabHgb());
+            JdbcUtil.setNullableDouble(ps, 21, form.getLabHct());
+            JdbcUtil.setNullableDouble(ps, 22, form.getLabPlt());
             ps.executeUpdate();
         }
     }

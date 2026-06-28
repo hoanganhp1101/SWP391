@@ -154,64 +154,22 @@
 </head>
 <body>
 
-<header class="topbar">
-    <div class="logo">HealthAlert</div>
-    <div class="top-nav">
-        <a href="${pageContext.request.contextPath}/doctor-dashboard">Bảng điều khiển</a>
-        <a href="${pageContext.request.contextPath}/doctor/patient-list">Bệnh nhân</a>
-        <a class="active" href="${pageContext.request.contextPath}/doctor/patient-records">Hồ sơ</a>
-        <a>Báo cáo</a>
-    </div>
-    <div class="top-actions">
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Tìm kiếm hồ sơ sức khỏe...">
-        </div>
-        <i class="fa-regular fa-bell icon-btn"></i>
-        <i class="fa-solid fa-gear icon-btn"></i>
-        <img class="avatar"
-             src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/40'}" alt="">
-    </div>
-</header>
-
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty doctor}">
+    <c:set var="doctor" value="${sessionScope.user}"/>
+</c:if>
+<jsp:include page="/WEB-INF/views/doctor/layout/topbar.jsp"/>
 <div class="layout">
-    <aside class="sidebar">
-        <div class="doctor-profile">
-            <img src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/60'}" alt="">
-            <div>
-                <h4>${not empty doctor.hoTen ? doctor.hoTen : 'Bác sĩ'}</h4>
-                <p>${not empty doctor.vaiTro ? doctor.vaiTro : 'Bác sĩ điều trị'}</p>
-            </div>
-        </div>
-        <nav class="menu">
-            <a href="${pageContext.request.contextPath}/doctor-dashboard" class="menu-item">
-                <i class="fa-solid fa-table-cells"></i><span>Tổng quan</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/doctor/patient-list" class="menu-item">
-                <i class="fa-solid fa-users"></i><span>Danh sách bệnh nhân</span>
-            </a>
-            <a class="menu-item"><i class="fa-regular fa-bell"></i><span>Cảnh báo khẩn cấp</span></a>
-            <a href="${pageContext.request.contextPath}/doctor/patient-records" class="menu-item active">
-                <i class="fa-regular fa-clipboard"></i><span>Hồ sơ sức khỏe</span>
-            </a>
-            <a class="menu-item"><i class="fa-solid fa-chart-column"></i><span>Phân tích dữ liệu</span></a>
-        </nav>
-        <div class="sidebar-bottom">
-            <a href="${pageContext.request.contextPath}/medical-encounters/add" class="new-record" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">
-                <i class="fa-solid fa-plus"></i> Tạo hồ sơ mới
-            </a>
-            <a class="bottom-link"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
-            <a class="bottom-link"><i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất</a>
-        </div>
-    </aside>
-
+    <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
     <main class="main-content">
+
         <div class="page-content">
 
             <nav class="breadcrumb">
                 <a href="${pageContext.request.contextPath}/doctor-dashboard">Dashboard</a>
                 <span>/</span>
-                <a href="${pageContext.request.contextPath}/doctor/patient-records">Quản lý hồ sơ bệnh án</a>
+                <a href="${pageContext.request.contextPath}/doctor/patient-records">Quản lý hồ sơ khám bệnh</a>
                 <span>/</span>
                 <span>Thêm hồ sơ bệnh án</span>
             </nav>
@@ -256,6 +214,14 @@
                             <div class="form-group">
                                 <label>Ngày khám <span class="req">*</span></label>
                                 <input type="date" name="ngayKham" value="${form.ngayKham}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Loại hồ sơ <span class="req">*</span></label>
+                                <select name="encounterType" id="encounterType" required>
+                                    <option value="tai_kham_noi_tiet" ${form.encounterType == 'tai_kham_noi_tiet' || empty form.encounterType ? 'selected' : ''}>Bệnh án tái khám Nội tiết</option>
+                                    <option value="mau_tong_quat" ${form.encounterType == 'mau_tong_quat' ? 'selected' : ''}>Kết quả xét nghiệm máu tổng quát</option>
+                                    <option value="sinh_hoa_mau" ${form.encounterType == 'sinh_hoa_mau' ? 'selected' : ''}>Kết quả sinh hóa máu</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Khoa khám</label>
@@ -305,13 +271,13 @@
                 </div>
 
                 <!-- B. Thông tin lâm sàng -->
-                <div class="card">
+                <div class="card" data-encounter-section="tai_kham_noi_tiet">
                     <div class="card-top"><i class="fa-solid fa-stethoscope"></i> B. Thông tin lâm sàng</div>
                     <div class="card-body">
                         <div class="form-container">
                             <div class="form-group full-width">
-                                <label>Triệu chứng <span class="req">*</span></label>
-                                <textarea name="trieuChung" rows="2" required>${not empty form.trieuChung ? form.trieuChung : form.lyDoKham}</textarea>
+                                <label>Triệu chứng <span class="req tai-kham-required">*</span></label>
+                                <textarea name="trieuChung" rows="2" data-tai-kham-required="true">${not empty form.trieuChung ? form.trieuChung : form.lyDoKham}</textarea>
                             </div>
                             <div class="form-group full-width">
                                 <label>Tiền sử bệnh</label>
@@ -322,8 +288,8 @@
                                 <textarea name="khamLamSang" rows="2">${form.khamLamSang}</textarea>
                             </div>
                             <div class="form-group">
-                                <label>Chẩn đoán chính <span class="req">*</span></label>
-                                <input type="text" name="chanDoanChinh" value="${form.chanDoanChinh}" required>
+                                <label>Chẩn đoán chính <span class="req tai-kham-required">*</span></label>
+                                <input type="text" name="chanDoanChinh" value="${form.chanDoanChinh}" data-tai-kham-required="true">
                             </div>
                             <div class="form-group">
                                 <label>Chẩn đoán phụ</label>
@@ -360,7 +326,7 @@
                 </div>
 
                 <!-- C. Chỉ số sức khỏe -->
-                <div class="card">
+                <div class="card" data-encounter-section="tai_kham_noi_tiet">
                     <div class="card-top"><i class="fa-solid fa-heart-pulse"></i> C. Chỉ số sức khỏe</div>
                     <div class="card-body">
                         <div class="form-container">
@@ -401,7 +367,7 @@
                 </div>
 
                 <!-- D. Kết quả sinh hóa -->
-                <div class="card">
+                <div class="card" data-encounter-section="sinh_hoa_mau">
                     <div class="card-top"><i class="fa-solid fa-flask"></i> D. Kết quả sinh hóa máu (tùy chọn)</div>
                     <div class="card-body">
                         <div class="form-container">
@@ -420,7 +386,7 @@
                 </div>
 
                 <!-- E. Xét nghiệm máu tổng quát -->
-                <div class="card">
+                <div class="card" data-encounter-section="mau_tong_quat">
                     <div class="card-top"><i class="fa-solid fa-vial"></i> E. Xét nghiệm máu tổng quát (tùy chọn)</div>
                     <div class="card-body">
                         <div class="form-container">
@@ -434,7 +400,7 @@
                 </div>
 
                 <!-- F. Đơn thuốc -->
-                <div class="card">
+                <div class="card" data-encounter-section="tai_kham_noi_tiet">
                     <div class="card-top" style="justify-content:space-between;">
                         <span><i class="fa-solid fa-pills"></i> F. Đơn thuốc (tùy chọn)</span>
                         <button type="button" class="btn btn-sm btn-add-outline" id="btnAddMed">
@@ -623,6 +589,25 @@
         });
     }
 
+    const encounterTypeSelect = document.getElementById('encounterType');
+    function toggleEncounterSections() {
+        const type = encounterTypeSelect.value;
+        const isTaiKham = type === 'tai_kham_noi_tiet';
+        document.querySelectorAll('[data-encounter-section]').forEach(function (card) {
+            card.style.display = card.getAttribute('data-encounter-section') === type ? '' : 'none';
+        });
+        document.querySelectorAll('[data-tai-kham-required]').forEach(function (field) {
+            if (isTaiKham) {
+                field.setAttribute('required', 'required');
+            } else {
+                field.removeAttribute('required');
+            }
+        });
+        document.querySelectorAll('.tai-kham-required').forEach(function (mark) {
+            mark.style.display = isTaiKham ? '' : 'none';
+        });
+    }
+
     document.getElementById('encounterForm').addEventListener('submit', function (e) {
         if (!patientIdInput.value) {
             e.preventDefault();
@@ -630,13 +615,26 @@
             searchInput.focus();
             return;
         }
-        const trieuChung = document.querySelector('[name="trieuChung"]');
-        if (trieuChung && !trieuChung.value.trim()) {
-            e.preventDefault();
-            alert('Vui lòng nhập triệu chứng.');
-            trieuChung.focus();
+        const type = encounterTypeSelect.value;
+        if (type === 'tai_kham_noi_tiet') {
+            const trieuChung = document.querySelector('[name="trieuChung"]');
+            if (trieuChung && !trieuChung.value.trim()) {
+                e.preventDefault();
+                alert('Vui lòng nhập triệu chứng.');
+                trieuChung.focus();
+                return;
+            }
+            const chanDoanChinh = document.querySelector('[name="chanDoanChinh"]');
+            if (chanDoanChinh && !chanDoanChinh.value.trim()) {
+                e.preventDefault();
+                alert('Vui lòng nhập chẩn đoán chính.');
+                chanDoanChinh.focus();
+            }
         }
     });
+
+    encounterTypeSelect.addEventListener('change', toggleEncounterSections);
+    toggleEncounterSections();
 })();
 </script>
 </body>

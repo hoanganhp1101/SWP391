@@ -1,7 +1,7 @@
 package com.example.diabetesmanage.dao;
 
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm;
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm.MedicationFormItem;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest.MedicationLineItem;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class MedicationDAO {
 
-    public void insertAll(Connection con, String prescriptionId, List<MedicationFormItem> medications)
+    public void insertAll(Connection con, String prescriptionId, List<MedicationLineItem> medications)
             throws SQLException {
         if (medications == null || medications.isEmpty()) {
             return;
@@ -23,7 +23,7 @@ public class MedicationDAO {
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            for (MedicationFormItem med : medications) {
+            for (MedicationLineItem med : medications) {
                 if (!med.hasContent()) {
                     continue;
                 }

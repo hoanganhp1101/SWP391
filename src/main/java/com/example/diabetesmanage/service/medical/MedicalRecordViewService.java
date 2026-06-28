@@ -1,13 +1,13 @@
 package com.example.diabetesmanage.service.medical;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.LabResultDAO;
 import com.example.diabetesmanage.dao.MedicalEncounterDAO;
-import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.LabResult;
+import com.example.diabetesmanage.model.EncounterType;
 import com.example.diabetesmanage.model.MedicalEncounter;
 import com.example.diabetesmanage.model.Patient;
-import com.example.diabetesmanage.model.medical.*;
+import com.example.diabetesmanage.util.EncounterClinicalJson;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfPCell;
@@ -30,7 +30,9 @@ public class MedicalRecordViewService {
         FULL("full", "Toan bo ho so"),
         INTERNAL_MEDICINE("internal", "Benh an noi tiet"),
         BLOOD_COUNT("blood", "Xet nghiem mau tong quat"),
-        BIOCHEMISTRY("biochemistry", "Sinh hoa mau");
+        BIOCHEMISTRY("biochemistry", "Sinh hoa mau"),
+        ULTRASOUND("ultrasound", "Sieu am bung"),
+        PRESCRIPTION("prescription", "Don thuoc");
 
         private final String param;
         private final String label;
@@ -63,38 +65,37 @@ public class MedicalRecordViewService {
 
     private static final double UMOL_TO_MGDL = 1.0 / 88.4;
 
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
     private final LabResultDAO labResultDAO = new LabResultDAO();
     private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
+    private final PatientDAO patientDAO = new PatientDAO();
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter EXPORT_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    public MedicalRecordDetailView loadDetailViewByRecordId(String recordId, String scopeDoctorId) {
-        HealthRecord record = healthRecordDAO.getHealthRecordRecordById(recordId, scopeDoctorId);
-        if (record == null) {
+    public EncounterDetail loadDetailViewByEncounterId(String encounterId, String scopeDoctorId) {
+        MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
+        if (encounter == null) {
+            encounter = encounterDAO.getEncounterById(encounterId, null);
+        }
+        if (encounter == null) {
             return null;
         }
-        return buildDetailView(record);
+        return buildDetailViewFromEncounter(encounter, scopeDoctorId);
     }
 
-    public MedicalRecordDetailView loadDetailViewByPatientId(String patientId, String scopeDoctorId) {
-        HealthRecord record = healthRecordDAO.getLatestHealthRecordByPatientId(patientId, scopeDoctorId);
-        if (record == null) {
+    public EncounterDetail loadDetailViewByPatientId(String patientId, String scopeDoctorId) {
+        MedicalEncounter encounter = encounterDAO.getLatestByPatientId(patientId, scopeDoctorId);
+        if (encounter == null) {
             return null;
         }
-        return buildDetailView(record);
+        return buildDetailViewFromEncounter(encounter, scopeDoctorId);
     }
 
-    public HealthRecord getRecordById(String recordId, String scopeDoctorId) {
-        return healthRecordDAO.getHealthRecordRecordById(recordId, scopeDoctorId);
+    public MedicalEncounter getLatestEncounterByPatientId(String patientId, String scopeDoctorId) {
+        return encounterDAO.getLatestByPatientId(patientId, scopeDoctorId);
     }
 
-    public HealthRecord getLatestRecordByPatientId(String patientId, String scopeDoctorId) {
-        return healthRecordDAO.getLatestHealthRecordByPatientId(patientId, scopeDoctorId);
-    }
-
-    public byte[] generateMedicalRecordPdf(MedicalRecordDetailView view, PdfExportType type)
+    public byte[] generateMedicalRecordPdf(EncounterDetail view, PdfExportType type)
             throws Exception {
 
         Document document = new Document(PageSize.A4, 40, 40, 50, 50);
@@ -120,10 +121,14 @@ public class MedicalRecordViewService {
             case BIOCHEMISTRY:
                 addBiochemistry(document, view, headerFont, normalFont);
                 break;
+            case ULTRASOUND:
+                addUltrasound(document, view, headerFont, normalFont);
+                break;
+            case PRESCRIPTION:
+                addPrescriptionDetail(document, view, headerFont, normalFont);
+                break;
             default:
-                addInternalMedicine(document, view, headerFont, normalFont);
-                addBloodCount(document, view, headerFont, normalFont);
-                addBiochemistry(document, view, headerFont, normalFont);
+                addSectionsForEncounterType(document, view, headerFont, normalFont);
         }
 
         addFooter(document, view, footerFont, smallFont);
@@ -132,254 +137,257 @@ public class MedicalRecordViewService {
         return output.toByteArray();
     }
 
-    private MedicalRecordDetailView buildDetailView(HealthRecord record) {
-        String patientId = record.getPatient() != null ? record.getPatient().getId() : null;
+    private EncounterDetail buildDetailViewFromEncounter(
+            MedicalEncounter encounter, String scopeDoctorId) {
+        Patient patient = patientDAO.getPatientById(encounter.getPatientId(), scopeDoctorId);
+        LabResult lab = labResultDAO.getByEncounterId(encounter.getId());
+        Map<String, String> prescriptionAdvice =
+                encounterDAO.getPrescriptionAdviceByEncounterId(encounter.getId());
+        List<Map<String, String>> prescriptionItems =
+                encounterDAO.getMedicationDetailsByEncounterId(encounter.getId());
 
-        MedicalEncounter encounter = null;
-        if (patientId != null && record.getThoiGianDo() != null) {
-            encounter = encounterDAO.getClosestByPatientAndTime(patientId, record.getThoiGianDo());
+        EncounterDetail view = new EncounterDetail();
+        view.setRecordId(encounter.getId());
+        view.setRecordCode(encounter.getDisplayCode());
+
+        if (patient != null) {
+            view.setPatientCode(patient.getPatientCode());
+            if (patient.getUser() != null) {
+                view.setPatientName(patient.getUser().getHoTen());
+            }
+        } else {
+            view.setPatientCode(encounter.getPatientCode());
+            view.setPatientName(encounter.getPatientName());
         }
-        if (encounter == null && patientId != null) {
-            encounter = encounterDAO.getLatestByPatientId(patientId);
+
+        if (encounter.getNgayKham() != null) {
+            view.setExamDate(encounter.getNgayKham().format(DATE_FMT));
         }
 
-        LabResult lab = null;
-        if (encounter != null && encounter.getId() != null) {
-            lab = labResultDAO.getByEncounterId(encounter.getId());
-        }
-        if (lab == null && patientId != null) {
-            lab = labResultDAO.getLatestByPatientId(patientId);
-        }
+        EncounterType encounterType = resolveEncounterType(encounter);
+        view.setEncounterType(encounterType.getCode());
+        view.setEncounterTypeLabel(encounterType.getLabel());
 
-        List<Map<String, String>> medications = encounter != null && encounter.getId() != null
-                ? encounterDAO.getMedicationsByEncounterId(encounter.getId())
-                : (patientId != null ? encounterDAO.getMedicationsByPatientId(patientId) : List.of());
-
-        List<String> recommendations = encounter != null && encounter.getId() != null
-                ? encounterDAO.getRecommendationsByEncounterId(encounter.getId())
-                : (patientId != null ? encounterDAO.getRecommendationsByPatientId(patientId) : List.of());
-
-        MedicalRecordDetailView view = buildView(record, lab, encounter, medications, recommendations);
-        if (encounter != null && encounter.getBacSiId() != null) {
+        if (encounter.getDoctorName() != null && !encounter.getDoctorName().isBlank()) {
+            view.setDoctorName(encounter.getDoctorName());
+        } else if (encounter.getBacSiId() != null) {
             String doctorName = encounterDAO.getDoctorNameById(encounter.getBacSiId());
             if (doctorName != null && !doctorName.isBlank()) {
                 view.setDoctorName(doctorName);
             }
         }
+
+        String khoaKham = EncounterClinicalJson.parseString(encounter.getKhamLamSang(), "khoa_kham");
+        if (khoaKham != null && !khoaKham.isBlank()) {
+            view.setDepartment(khoaKham);
+        }
+
+        view.setInternalMedicine(buildInternalMedicineFromEncounter(
+                encounter, patient, prescriptionAdvice));
+        if (encounterType.isTaiKhamNoiTiet()) {
+            view.setPrescriptionDetail(buildPrescriptionDetail(prescriptionItems));
+        } else {
+            view.setPrescriptionDetail(new EncounterDetail.PrescriptionDetailSection());
+        }
+        if (encounterType.isMauTongQuat()) {
+            view.setBloodCount(buildBloodCount(lab));
+        } else {
+            view.setBloodCount(new EncounterDetail.BloodCountSection());
+        }
+        if (encounterType.isSinhHoaMau()) {
+            view.setBiochemistry(buildBiochemistryFromLab(lab));
+        } else {
+            view.setBiochemistry(new EncounterDetail.BiochemistrySection());
+        }
+        view.setUltrasound(new EncounterDetail.UltrasoundSection());
         return view;
     }
 
-    public MedicalRecordDetailView buildView(HealthRecord record) {
-        return buildView(record, null, null, List.of(), List.of());
+    private void addSectionsForEncounterType(
+            Document document,
+            EncounterDetail view,
+            Font headerFont,
+            Font normalFont
+    ) throws DocumentException {
+        EncounterType type = view.resolveEncounterType();
+        if (type.isTaiKhamNoiTiet()) {
+            addInternalMedicine(document, view, headerFont, normalFont);
+            addPrescriptionDetail(document, view, headerFont, normalFont);
+        } else if (type.isMauTongQuat()) {
+            addBloodCount(document, view, headerFont, normalFont);
+        } else if (type.isSinhHoaMau()) {
+            addBiochemistry(document, view, headerFont, normalFont);
+        }
     }
 
-    public MedicalRecordDetailView buildView(
-            HealthRecord record,
-            LabResult lab,
-            MedicalEncounter encounter,
-            List<Map<String, String>> medications,
-            List<String> recommendations
-    ) {
-        MedicalRecordDetailView view = new MedicalRecordDetailView();
-
-        if (record == null) {
-            return view;
+    private EncounterType resolveEncounterType(MedicalEncounter encounter) {
+        if (encounter.getLoaiEncounter() != null && !encounter.getLoaiEncounter().isBlank()) {
+            return EncounterType.fromCode(encounter.getLoaiEncounter());
         }
-
-        view.setRecordId(record.getId());
-        view.setRecordCode(record.getHealthRecordId());
-
-        if (record.getPatient() != null) {
-            view.setPatientCode(record.getPatient().getPatientCode());
-            if (record.getPatient().getUser() != null) {
-                view.setPatientName(record.getPatient().getUser().getHoTen());
-            }
+        String json = encounter.getKhamLamSang();
+        String fromJson = EncounterClinicalJson.parseString(json, "loai_encounter");
+        if (fromJson != null && !fromJson.isBlank()) {
+            return EncounterType.fromCode(fromJson);
         }
-
-        if (encounter != null && encounter.getNgayKham() != null) {
-            view.setExamDate(encounter.getNgayKham().format(DATE_FMT));
-        } else if (record.getThoiGianDo() != null) {
-            view.setExamDate(record.getThoiGianDo().format(DATE_FMT));
-        }
-
-        view.setInternalMedicine(buildInternalMedicine(record, encounter, medications, recommendations));
-        view.setBloodCount(buildBloodCount(lab));
-        view.setBiochemistry(buildBiochemistry(record, lab));
-
-        return view;
+        return encounter.getEncounterType();
     }
 
-    private MedicalRecordDetailView.InternalMedicineSection buildInternalMedicine(
-            HealthRecord record,
+    private EncounterDetail.InternalMedicineSection buildInternalMedicineFromEncounter(
             MedicalEncounter encounter,
-            List<Map<String, String>> medications,
-            List<String> recommendations
+            Patient patient,
+            Map<String, String> prescriptionAdvice
     ) {
-        MedicalRecordDetailView.InternalMedicineSection section =
-                new MedicalRecordDetailView.InternalMedicineSection();
-        Patient patient = record.getPatient();
+        EncounterDetail.InternalMedicineSection section =
+                new EncounterDetail.InternalMedicineSection();
+        String json = encounter.getKhamLamSang();
 
-        String symptoms = firstNonBlank(
-                encounter != null ? encounter.getLyDoKham() : null,
-                encounter != null ? encounter.getQuaTrinhBenhLy() : null,
-                record.getGhiChu(),
-                "Không ghi nhận triệu chứng đặc biệt"
+        String trieuChung = firstNonBlank(
+                EncounterClinicalJson.parseString(json, "trieu_chung"),
+                encounter.getLyDoKham()
         );
+        section.getClinicalInfo().add(textField(
+                "Triệu chứng", trieuChung != null ? trieuChung : "—"));
 
-        section.getClinicalInfo().add(textField("Triệu chứng", symptoms));
-        if (encounter != null && encounter.getKhamLamSang() != null && !encounter.getKhamLamSang().isBlank()) {
-            section.getClinicalInfo().add(textField("Khám lâm sàng", encounter.getKhamLamSang()));
+        String tienSu = firstNonBlank(encounter.getQuaTrinhBenhLy());
+        section.getClinicalInfo().add(textField(
+                "Tiền sử bệnh", tienSu != null ? tienSu : "—"));
+
+        String khamLamSang = EncounterClinicalJson.parseString(json, "noi_dung");
+        section.getClinicalInfo().add(textField(
+                "Khám lâm sàng", khamLamSang != null ? khamLamSang : "—"));
+
+        Double height = EncounterClinicalJson.parseDouble(json, "chieu_cao_cm");
+        section.getHealthMetrics().add(field(
+                "Chiều cao", height != null ? format(height) : "—", "cm", null));
+
+        Double weight = EncounterClinicalJson.parseDouble(json, "can_nang_kg");
+        section.getHealthMetrics().add(field(
+                "Cân nặng", weight != null ? format(weight) : "—", "kg", null));
+
+        Double bmi = EncounterClinicalJson.parseDouble(json, "bmi");
+        if (bmi != null) {
+            section.getHealthMetrics().add(bmi(bmi));
+        } else {
+            section.getHealthMetrics().add(field("BMI", "—", "kg/m²", "18.5-24.9"));
         }
-        if (encounter != null && encounter.getQuaTrinhBenhLy() != null && !encounter.getQuaTrinhBenhLy().isBlank()) {
-            section.getClinicalInfo().add(textField("Tiền sử bệnh", encounter.getQuaTrinhBenhLy()));
+
+        Integer systolic = EncounterClinicalJson.parseInteger(json, "huyet_ap_tam_thu");
+        Integer diastolic = EncounterClinicalJson.parseInteger(json, "huyet_ap_tam_truong");
+        if (systolic != null || diastolic != null) {
+            section.getHealthMetrics().add(bloodPressure(systolic, diastolic));
+        } else {
+            section.getHealthMetrics().add(field("Huyết áp", "—", "mmHg", "< 120/80"));
         }
-        section.getClinicalInfo().add(bmi(record.getBmi()));
-        section.getClinicalInfo().add(bloodPressure(
-                record.getHuyetApTamThu(),
-                record.getHuyetApTamTruong()
+
+        Integer heartRate = EncounterClinicalJson.parseInteger(json, "nhip_tim");
+        section.getHealthMetrics().add(field(
+                "Nhịp tim",
+                heartRate != null ? String.valueOf(heartRate) : "—",
+                "bpm", "60-100"));
+
+        Double temperature = EncounterClinicalJson.parseDouble(json, "nhiet_do_c");
+        section.getHealthMetrics().add(field(
+                "Nhiệt độ",
+                temperature != null ? format(temperature) : "—",
+                "°C", "36.0-37.5"));
+
+        Integer respiratoryRate = EncounterClinicalJson.parseInteger(json, "nhip_tho");
+        section.getHealthMetrics().add(field(
+                "Nhịp thở",
+                respiratoryRate != null ? String.valueOf(respiratoryRate) : "—",
+                "lần/phút", "12-20"));
+
+        String diagnosis = encounter.getChanDoanChinh();
+        section.getDiagnosisInfo().add(textField(
+                "Chẩn đoán chính",
+                diagnosis != null && !diagnosis.isBlank() ? diagnosis : "—"
         ));
-
-        String diagnosis = firstNonBlank(
-                encounter != null ? encounter.getChanDoanChinh() : null,
-                record.getChanDoanChinh(),
-                patient != null ? patient.getLoaiTieuDuong() : null,
-                "Theo dõi đái tháo đường"
-        );
-        section.getDiagnosisInfo().add(textField("Chẩn đoán chính", diagnosis));
-
-        String secondary = encounter != null ? encounter.getChanDoanPhu() : null;
-        if (secondary != null && !secondary.isBlank()) {
-            section.getDiagnosisInfo().add(textField("Chẩn đoán phụ", secondary));
-        }
-
+        section.getDiagnosisInfo().add(textField(
+                "Chẩn đoán phụ",
+                encounter.getChanDoanPhu() != null && !encounter.getChanDoanPhu().isBlank()
+                        ? encounter.getChanDoanPhu() : "—"
+        ));
         section.getDiagnosisInfo().add(textField(
                 "Phân loại tiểu đường",
-                patient != null ? patient.getLoaiTieuDuong() : "—"
+                patient != null && patient.getLoaiTieuDuong() != null
+                        ? patient.getLoaiTieuDuong() : "—"
+        ));
+        section.getDiagnosisInfo().add(textField(
+                "Hướng xử trí",
+                encounter.getHuongXuTri() != null && !encounter.getHuongXuTri().isBlank()
+                        ? encounter.getHuongXuTri() : "—"
         ));
 
-        if (encounter != null && encounter.getHuongXuTri() != null && !encounter.getHuongXuTri().isBlank()) {
-            section.getDiagnosisInfo().add(textField("Hướng xử trí", encounter.getHuongXuTri()));
+        section.getRecommendationFields().add(textField(
+                "Khuyến nghị điều trị",
+                prescriptionAdvice != null ? prescriptionAdvice.get("huong_dieu_tri") : null
+        ));
+        section.getRecommendationFields().add(textField(
+                "Chế độ ăn",
+                prescriptionAdvice != null ? prescriptionAdvice.get("che_do_an") : null
+        ));
+        section.getRecommendationFields().add(textField(
+                "Luyện tập",
+                prescriptionAdvice != null ? prescriptionAdvice.get("luyen_tap") : null
+        ));
+
+        List<String> recommendations = new ArrayList<>();
+        if (prescriptionAdvice != null) {
+            appendRecommendation(recommendations, prescriptionAdvice.get("huong_dieu_tri"));
+            appendRecommendation(recommendations, prescriptionAdvice.get("che_do_an"));
+            appendRecommendation(recommendations, prescriptionAdvice.get("luyen_tap"));
         }
-
-        section.setMedications(buildMedications(record, medications));
-        section.setRecommendations(buildRecommendations(record, recommendations));
-
+        section.setMedications(List.of());
+        section.setRecommendations(recommendations);
         return section;
     }
 
-    private List<Map<String, String>> buildMedications(
-            HealthRecord record, List<Map<String, String>> prescriptions) {
-        if (prescriptions != null && !prescriptions.isEmpty()) {
-            return prescriptions;
+    private void appendRecommendation(List<String> target, String item) {
+        if (item == null || item.isBlank()) {
+            return;
         }
-
-        List<Map<String, String>> meds = new ArrayList<>();
-
-        if (record.getLoaiInsulinTiem() != null && !record.getLoaiInsulinTiem().isBlank()) {
-            String dose = record.getLieuLuongInsulinUi() != null
-                    ? record.getLieuLuongInsulinUi() + " UI"
-                    : "—";
-            meds.add(medication(record.getLoaiInsulinTiem(), dose));
-        } else if (record.getLieuLuongInsulinUi() != null && record.getLieuLuongInsulinUi() > 0) {
-            meds.add(medication("Insulin", record.getLieuLuongInsulinUi() + " UI"));
+        String trimmed = item.trim();
+        if (!target.contains(trimmed)) {
+            target.add(trimmed);
         }
-
-        if (meds.isEmpty()) {
-            meds.add(medication(
-                    "Chưa ghi nhận đơn thuốc", "—", "Cập nhật tại tái khám"));
-        }
-
-        return meds;
     }
 
-    private List<String> buildRecommendations(HealthRecord record, List<String> fromPrescription) {
-        if (fromPrescription != null && !fromPrescription.isEmpty()) {
-            return fromPrescription;
-        }
-
-        if (record.getKhuyenNghi() != null && !record.getKhuyenNghi().isBlank()) {
-            return Arrays.asList(record.getKhuyenNghi().split("\\n|;"));
-        }
-
-        List<String> recs = new ArrayList<>();
-        recs.add("Duy trì chế độ ăn kiểm soát carbohydrate và đường huyết.");
-        recs.add("Tập thể dục đều đặn 30 phút/ngày, ít nhất 5 ngày/tuần.");
-
-        if (record.getSoBuocChan() != null && record.getSoBuocChan() < 5000) {
-            recs.add("Tăng hoạt động thể chất — mục tiêu ≥ 7.000 bước/ngày.");
-        }
-        if (record.getSoGioNgu() != null && record.getSoGioNgu() < 7) {
-            recs.add("Ngủ đủ 7-8 giờ/ngày để ổn định đường huyết.");
-        }
-        if (record.getCarbsG() != null && record.getCarbsG() > 200) {
-            recs.add("Giảm lượng carbohydrate trong bữa ăn hàng ngày.");
-        }
-
-        return recs;
-    }
-
-    private MedicalRecordDetailView.BloodCountSection buildBloodCount(LabResult lab) {
-        MedicalRecordDetailView.BloodCountSection section =
-                new MedicalRecordDetailView.BloodCountSection();
-        section.getItems().add(lab("WBC", lab != null ? lab.getWbc() : null, "G/L", "4.0-10.0", 4.0, 10.0));
-        section.getItems().add(lab("RBC", lab != null ? lab.getRbc() : null, "T/L", "4.0-5.5", 4.0, 5.5));
-        section.getItems().add(lab("HGB", lab != null ? lab.getHgb() : null, "g/dL", "12-16", 12, 16));
-        section.getItems().add(lab("HCT", lab != null ? lab.getHct() : null, "%", "36-46", 36, 46));
-        section.getItems().add(lab("PLT", lab != null ? lab.getPlt() : null, "G/L", "150-400", 150, 400));
+    private EncounterDetail.PrescriptionDetailSection buildPrescriptionDetail(
+            List<Map<String, String>> items) {
+        EncounterDetail.PrescriptionDetailSection section =
+                new EncounterDetail.PrescriptionDetailSection();
+        section.setItems(items != null ? items : List.of());
         return section;
     }
 
-    private MedicalRecordDetailView.BiochemistrySection buildBiochemistry(
-            HealthRecord record, LabResult lab) {
-        MedicalRecordDetailView.BiochemistrySection section =
-                new MedicalRecordDetailView.BiochemistrySection();
+    private EncounterDetail.BiochemistrySection buildBiochemistryFromLab(LabResult lab) {
+        EncounterDetail.BiochemistrySection section =
+                new EncounterDetail.BiochemistrySection();
 
-        Double glucoseMgdl = record.getDuongHuyetMgdl();
-        if (glucoseMgdl == null && lab != null) {
-            glucoseMgdl = lab.getGlucoseMgdl();
-        }
+        Double glucoseMgdl = lab != null ? lab.getGlucoseMgdl() : null;
+        Double hba1c = lab != null ? lab.getHba1c() : null;
 
-        Double hba1c = record.getHba1cPercent();
-        if (hba1c == null && lab != null) {
-            hba1c = lab.getHba1c();
-        }
-
-        section.setGlucose(glucose(glucoseMgdl, record.getThoiDiemDoDuong()));
+        section.setGlucose(glucose(glucoseMgdl, null));
         section.setHba1c(hba1c(hba1c));
 
-        Double cholesterol = firstNonNull(
-                record.getCholesterolMmol(),
-                lab != null ? lab.getCholesterolTp() : null
-        );
-        Double triglyceride = firstNonNull(
-                record.getTriglycerideMmol(),
-                lab != null ? lab.getTriglyceride() : null
-        );
+        section.getLipidProfile().add(lab(
+                "Cholesterol", lab != null ? lab.getCholesterolTp() : null, "mmol/L", "< 5.2", 0, 5.2));
+        section.getLipidProfile().add(lab(
+                "Triglyceride", lab != null ? lab.getTriglyceride() : null, "mmol/L", "< 1.7", 0, 1.7));
+        section.getLipidProfile().add(lab(
+                "HDL", lab != null ? lab.getHdlC() : null, "mmol/L", "> 1.0", 1.0, 99));
+        section.getLipidProfile().add(lab(
+                "LDL", lab != null ? lab.getLdlC() : null, "mmol/L", "< 3.4", 0, 3.4));
 
-        section.getLipidProfile().add(lab(
-                "Cholesterol", cholesterol, "mmol/L", "< 5.2", 0, 5.2));
-        section.getLipidProfile().add(lab(
-                "Triglyceride", triglyceride, "mmol/L", "< 1.7", 0, 1.7));
-        section.getLipidProfile().add(lab(
-                "HDL", lab != null ? lab.getHdlC() : record.getHdlMmol(), "mmol/L", "> 1.0", 1.0, 99));
-        section.getLipidProfile().add(lab(
-                "LDL", lab != null ? lab.getLdlC() : record.getLdlMmol(), "mmol/L", "< 3.4", 0, 3.4));
-
-        Double ast = lab != null ? lab.getAst() : record.getAst();
-        Double alt = lab != null ? lab.getAlt() : record.getAlt();
-        section.getLiverEnzymes().add(lab("AST", ast, "U/L", "< 40", 0, 40));
-        section.getLiverEnzymes().add(lab("ALT", alt, "U/L", "< 41", 0, 41));
+        section.getLiverEnzymes().add(lab("AST", lab != null ? lab.getAst() : null, "U/L", "< 40", 0, 40));
+        section.getLiverEnzymes().add(lab("ALT", lab != null ? lab.getAlt() : null, "U/L", "< 41", 0, 41));
 
         Double creatinineMgdl = null;
         if (lab != null && lab.getCreatinine() != null) {
             creatinineMgdl = lab.getCreatinine() * UMOL_TO_MGDL;
-        } else if (record.getCreatinine() != null) {
-            creatinineMgdl = record.getCreatinine();
         }
-
         section.getKidneyFunction().add(lab(
                 "Creatinine", creatinineMgdl, "mg/dL", "0.6-1.2", 0.6, 1.2));
-
         if (lab != null && lab.getUre() != null) {
             section.getKidneyFunction().add(lab(
                     "Ure", lab.getUre(), "mmol/L", "2.5-7.5", 2.5, 7.5));
@@ -389,11 +397,20 @@ public class MedicalRecordViewService {
         if (alert != null) {
             section.getAlerts().add(alert);
         }
-
         if (isAbnormal(section.getGlucose())) {
             section.getAlerts().add("Đường huyết bất thường — cần can thiệp điều trị");
         }
+        return section;
+    }
 
+    private EncounterDetail.BloodCountSection buildBloodCount(LabResult lab) {
+        EncounterDetail.BloodCountSection section =
+                new EncounterDetail.BloodCountSection();
+        section.getItems().add(lab("WBC", lab != null ? lab.getWbc() : null, "G/L", "4.0-10.0", 4.0, 10.0));
+        section.getItems().add(lab("RBC", lab != null ? lab.getRbc() : null, "T/L", "4.0-5.5", 4.0, 5.5));
+        section.getItems().add(lab("HGB", lab != null ? lab.getHgb() : null, "g/dL", "12-16", 12, 16));
+        section.getItems().add(lab("HCT", lab != null ? lab.getHct() : null, "%", "36-46", 36, 46));
+        section.getItems().add(lab("PLT", lab != null ? lab.getPlt() : null, "G/L", "150-400", 150, 400));
         return section;
     }
 
@@ -519,10 +536,6 @@ public class MedicalRecordViewService {
         return null;
     }
 
-    private String diabetesAlert(HealthRecord record) {
-        return diabetesAlert(record.getDuongHuyetMgdl(), record.getHba1cPercent());
-    }
-
     private Map<String, Object> field(String label, String value, String unit, String range) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("label", label);
@@ -555,10 +568,10 @@ public class MedicalRecordViewService {
         return String.format("%.1f", value);
     }
 
-    private void addHeader(Document document, MedicalRecordDetailView view,
+    private void addHeader(Document document, EncounterDetail view,
                            Font titleFont, Font normalFont) throws DocumentException {
 
-        Paragraph title = new Paragraph("HO SO SUC KHOE - NOI TIET", titleFont);
+        Paragraph title = new Paragraph("HO SO KHAM BENH - NOI TIET", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
         title.setSpacingAfter(12);
         document.add(title);
@@ -568,7 +581,7 @@ public class MedicalRecordViewService {
         table.setSpacingAfter(16);
 
         addRow(table, "Benh nhan:", safe(view.getPatientName()), normalFont);
-        addRow(table, "Ma ho so:", safe(view.getRecordCode()), normalFont);
+        addRow(table, "Ma encounter:", safe(view.getRecordCode()), normalFont);
         addRow(table, "Ma benh nhan:", safe(view.getPatientCode()), normalFont);
         addRow(table, "Ngay kham:", safe(view.getExamDate()), normalFont);
         addRow(table, "Khoa:", safe(view.getDepartment()), normalFont);
@@ -577,12 +590,12 @@ public class MedicalRecordViewService {
         document.add(new Paragraph(" ", normalFont));
     }
 
-    private void addInternalMedicine(Document document, MedicalRecordDetailView view,
+    private void addInternalMedicine(Document document, EncounterDetail view,
                                      Font headerFont, Font normalFont) throws DocumentException {
 
         document.add(sectionTitle("I. Benh an tai kham noi tiet", headerFont));
 
-        MedicalRecordDetailView.InternalMedicineSection section = view.getInternalMedicine();
+        EncounterDetail.InternalMedicineSection section = view.getInternalMedicine();
 
         document.add(subTitle("Thong tin lam sang", normalFont));
         addFieldTable(document, section.getClinicalInfo(), normalFont);
@@ -590,24 +603,34 @@ public class MedicalRecordViewService {
         document.add(subTitle("Chan doan", normalFont));
         addFieldTable(document, section.getDiagnosisInfo(), normalFont);
 
-        document.add(subTitle("Don thuoc", normalFont));
-        for (Map<String, String> med : section.getMedications()) {
-            document.add(new Paragraph(
-                    "- " + safe(med.get("name")) + ": " + safe(med.get("dose")), normalFont));
-        }
-
         document.add(subTitle("Khuyen nghi", normalFont));
-        for (String rec : section.getRecommendations()) {
-            document.add(new Paragraph("- " + safe(rec), normalFont));
-        }
+        addFieldTable(document, section.getRecommendationFields(), normalFont);
+
+        document.add(subTitle("Chi so suc khoe", normalFont));
+        addFieldTable(document, section.getHealthMetrics(), normalFont);
 
         document.add(Chunk.NEWLINE);
     }
 
-    private void addBloodCount(Document document, MedicalRecordDetailView view,
+    private void addPrescriptionDetail(Document document, EncounterDetail view,
+                                       Font headerFont, Font normalFont) throws DocumentException {
+        document.add(sectionTitle("II. Don thuoc", headerFont));
+        for (Map<String, String> med : view.getPrescriptionDetail().getItems()) {
+            document.add(new Paragraph(
+                    "- " + safe(med.get("name")) + ": " + safe(med.get("dose"))
+                            + " | " + safe(med.get("frequency"))
+                            + " | " + safe(med.get("usage")), normalFont));
+            if (med.get("note") != null && !med.get("note").isBlank()) {
+                document.add(new Paragraph("  Ghi chu: " + safe(med.get("note")), normalFont));
+            }
+        }
+        document.add(Chunk.NEWLINE);
+    }
+
+    private void addBloodCount(Document document, EncounterDetail view,
                                Font headerFont, Font normalFont) throws DocumentException {
 
-        document.add(sectionTitle("II. Xet nghiem mau tong quat", headerFont));
+        document.add(sectionTitle("III. Xet nghiem mau tong quat", headerFont));
 
         PdfPTable table = new PdfPTable(3);
         table.setWidthPercentage(100);
@@ -625,12 +648,12 @@ public class MedicalRecordViewService {
         document.add(Chunk.NEWLINE);
     }
 
-    private void addBiochemistry(Document document, MedicalRecordDetailView view,
+    private void addBiochemistry(Document document, EncounterDetail view,
                                  Font headerFont, Font normalFont) throws DocumentException {
 
-        document.add(sectionTitle("III. Sinh hoa mau", headerFont));
+        document.add(sectionTitle("IV. Sinh hoa mau", headerFont));
 
-        MedicalRecordDetailView.BiochemistrySection section = view.getBiochemistry();
+        EncounterDetail.BiochemistrySection section = view.getBiochemistry();
 
         document.add(subTitle("Duong huyet (Core Metrics)", normalFont));
         addFieldTable(document, List.of(section.getGlucose(), section.getHba1c()), normalFont);
@@ -654,7 +677,17 @@ public class MedicalRecordViewService {
         document.add(Chunk.NEWLINE);
     }
 
-    private void addFooter(Document document, MedicalRecordDetailView view,
+    private void addUltrasound(Document document, EncounterDetail view,
+                               Font headerFont, Font normalFont) throws DocumentException {
+        document.add(sectionTitle("V. Sieu am bung", headerFont));
+        for (Map<String, String> field : view.getUltrasound().getFields()) {
+            document.add(new Paragraph(
+                    safe(field.get("label")) + ": " + safe(field.get("value")), normalFont));
+        }
+        document.add(Chunk.NEWLINE);
+    }
+
+    private void addFooter(Document document, EncounterDetail view,
                            Font footerFont, Font smallFont) throws DocumentException {
 
         document.add(new Paragraph(" ", smallFont));
@@ -759,16 +792,12 @@ public class MedicalRecordViewService {
         return value;
     }
 
-    private Double firstNonNull(Double first, Double second) {
-        return first != null ? first : second;
-    }
-
     private String firstNonBlank(String... values) {
         for (String value : values) {
             if (value != null && !value.isBlank()) {
                 return value;
             }
         }
-        return "—";
+        return null;
     }
 }

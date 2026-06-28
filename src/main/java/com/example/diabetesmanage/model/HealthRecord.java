@@ -2,12 +2,20 @@ package com.example.diabetesmanage.model;
 
 import java.time.LocalDateTime;
 
+/**
+ * Snapshot sức khỏe — entity map trực tiếp bảng {@code health_records}.
+ * UI chi tiết sức khỏe chỉ bind object này; không đọc MedicalEncounter.
+ */
 public class HealthRecord {
 
     private String id;
+    private String encounterId;
+    private String lastEncounterId;
     private String healthRecordId;
     private Patient patient;
     private User nhapBoi;
+
+    private Double chieuCaoCm;
 
     private Double duongHuyetMgdl;
     private String thoiDiemDoDuong;
@@ -35,11 +43,20 @@ public class HealthRecord {
 
     private Double ast;
     private Double alt;
+    private Double ure;
     private Double creatinine;
 
     private String trieuChung;
+    private String tienSuBenh;
+    private String khamLamSang;
     private String chanDoanChinh;
+    private String chanDoanPhu;
+    private String phanLoaiTieuDuong;
+    private String huongXuTri;
     private String khuyenNghi;
+    private String khuyenNghiDieuTri;
+    private String cheDoAn;
+    private String luyenTap;
 
     private Integer soBuocChan;
     private Double carbsG;
@@ -56,6 +73,7 @@ public class HealthRecord {
 
     private LocalDateTime thoiGianDo;
     private LocalDateTime ngayTao;
+    private LocalDateTime ngayCapNhat;
     private int daysSinceLastVisit;
 
     public HealthRecord() {
@@ -67,6 +85,30 @@ public class HealthRecord {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getEncounterId() {
+        return encounterId;
+    }
+
+    public void setEncounterId(String encounterId) {
+        this.encounterId = encounterId;
+    }
+
+    public String getLastEncounterId() {
+        return lastEncounterId;
+    }
+
+    public void setLastEncounterId(String lastEncounterId) {
+        this.lastEncounterId = lastEncounterId;
+    }
+
+    public Double getChieuCaoCm() {
+        return chieuCaoCm;
+    }
+
+    public void setChieuCaoCm(Double chieuCaoCm) {
+        this.chieuCaoCm = chieuCaoCm;
     }
 
     public String getHealthRecordId() {
@@ -261,6 +303,14 @@ public class HealthRecord {
         this.alt = alt;
     }
 
+    public Double getUre() {
+        return ure;
+    }
+
+    public void setUre(Double ure) {
+        this.ure = ure;
+    }
+
     public Double getCreatinine() {
         return creatinine;
     }
@@ -277,6 +327,22 @@ public class HealthRecord {
         this.trieuChung = trieuChung;
     }
 
+    public String getTienSuBenh() {
+        return tienSuBenh;
+    }
+
+    public void setTienSuBenh(String tienSuBenh) {
+        this.tienSuBenh = tienSuBenh;
+    }
+
+    public String getKhamLamSang() {
+        return khamLamSang;
+    }
+
+    public void setKhamLamSang(String khamLamSang) {
+        this.khamLamSang = khamLamSang;
+    }
+
     public String getChanDoanChinh() {
         return chanDoanChinh;
     }
@@ -285,12 +351,60 @@ public class HealthRecord {
         this.chanDoanChinh = chanDoanChinh;
     }
 
+    public String getChanDoanPhu() {
+        return chanDoanPhu;
+    }
+
+    public void setChanDoanPhu(String chanDoanPhu) {
+        this.chanDoanPhu = chanDoanPhu;
+    }
+
+    public String getPhanLoaiTieuDuong() {
+        return phanLoaiTieuDuong;
+    }
+
+    public void setPhanLoaiTieuDuong(String phanLoaiTieuDuong) {
+        this.phanLoaiTieuDuong = phanLoaiTieuDuong;
+    }
+
+    public String getHuongXuTri() {
+        return huongXuTri;
+    }
+
+    public void setHuongXuTri(String huongXuTri) {
+        this.huongXuTri = huongXuTri;
+    }
+
     public String getKhuyenNghi() {
         return khuyenNghi;
     }
 
     public void setKhuyenNghi(String khuyenNghi) {
         this.khuyenNghi = khuyenNghi;
+    }
+
+    public String getKhuyenNghiDieuTri() {
+        return khuyenNghiDieuTri;
+    }
+
+    public void setKhuyenNghiDieuTri(String khuyenNghiDieuTri) {
+        this.khuyenNghiDieuTri = khuyenNghiDieuTri;
+    }
+
+    public String getCheDoAn() {
+        return cheDoAn;
+    }
+
+    public void setCheDoAn(String cheDoAn) {
+        this.cheDoAn = cheDoAn;
+    }
+
+    public String getLuyenTap() {
+        return luyenTap;
+    }
+
+    public void setLuyenTap(String luyenTap) {
+        this.luyenTap = luyenTap;
     }
 
     public Integer getSoBuocChan() {
@@ -379,6 +493,14 @@ public class HealthRecord {
 
     public void setNgayTao(LocalDateTime ngayTao) {
         this.ngayTao = ngayTao;
+    }
+
+    public LocalDateTime getNgayCapNhat() {
+        return ngayCapNhat;
+    }
+
+    public void setNgayCapNhat(LocalDateTime ngayCapNhat) {
+        this.ngayCapNhat = ngayCapNhat;
     }
 
     public int getDaysSinceLastVisit() {

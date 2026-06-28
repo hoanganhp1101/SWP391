@@ -1,24 +1,28 @@
 package com.example.diabetesmanage.controller.doctor;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.service.medical.HealthRecordService;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
-import com.example.diabetesmanage.model.form.HealthRecordUpdateForm;
 import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/doctor/patient-detail")
 public class PatientDetailController extends HttpServlet {
 
+    private static final Logger LOG = Logger.getLogger(PatientDetailController.class.getName());
+
     private final PatientDAO patientDAO = new PatientDAO();
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final HealthRecordService healthRecordService = new HealthRecordService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -39,23 +43,26 @@ public class PatientDetailController extends HttpServlet {
             return;
         }
 
+        String normalizedPatientId = patientId.trim();
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
-        Patient patient = patientDAO.getPatientById(patientId, scopeDoctorId);
+        Patient patient = patientDAO.getPatientById(normalizedPatientId, scopeDoctorId);
         if (patient == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Patient not found");
             return;
         }
 
-        HealthRecord latestHealthRecord = healthRecordDAO.findLatestByPatientId(patientId, scopeDoctorId);
-        boolean editMode = "1".equals(request.getParameter("edit"));
+        HealthRecord healthRecord = healthRecordService.getByPatientId(normalizedPatientId, null);
+        LOG.log(Level.INFO, "patient-detail patientId={0} healthRecordPresent={1} healthRecordId={2}",
+                new Object[]{
+                        normalizedPatientId,
+                        healthRecord != null,
+                        healthRecord != null ? healthRecord.getId() : null
+                });
 
+        DoctorLayoutHelper.prepare(request, user, "patients");
         request.setAttribute("patient", patient);
-        request.setAttribute("latestHealthRecord", latestHealthRecord);
-        request.setAttribute("editMode", editMode);
-        if (latestHealthRecord != null) {
-            request.setAttribute("hrForm",
-                    HealthRecordUpdateForm.fromHealthRecord(latestHealthRecord, patientId));
-        }
+        request.setAttribute("healthRecord", healthRecord);
+        request.setAttribute("hasHealthRecord", healthRecord != null);
         request.setAttribute("currentUser", user);
         request.getRequestDispatcher("/WEB-INF/views/doctor/patientdetail.jsp")
                 .forward(request, response);

@@ -8,6 +8,7 @@ import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.DangerousPatientService;
 import com.example.diabetesmanage.service.DangerousPatientService.AnalysisResult;
 import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -52,7 +53,7 @@ public class DoctorDashboardServlet extends HttpServlet {
             stats.setActiveAlerts(analysisResult.getTotalDangerousCount());
         }
 
-        request.setAttribute("doctor", doctor);
+        DoctorLayoutHelper.prepare(request, doctor, "dashboard");
         request.setAttribute("stats", stats);
         request.setAttribute("urgentPatients", dangerousPatients);
         request.setAttribute("analysisResult", analysisResult);

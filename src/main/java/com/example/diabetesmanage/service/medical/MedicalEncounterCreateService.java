@@ -1,43 +1,45 @@
 package com.example.diabetesmanage.service.medical;
 
 import com.example.diabetesmanage.context.DBContext;
-import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.LabResultDAO;
 import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.MedicationDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.PrescriptionDAO;
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm;
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm.MedicationFormItem;
+import com.example.diabetesmanage.model.EncounterType;
+import com.example.diabetesmanage.model.MedicalEncounter;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest.MedicationLineItem;
+import com.example.diabetesmanage.util.SqlDiagnostics;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Lưu hồ sơ bệnh án mới trong một transaction duy nhất.
+ * Lưu Medical Encounter theo đúng loại hồ sơ trong một transaction.
  */
 public class MedicalEncounterCreateService {
 
+    private static final Logger LOG = Logger.getLogger(MedicalEncounterCreateService.class.getName());
+
     private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final HealthRecordSnapshotService snapshotService = new HealthRecordSnapshotService();
     private final LabResultDAO labResultDAO = new LabResultDAO();
     private final PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
     private final MedicationDAO medicationDAO = new MedicationDAO();
     private final PatientDAO patientDAO = new PatientDAO();
 
     public static class CreateResult {
-        private final String healthRecordId;
         private final String encounterId;
 
-        public CreateResult(String healthRecordId, String encounterId) {
-            this.healthRecordId = healthRecordId;
+        public CreateResult(String encounterId) {
             this.encounterId = encounterId;
-        }
-
-        public String getHealthRecordId() {
-            return healthRecordId;
         }
 
         public String getEncounterId() {
@@ -45,41 +47,65 @@ public class MedicalEncounterCreateService {
         }
     }
 
-    public List<String> validate(AddMedicalEncounterForm form) {
+    public List<String> validate(EncounterCreateRequest form) {
         List<String> errors = new ArrayList<>();
+        EncounterType type = form.resolveEncounterType();
 
-        if (form.getTrieuChung() == null || form.getTrieuChung().isBlank()) {
-            errors.add("Triệu chứng là bắt buộc.");
+        if (form.getPatientId() == null || form.getPatientId().isBlank()) {
+            errors.add("Vui lòng chọn bệnh nhân.");
+        } else if (!isValidUuid(form.getPatientId())) {
+            errors.add("Mã bệnh nhân phải là UUID (không dùng mã PAT-000001).");
+        } else if (form.getPatientId().trim().matches("(?i)(PAT|HR|ENC|LAB)-\\d+")) {
+            errors.add("Mã bệnh nhân phải là UUID, không phải mã hiển thị.");
         }
-        if (form.getChanDoanChinh() == null || form.getChanDoanChinh().isBlank()) {
-            errors.add("Chẩn đoán chính là bắt buộc.");
+        if (form.getNgayKham() == null || form.getNgayKham().isBlank()) {
+            errors.add("Ngày khám là bắt buộc.");
         }
 
-        validateNonNegative(errors, form.getDuongHuyetMgdl(), "Đường huyết");
-        validateNonNegative(errors, form.getCanNangKg(), "Cân nặng");
-        validateNonNegative(errors, form.getChieuCaoCm(), "Chiều cao");
-        validateNonNegative(errors, form.getBmi(), "BMI");
-        validateNonNegative(errors, form.getHba1cPercent(), "HbA1c");
-        validateNonNegative(errors, form.getCholesterolMmol(), "Cholesterol");
-        validateNonNegative(errors, form.getTriglycerideMmol(), "Triglyceride");
-        validateNonNegative(errors, form.getCarbsG(), "Carbs");
-        validateNonNegative(errors, form.getNhietDoC(), "Nhiệt độ");
-
-        validateBloodPressure(errors, form.getHuyetApTamThu(), form.getHuyetApTamTruong());
-        validateHeartRate(errors, form.getNhipTim());
-        validateRespiratoryRate(errors, form.getNhipTho());
-        validateTemperature(errors, form.getNhietDoC());
-
-        validateLabNumbers(errors, form);
-        validateBloodCount(errors, form);
-        validateMedications(errors, form.getMedications());
+        switch (type) {
+            case TAI_KHAM_NOI_TIET:
+                normalizeEndocrinePayload(null, form);
+                validateTaiKham(errors, form);
+                break;
+            case MAU_TONG_QUAT:
+                validateBloodCount(errors, form);
+                if (!form.hasBloodCountData()) {
+                    errors.add("Vui lòng nhập ít nhất một chỉ số xét nghiệm máu tổng quát.");
+                }
+                break;
+            case SINH_HOA_MAU:
+                validateLabNumbers(errors, form);
+                if (!form.hasBiochemistryData()) {
+                    errors.add("Vui lòng nhập ít nhất một chỉ số sinh hóa máu.");
+                }
+                break;
+            default:
+                errors.add("Loại hồ sơ không hợp lệ.");
+        }
 
         return errors;
     }
 
-    public CreateResult create(AddMedicalEncounterForm form, String doctorId) throws SQLException {
-        form.syncLabToHealthMetrics();
+    public CreateResult create(EncounterCreateRequest form, String doctorId) throws SQLException {
+        EncounterType type = form.resolveEncounterType();
         form.calculateBmiIfNeeded();
+        if (type.isSinhHoaMau()) {
+            form.syncLabToHealthMetrics();
+        }
+
+        String patientUuid = requirePatientUuid(form.getPatientId());
+        String doctorUuid = requireDoctorUuid(doctorId);
+        form.setPatientId(patientUuid);
+
+        LOG.log(Level.INFO, "create medical_encounter patient_id={0} bac_si_id={1} type={2}",
+                new Object[]{patientUuid, doctorUuid, type.getCode()});
+
+        encounterDAO.validateInsertFields(form, doctorUuid);
+        if (type.isTaiKhamNoiTiet()) {
+            normalizeEndocrinePayload(null, form);
+            validateEndocrineInsertFields(form, doctorUuid);
+            logEndocrinePayload("before-sql-insert", form);
+        }
 
         Connection con = DBContext.getConnection();
         if (con == null) {
@@ -88,34 +114,222 @@ public class MedicalEncounterCreateService {
 
         boolean previousAutoCommit = con.getAutoCommit();
         con.setAutoCommit(false);
+        String encounterId;
 
         try {
-            String encounterId = encounterDAO.insert(con, form, doctorId);
-            String healthRecordId = healthRecordDAO.insert(con, form, form.getPatientId(), doctorId);
+            encounterId = encounterDAO.insert(con, form, doctorUuid);
 
-            patientDAO.updateLoaiTieuDuong(con, form.getPatientId(), form.getPhanLoaiTieuDuong());
-
-            if (form.hasLabData()) {
-                labResultDAO.insert(con, form, form.getPatientId(), encounterId);
+            if (type.isTaiKhamNoiTiet()) {
+                patientDAO.updateLoaiTieuDuong(con, patientUuid, form.getPhanLoaiTieuDuong());
+                if (form.hasPrescriptionData()) {
+                    String prescriptionId = prescriptionDAO.insert(
+                            con, form, patientUuid, doctorUuid, encounterId);
+                    if (form.hasMedications()) {
+                        medicationDAO.insertAll(con, prescriptionId, form.getMedications());
+                    }
+                }
+            } else if (type.isMauTongQuat()) {
+                labResultDAO.insertBloodCount(con, form, patientUuid, encounterId);
+            } else if (type.isSinhHoaMau()) {
+                labResultDAO.insertBiochemistry(con, form, patientUuid, encounterId);
             }
 
-            if (form.hasPrescriptionData()) {
-                String prescriptionId = prescriptionDAO.insert(
-                        con, form, form.getPatientId(), doctorId, encounterId);
-                if (form.hasMedications()) {
-                    medicationDAO.insertAll(con, prescriptionId, form.getMedications());
-                }
+            snapshotService.applyEncounterToSnapshot(
+                    con, form, patientUuid, doctorUuid, encounterId);
+
+            if (!encounterDAO.existsById(con, encounterId)) {
+                throw new SQLException("Encounter row missing before commit id=" + encounterId);
             }
 
             con.commit();
-            return new CreateResult(healthRecordId, encounterId);
+            LOG.log(Level.INFO,
+                    "Committed medical_encounters transaction id={0} patient_id={1} bac_si_id={2}",
+                    new Object[]{encounterId, patientUuid, doctorUuid});
         } catch (SQLException ex) {
-            con.rollback();
+            SqlDiagnostics.log(LOG, Level.SEVERE,
+                    "create-medical-encounter",
+                    "TRANSACTION medical_encounters + related tables",
+                    new Object[]{patientUuid, doctorUuid, type.getCode()},
+                    ex);
+            try {
+                con.rollback();
+            } catch (SQLException rollbackEx) {
+                ex.addSuppressed(rollbackEx);
+                SqlDiagnostics.log(LOG, Level.SEVERE, "rollback", null, null, rollbackEx);
+            }
+            LOG.log(Level.SEVERE,
+                    "Rollback medical_encounters transaction patient_id=" + patientUuid
+                            + " bac_si_id=" + doctorUuid, ex);
             throw ex;
         } finally {
             con.setAutoCommit(previousAutoCommit);
             con.close();
         }
+
+        if (!encounterDAO.existsById(encounterId)) {
+            throw new SQLException("Encounter not persisted after commit id=" + encounterId);
+        }
+
+        return new CreateResult(encounterId);
+    }
+
+    /** Đọc lại encounter từ DB sau commit — UI không dùng object trong memory. */
+    public MedicalEncounter loadPersistedEncounter(String encounterId, String scopeDoctorId) {
+        if (encounterId == null || encounterId.isBlank()) {
+            return null;
+        }
+        return encounterDAO.getEncounterById(encounterId, scopeDoctorId);
+    }
+
+    public boolean isEncounterPersisted(String encounterId) throws SQLException {
+        return encounterDAO.existsById(encounterId);
+    }
+
+    private String requirePatientUuid(String patientId) throws SQLException {
+        if (patientId == null || patientId.isBlank()) {
+            throw new SQLException("patient_id is required");
+        }
+        String trimmed = patientId.trim();
+        if (trimmed.matches("(?i)(PAT|HR|ENC|LAB)-\\d+")) {
+            throw new SQLException("patient_id must be UUID, not display code: " + trimmed);
+        }
+        if (!isValidUuid(trimmed)) {
+            throw new SQLException("patient_id must be a valid UUID: " + trimmed);
+        }
+        return trimmed;
+    }
+
+    private String requireDoctorUuid(String doctorId) throws SQLException {
+        if (doctorId == null || doctorId.isBlank()) {
+            throw new SQLException("bac_si_id is required");
+        }
+        String trimmed = doctorId.trim();
+        if (trimmed.matches("(?i)(PAT|HR|ENC|LAB)-\\d+")) {
+            throw new SQLException("bac_si_id must be UUID, not display code: " + trimmed);
+        }
+        if (!isValidUuid(trimmed)) {
+            throw new SQLException("bac_si_id must be a valid UUID: " + trimmed);
+        }
+        return trimmed;
+    }
+
+    private boolean isValidUuid(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        try {
+            UUID.fromString(value.trim());
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Maps UI "Triệu chứng" to {@code medical_encounters.ly_do_kham} and syncs related endocrine fields.
+     */
+    public void normalizeEndocrinePayload(HttpServletRequest request, EncounterCreateRequest form) {
+        if (!form.isTaiKhamNoiTiet()) {
+            return;
+        }
+
+        String trieuChung = firstNonBlank(
+                trimToNull(form.getTrieuChung()),
+                trimToNull(form.getLyDoKham()),
+                requestParam(request, "trieuChung"),
+                requestParam(request, "trieu_chung"),
+                requestParam(request, "lyDoKham"),
+                requestParam(request, "ly_do_kham")
+        );
+        if (trieuChung != null) {
+            form.setTrieuChung(trieuChung);
+            form.setLyDoKham(trieuChung);
+        }
+
+        String chanDoanChinh = firstNonBlank(
+                trimToNull(form.getChanDoanChinh()),
+                requestParam(request, "chanDoanChinh"),
+                requestParam(request, "chan_doan_chinh")
+        );
+        if (chanDoanChinh != null) {
+            form.setChanDoanChinh(chanDoanChinh);
+        }
+
+        String tienSuBenh = firstNonBlank(
+                trimToNull(form.getTienSuBenh()),
+                trimToNull(form.getQuaTrinhBenhLy()),
+                requestParam(request, "tienSuBenh"),
+                requestParam(request, "tien_su_benh")
+        );
+        if (tienSuBenh != null) {
+            form.setTienSuBenh(tienSuBenh);
+            if (isBlank(form.getQuaTrinhBenhLy())) {
+                form.setQuaTrinhBenhLy(tienSuBenh);
+            }
+        }
+    }
+
+    public void logEndocrinePayload(String stage, EncounterCreateRequest form) {
+        if (!form.isTaiKhamNoiTiet()) {
+            return;
+        }
+        LOG.log(Level.INFO,
+                "Endocrine encounter payload [{0}]: patientId={1}, encounterType={2}, ngayKham={3}, "
+                        + "lyDoKham={4}, trieuChung={5}, chanDoanChinh={6}, chanDoanPhu={7}, "
+                        + "huongXuTri={8}, phanLoaiTieuDuong={9}, khamLamSang={10}, tienSuBenh={11}",
+                new Object[] {
+                        stage,
+                        form.getPatientId(),
+                        form.getEncounterType(),
+                        form.getNgayKham(),
+                        form.getLyDoKham(),
+                        form.getTrieuChung(),
+                        form.getChanDoanChinh(),
+                        form.getChanDoanPhu(),
+                        form.getHuongXuTri(),
+                        form.getPhanLoaiTieuDuong(),
+                        form.getKhamLamSang(),
+                        form.getTienSuBenh()
+                });
+    }
+
+    private void validateEndocrineInsertFields(EncounterCreateRequest form, String doctorId) throws SQLException {
+        if (!isValidUuid(form.getPatientId())) {
+            throw new SQLException("patient_id must be a valid UUID");
+        }
+        if (!isValidUuid(doctorId)) {
+            throw new SQLException("bac_si_id must be a valid UUID");
+        }
+        if (isBlank(form.getNgayKham())) {
+            throw new SQLException("ngay_kham is required");
+        }
+        if (isBlank(form.getLyDoKham())) {
+            throw new SQLException("ly_do_kham is required (Triệu chứng)");
+        }
+        if (isBlank(form.getChanDoanChinh())) {
+            throw new SQLException("chan_doan_chinh is required (Chẩn đoán chính)");
+        }
+        if (isBlank(form.getEncounterType())) {
+            form.setEncounterType(EncounterType.TAI_KHAM_NOI_TIET.getCode());
+        }
+    }
+
+    private void validateTaiKham(List<String> errors, EncounterCreateRequest form) {
+        if (isBlank(form.getLyDoKham())) {
+            errors.add("Triệu chứng là bắt buộc.");
+        }
+        if (isBlank(form.getChanDoanChinh())) {
+            errors.add("Chẩn đoán chính là bắt buộc.");
+        }
+        validateNonNegative(errors, form.getCanNangKg(), "Cân nặng");
+        validateNonNegative(errors, form.getChieuCaoCm(), "Chiều cao");
+        validateNonNegative(errors, form.getBmi(), "BMI");
+        validateNonNegative(errors, form.getNhietDoC(), "Nhiệt độ");
+        validateBloodPressure(errors, form.getHuyetApTamThu(), form.getHuyetApTamTruong());
+        validateHeartRate(errors, form.getNhipTim());
+        validateRespiratoryRate(errors, form.getNhipTho());
+        validateTemperature(errors, form.getNhietDoC());
+        validateMedications(errors, form.getMedications());
     }
 
     private void validateBloodPressure(List<String> errors, Integer systolic, Integer diastolic) {
@@ -148,7 +362,7 @@ public class MedicalEncounterCreateService {
         }
     }
 
-    private void validateLabNumbers(List<String> errors, AddMedicalEncounterForm form) {
+    private void validateLabNumbers(List<String> errors, EncounterCreateRequest form) {
         validateNonNegative(errors, form.getLabGlucoseMau(), "Glucose (sinh hóa)");
         validateNonNegative(errors, form.getLabHba1c(), "HbA1c (sinh hóa)");
         validateNonNegative(errors, form.getLabCholesterol(), "Cholesterol (sinh hóa)");
@@ -161,7 +375,7 @@ public class MedicalEncounterCreateService {
         validateNonNegative(errors, form.getLabCreatinine(), "Creatinine");
     }
 
-    private void validateBloodCount(List<String> errors, AddMedicalEncounterForm form) {
+    private void validateBloodCount(List<String> errors, EncounterCreateRequest form) {
         validateNonNegative(errors, form.getLabWbc(), "WBC");
         validateNonNegative(errors, form.getLabRbc(), "RBC");
         validateNonNegative(errors, form.getLabHgb(), "HGB");
@@ -169,9 +383,9 @@ public class MedicalEncounterCreateService {
         validateNonNegative(errors, form.getLabPlt(), "PLT");
     }
 
-    private void validateMedications(List<String> errors, List<MedicationFormItem> medications) {
+    private void validateMedications(List<String> errors, List<MedicationLineItem> medications) {
         for (int i = 0; i < medications.size(); i++) {
-            MedicationFormItem med = medications.get(i);
+            MedicationLineItem med = medications.get(i);
             if (!med.hasContent()) {
                 continue;
             }
@@ -192,5 +406,37 @@ public class MedicalEncounterCreateService {
         if (value != null && value < 0) {
             errors.add(label + " không được âm.");
         }
+    }
+
+    private static String requestParam(HttpServletRequest request, String name) {
+        if (request == null) {
+            return null;
+        }
+        String value = request.getParameter(name);
+        return trimToNull(value);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 }

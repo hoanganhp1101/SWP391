@@ -1,11 +1,13 @@
 package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.PatientDAO;
+import com.example.diabetesmanage.model.MedicalEncounter;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
-import com.example.diabetesmanage.model.form.AddMedicalEncounterForm;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
 import com.example.diabetesmanage.service.medical.MedicalEncounterCreateService;
 import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,9 +21,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/medical-encounters/add")
 public class AddMedicalEncounterServlet extends HttpServlet {
+
+    private static final Logger LOG = Logger.getLogger(AddMedicalEncounterServlet.class.getName());
 
     private final PatientDAO patientDAO = new PatientDAO();
     private final MedicalEncounterCreateService createService = new MedicalEncounterCreateService();
@@ -35,7 +41,7 @@ public class AddMedicalEncounterServlet extends HttpServlet {
             return;
         }
 
-        prepareForm(request, doctor, new AddMedicalEncounterForm());
+        prepareForm(request, doctor, new EncounterCreateRequest());
         forwardForm(request, response);
     }
 
@@ -50,11 +56,13 @@ public class AddMedicalEncounterServlet extends HttpServlet {
             return;
         }
 
-        AddMedicalEncounterForm form;
+        EncounterCreateRequest form;
         try {
-            form = AddMedicalEncounterForm.fromRequest(request);
+            form = EncounterCreateRequest.fromRequest(request);
+            createService.normalizeEndocrinePayload(request, form);
+            createService.logEndocrinePayload("http-request", form);
         } catch (NumberFormatException ex) {
-            form = new AddMedicalEncounterForm();
+            form = new EncounterCreateRequest();
             form.setPatientId(request.getParameter("patientId"));
             List<String> errors = new ArrayList<>();
             errors.add("Du lieu so khong hop le. Vui long kiem tra lai cac truong so.");
@@ -69,6 +77,17 @@ public class AddMedicalEncounterServlet extends HttpServlet {
             return;
         }
 
+        if (doctor.getId() == null) {
+            List<String> errors = new ArrayList<>();
+            errors.add("Khong xac dinh duoc bac si dang nhap.");
+            forwardWithErrors(request, response, form, errors, doctor);
+            return;
+        }
+
+        String doctorUuid = doctor.getId().toString();
+        LOG.log(Level.INFO, "POST medical-encounters/add patient_id={0} bac_si_id={1}",
+                new Object[]{form.getPatientId(), doctorUuid});
+
         if (!AuthContext.ensurePatientAccess(doctor, patientDAO, form.getPatientId(), response)) {
             return;
         }
@@ -81,28 +100,56 @@ public class AddMedicalEncounterServlet extends HttpServlet {
 
         try {
             MedicalEncounterCreateService.CreateResult result =
-                    createService.create(form, doctor.getId().toString());
+                    createService.create(form, doctorUuid);
+            if (result.getEncounterId() == null || result.getEncounterId().isBlank()) {
+                throw new SQLException("Encounter id is empty after create");
+            }
+            if (!createService.isEncounterPersisted(result.getEncounterId())) {
+                throw new SQLException("Encounter not found in database after commit id="
+                        + result.getEncounterId());
+            }
+            MedicalEncounter persisted = createService.loadPersistedEncounter(
+                    result.getEncounterId(), doctorUuid);
+            if (persisted == null) {
+                throw new SQLException("Cannot reload encounter from database id="
+                        + result.getEncounterId());
+            }
+            LOG.log(Level.INFO,
+                    "Saved medical_encounter id={0} patient_id={1} bac_si_id={2} type={3}",
+                    new Object[]{
+                            persisted.getId(),
+                            persisted.getPatientId(),
+                            doctorUuid,
+                            persisted.getEncounterTypeLabel()
+                    });
             response.sendRedirect(request.getContextPath()
-                    + "/doctor/record-detail?id=" + result.getHealthRecordId() + "&success=1");
+                    + "/doctor/patient-records?success=1&patientId=" + form.getPatientId());
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE,
+                    "Failed to save medical encounter patient_id=" + form.getPatientId()
+                            + " bac_si_id=" + doctorUuid, ex);
             errors = new ArrayList<>();
-            errors.add("Khong the luu ho so benh an. Vui long thu lai sau.");
+            String detail = ex.getMessage();
+            if (detail != null && !detail.isBlank()) {
+                errors.add("Không thể lưu hồ sơ bệnh án: " + detail);
+            } else {
+                errors.add("Không thể lưu hồ sơ bệnh án. Vui lòng thử lại sau.");
+            }
             forwardWithErrors(request, response, form, errors, doctor);
         }
     }
 
     private void forwardWithErrors(HttpServletRequest request, HttpServletResponse response,
-                                   AddMedicalEncounterForm form, List<String> errors, User doctor)
+                                   EncounterCreateRequest form, List<String> errors, User doctor)
             throws ServletException, IOException {
         request.setAttribute("errors", errors);
         prepareForm(request, doctor, form);
         forwardForm(request, response);
     }
 
-    private void prepareForm(HttpServletRequest request, User doctor, AddMedicalEncounterForm form) {
+    private void prepareForm(HttpServletRequest request, User doctor, EncounterCreateRequest form) {
         String doctorId = doctor.getId().toString();
-        request.setAttribute("doctor", doctor);
+        DoctorLayoutHelper.prepare(request, doctor, "records");
         request.setAttribute("patients", patientDAO.getPatients(doctorId));
         request.setAttribute("form", form);
         if (form.getNgayKham() == null || form.getNgayKham().isBlank()) {

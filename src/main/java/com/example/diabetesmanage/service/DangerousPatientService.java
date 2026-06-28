@@ -1,7 +1,7 @@
 package com.example.diabetesmanage.service;
 
 import com.example.diabetesmanage.config.GeminiConfig;
-import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.service.medical.HealthRecordService;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.DangerousPatientDetail;
 import com.example.diabetesmanage.model.HealthRecord;
@@ -61,7 +61,7 @@ public class DangerousPatientService {
     );
 
     private final PatientDAO patientDAO = new PatientDAO();
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final HealthRecordService healthRecordService = new HealthRecordService();
     private final GeminiConfig geminiConfig = GeminiConfig.load();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -109,10 +109,7 @@ public class DangerousPatientService {
     public DangerousPatientDetail getDangerousPatientDetail(String doctorId, String patientId) {
 
         Map<String, List<HealthRecord>> recordsByPatient =
-                healthRecordDAO.getRecentRecordsGroupedByPatient(
-                        doctorId,
-                        RECORDS_PER_PATIENT
-                );
+                healthRecordService.getSnapshotsGroupedByPatient(doctorId);
 
         List<HealthRecord> records = recordsByPatient.getOrDefault(patientId, new ArrayList<>());
         if (records.isEmpty()) {
@@ -189,10 +186,7 @@ public class DangerousPatientService {
         List<PatientHealthSnapshot> dangerousSnapshots = new ArrayList<>();
         List<Patient> patients = patientDAO.getPatients(doctorId);
         Map<String, List<HealthRecord>> recordsByPatient =
-                healthRecordDAO.getRecentRecordsGroupedByPatient(
-                        doctorId,
-                        RECORDS_PER_PATIENT
-                );
+                healthRecordService.getSnapshotsGroupedByPatient(doctorId);
 
         for (Patient patient : patients) {
             List<HealthRecord> records =

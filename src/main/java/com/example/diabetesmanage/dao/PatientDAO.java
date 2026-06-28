@@ -16,14 +16,32 @@ public class PatientDAO {
         if (code != null && !code.isBlank()) {
             return code;
         }
-        String id = rs.getString("id");
+        String id = rs.getString("patient_id");
+        if (id == null || id.isBlank()) {
+            id = rs.getString("id");
+        }
         return id != null && id.length() >= 8 ? id.substring(0, 8).toUpperCase() : "N/A";
     }
 
     private static final String SUMMARY_SELECT =
-            "SELECT vps.*, p.patient_code " +
+            "SELECT vps.patient_id AS patient_id, " +
+                    "vps.ho_ten AS ho_ten, " +
+                    "vps.email AS email, " +
+                    "vps.so_dien_thoai AS so_dien_thoai, " +
+                    "vps.gioi_tinh AS gioi_tinh, " +
+                    "vps.loai_tieu_duong AS loai_tieu_duong, " +
+                    "vps.tuoi AS tuoi, " +
+                    "vps.duong_huyet_gan_nhat AS duong_huyet_gan_nhat, " +
+                    "vps.bmi_gan_nhat AS bmi_gan_nhat, " +
+                    "vps.hba1c_gan_nhat AS hba1c_gan_nhat, " +
+                    "vps.muc_nguy_co AS muc_nguy_co, " +
+                    "vps.diem_nguy_co AS diem_nguy_co, " +
+                    "vps.lan_do_cuoi AS lan_do_cuoi, " +
+                    "vps.canh_bao_chua_doc AS canh_bao_chua_doc, " +
+                    "p.patient_code AS patient_code " +
                     "FROM v_patient_summary vps " +
-                    "JOIN patients p ON vps.patient_id = p.id ";
+                    "JOIN patients p ON vps.patient_id = p.id " +
+                    "LEFT JOIN users doc ON p.bac_si_id = doc.id ";
 
     public List<Patient> getPatients(String scopeDoctorId) {
         return searchPatients(null, null, scopeDoctorId);
@@ -31,7 +49,7 @@ public class PatientDAO {
 
     public List<Patient> searchPatients(String keyword, String risk, String scopeDoctorId) {
         StringBuilder sql = new StringBuilder(SUMMARY_SELECT);
-        sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE p.bac_si_id = ? ");
+        sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE doc.id = ? ");
 
         if (keyword != null && !keyword.isBlank()) {
             sql.append("AND (vps.ho_ten LIKE ? OR vps.email LIKE ? OR p.patient_code LIKE ?) ");
@@ -57,13 +75,19 @@ public class PatientDAO {
     }
 
     public boolean isAssignedToDoctor(String patientId, String doctorId) {
-        String sql = "SELECT 1 FROM patients WHERE id = ? AND bac_si_id = ? LIMIT 1";
+        if (patientId == null || patientId.isBlank() || doctorId == null || doctorId.isBlank()) {
+            return false;
+        }
+        String sql =
+                "SELECT 1 FROM patients p " +
+                        "JOIN users doc ON p.bac_si_id = doc.id " +
+                        "WHERE p.id = ? AND doc.id = ? LIMIT 1";
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
-            ps.setString(1, patientId);
-            ps.setString(2, doctorId);
+            ps.setString(1, patientId.trim());
+            ps.setString(2, doctorId.trim());
             ResultSet rs = ps.executeQuery();
             return rs.next();
         } catch (Exception e) {
@@ -72,35 +96,136 @@ public class PatientDAO {
         return false;
     }
 
-    public Patient getPatientById(String patientId, String scopeDoctorId) {
-        StringBuilder sql = new StringBuilder(
-                "SELECT p.*, " +
-                        "TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS tuoi, " +
-                        "u.id AS user_id, u.ho_ten, u.email, u.so_dien_thoai " +
-                        "FROM patients p " +
-                        "JOIN users u ON p.user_id = u.id " +
-                        "WHERE p.id = ? "
-        );
-        if (scopeDoctorId != null) {
-            sql.append("AND p.bac_si_id = ? ");
-        }
+    private static final String PATIENT_BY_ID_SQL =
+            "SELECT p.id AS patient_id, " +
+                    "p.patient_code AS patient_code, " +
+                    "p.ngay_sinh AS patient_birth_date, " +
+                    "p.gioi_tinh AS patient_gender, " +
+                    "p.chieu_cao_cm AS patient_height_cm, " +
+                    "p.dia_chi AS patient_address, " +
+                    "p.bao_hiem_y_te AS patient_insurance, " +
+                    "p.tien_su_benh AS patient_medical_history, " +
+                    "p.di_ung AS patient_allergies, " +
+                    "p.nhom_mau AS patient_blood_type, " +
+                    "p.loai_tieu_duong AS patient_diabetes_type, " +
+                    "p.ngay_chan_doan_tieu_duong AS patient_diabetes_diagnosis_date, " +
+                    "p.ngay_cap_nhat AS patient_updated_at, " +
+                    "p.bac_si_id AS assigned_doctor_id, " +
+                    "TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS patient_age, " +
+                    "pu.id AS patient_user_id, " +
+                    "pu.ho_ten AS patient_user_name, " +
+                    "pu.email AS patient_user_email, " +
+                    "pu.so_dien_thoai AS patient_user_phone, " +
+                    "doc.id AS doctor_user_id " +
+                    "FROM patients p " +
+                    "LEFT JOIN users pu ON p.user_id = pu.id " +
+                    "LEFT JOIN users doc ON p.bac_si_id = doc.id " +
+                    "WHERE p.id = ? " +
+                    "AND (? IS NULL OR doc.id = ?)";
 
+    public Patient getPatientById(String patientId, String scopeDoctorId) {
+        if (patientId == null || patientId.isBlank()) {
+            return null;
+        }
         try (
                 Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql.toString())
+                PreparedStatement ps = con.prepareStatement(PATIENT_BY_ID_SQL)
         ) {
-            ps.setString(1, patientId);
-            if (scopeDoctorId != null) {
-                ps.setString(2, scopeDoctorId);
-            }
+            ps.setString(1, patientId.trim());
+            bindDoctorScopeParams(ps, 2, 3, scopeDoctorId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapDetailPatient(rs);
+                return mapPatientByIdRow(rs);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private void bindDoctorScopeParams(
+            PreparedStatement ps,
+            int nullCheckIndex,
+            int valueIndex,
+            String scopeDoctorId
+    ) throws SQLException {
+        if (scopeDoctorId != null && !scopeDoctorId.isBlank()) {
+            String doctorUserId = scopeDoctorId.trim();
+            ps.setString(nullCheckIndex, doctorUserId);
+            ps.setString(valueIndex, doctorUserId);
+        } else {
+            ps.setNull(nullCheckIndex, Types.VARCHAR);
+            ps.setNull(valueIndex, Types.VARCHAR);
+        }
+    }
+
+    private Patient mapPatientByIdRow(ResultSet rs) throws SQLException {
+        Patient p = new Patient();
+        p.setId(rs.getString("patient_id"));
+        p.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
+
+        User user = new User();
+        parseUuid(rs.getString("patient_user_id")).ifPresent(user::setId);
+        user.setHoTen(optionalString(rs, "patient_user_name"));
+        user.setEmail(optionalString(rs, "patient_user_email"));
+        user.setSoDienThoai(optionalString(rs, "patient_user_phone"));
+        p.setUser(user);
+
+        Integer age = optionalInt(rs, "patient_age");
+        if (age != null) {
+            p.setTuoi(age);
+        }
+        Date birthDate = rs.getDate("patient_birth_date");
+        if (birthDate != null) {
+            p.setNgaySinh(birthDate.toLocalDate());
+        }
+        p.setGioiTinh(optionalString(rs, "patient_gender"));
+        p.setChieuCaoCm(optDouble(rs, "patient_height_cm"));
+        p.setDiaChi(optionalString(rs, "patient_address"));
+        p.setBaoHiemYTe(optionalString(rs, "patient_insurance"));
+        p.setTienSuBenh(optionalString(rs, "patient_medical_history"));
+        p.setDiUng(optionalString(rs, "patient_allergies"));
+        p.setNhomMau(optionalString(rs, "patient_blood_type"));
+        p.setLoaiTieuDuong(optionalString(rs, "patient_diabetes_type"));
+
+        Date diagnosisDate = rs.getDate("patient_diabetes_diagnosis_date");
+        if (diagnosisDate != null) {
+            p.setNgayChanDoanTieuDuong(diagnosisDate.toLocalDate());
+        }
+
+        Timestamp updatedAt = rs.getTimestamp("patient_updated_at");
+        if (updatedAt != null) {
+            p.setNgayCapNhat(updatedAt);
+        }
+
+        String doctorUserId = optionalString(rs, "doctor_user_id");
+        if (doctorUserId != null && !doctorUserId.isBlank()) {
+            User doctor = new User();
+            parseUuid(doctorUserId).ifPresent(doctor::setId);
+            p.setDoctor(doctor);
+        }
+        return p;
+    }
+
+    private static java.util.Optional<UUID> parseUuid(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        try {
+            return java.util.Optional.of(UUID.fromString(raw.trim()));
+        } catch (IllegalArgumentException ex) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    private static String optionalString(ResultSet rs, String column) throws SQLException {
+        String value = rs.getString(column);
+        return rs.wasNull() ? null : value;
+    }
+
+    private static Integer optionalInt(ResultSet rs, String column) throws SQLException {
+        int value = rs.getInt(column);
+        return rs.wasNull() ? null : value;
     }
 
     private void appendRiskFilter(StringBuilder sql, String risk) {
@@ -125,8 +250,8 @@ public class PatientDAO {
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
             int index = 1;
-            if (scopeDoctorId != null) {
-                ps.setString(index++, scopeDoctorId);
+            if (scopeDoctorId != null && !scopeDoctorId.isBlank()) {
+                ps.setString(index++, scopeDoctorId.trim());
             }
 
             if (keyword != null && !keyword.isBlank()) {
@@ -169,40 +294,6 @@ public class PatientDAO {
         user.setSoDienThoai(rs.getString("so_dien_thoai"));
         p.setUser(user);
 
-        return p;
-    }
-
-    private Patient mapDetailPatient(ResultSet rs) throws SQLException {
-        Patient p = new Patient();
-        p.setId(rs.getString("id"));
-        p.setPatientCode(resolveCode(rs, "patient_code"));
-
-        User user = new User();
-        user.setId(UUID.fromString(rs.getString("user_id")));
-        user.setHoTen(rs.getString("ho_ten"));
-        user.setEmail(rs.getString("email"));
-        user.setSoDienThoai(rs.getString("so_dien_thoai"));
-        p.setUser(user);
-
-        p.setTuoi(rs.getInt("tuoi"));
-        if (rs.getDate("ngay_sinh") != null) {
-            p.setNgaySinh(rs.getDate("ngay_sinh").toLocalDate());
-        }
-        p.setGioiTinh(rs.getString("gioi_tinh"));
-        p.setChieuCaoCm(optDouble(rs, "chieu_cao_cm"));
-        p.setDiaChi(rs.getString("dia_chi"));
-        p.setBaoHiemYTe(rs.getString("bao_hiem_y_te"));
-        p.setTienSuBenh(rs.getString("tien_su_benh"));
-        p.setDiUng(rs.getString("di_ung"));
-        p.setNhomMau(rs.getString("nhom_mau"));
-        p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
-
-        Date diagnosisDate = rs.getDate("ngay_chan_doan_tieu_duong");
-        if (diagnosisDate != null) {
-            p.setNgayChanDoanTieuDuong(diagnosisDate.toLocalDate());
-        }
-
-        p.setNgayCapNhat(rs.getTimestamp("ngay_cap_nhat"));
         return p;
     }
 

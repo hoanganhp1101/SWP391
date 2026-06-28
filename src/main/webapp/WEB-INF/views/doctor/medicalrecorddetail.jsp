@@ -5,8 +5,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết hồ sơ sức khỏe - ${detailView.patientName}</title>
+    <title>Chi tiết hồ sơ khám bệnh - ${detailView.patientName}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/doctor-layout.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
         body{background:#f0f4f8;color:#111827;}
@@ -40,6 +41,8 @@
         .dot.blue{background:#3b82f6;}
         .dot.green{background:#10b981;}
         .dot.red{background:#ef4444;}
+        .dot.purple{background:#8b5cf6;}
+        .dot.orange{background:#f97316;}
         .med-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:16px;}
         .med-card h3{font-size:15px;color:#6b7280;margin-bottom:12px;font-weight:600;}
         .field-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:16px;}
@@ -50,9 +53,6 @@
         .field-value.warning{color:#d97706;}
         .field-value.core{color:#1d4ed8;font-size:16px;}
         .field-ref{font-size:11px;color:#9ca3af;display:block;margin-top:2px;}
-        .chip-list{display:flex;flex-wrap:wrap;gap:10px;}
-        .med-chip{background:#eff6ff;color:#1d4ed8;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;}
-        .med-chip span{color:#6b7280;font-weight:500;}
         .rec-list{padding-left:20px;line-height:1.8;color:#4b5563;font-size:14px;}
         .lab-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
         .lab-item{background:#f9fafb;border-radius:12px;padding:14px 16px;}
@@ -64,6 +64,9 @@
         .bio-group{margin-bottom:16px;}
         .bio-group h4{font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
         .empty-note{color:#9ca3af;font-size:14px;padding:12px 0;}
+        .rx-table{width:100%;border-collapse:collapse;}
+        .rx-table th,.rx-table td{padding:10px 12px;border-bottom:1px solid #f3f4f6;text-align:left;font-size:14px;}
+        .rx-table th{color:#6b7280;font-weight:600;}
         @media(max-width:768px){
             .core-panel,.lab-grid{grid-template-columns:1fr;}
             .export-actions{width:100%;}
@@ -71,19 +74,28 @@
     </style>
 </head>
 <body>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty doctor}">
+    <c:set var="doctor" value="${sessionScope.user}"/>
+</c:if>
+<jsp:include page="/WEB-INF/views/doctor/layout/topbar.jsp"/>
+<div class="layout">
+    <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
+    <main class="main-content">
 <div class="page">
 
     <div class="top-bar">
         <a href="${pageContext.request.contextPath}/doctor/patient-records" class="back-link">
-            <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách hồ sơ
+            <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách hồ sơ khám bệnh
         </a>
         <div class="export-actions">
             <a class="btn-export primary"
                href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=full">
-                <i class="fa-solid fa-file-pdf"></i> Xuất PDF toàn bộ
+                <i class="fa-solid fa-file-pdf"></i> Xuất PDF
             </a>
             <form method="post" action="${pageContext.request.contextPath}/doctor/record-delete"
-                  onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ bệnh án này?');" style="display:inline;">
+                  onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ khám bệnh này?');" style="display:inline;">
                 <input type="hidden" name="id" value="${detailView.recordId}">
                 <button type="submit" class="btn-delete">
                     <i class="fa-solid fa-trash"></i> Xóa hồ sơ
@@ -94,33 +106,35 @@
 
     <c:if test="${param.success eq '1'}">
         <div class="success-banner">
-            <i class="fa-solid fa-circle-check"></i> Tạo hồ sơ bệnh án thành công.
+            <i class="fa-solid fa-circle-check"></i> Tạo hồ sơ khám bệnh thành công.
         </div>
     </c:if>
     <c:if test="${param.error eq 'delete'}">
-        <div class="alert-banner">Không thể xóa hồ sơ. Vui lòng thử lại sau.</div>
+        <div class="alert-banner">Không thể xóa hồ sơ khám bệnh. Vui lòng thử lại sau.</div>
     </c:if>
 
     <div class="patient-header">
         <div>
             <h1>${detailView.patientName}</h1>
             <div class="meta">
-                <div><strong>Mã hồ sơ:</strong> ${detailView.recordCode}</div>
+                <div><strong>Bệnh nhân:</strong> ${detailView.patientName}</div>
                 <div><strong>Mã bệnh nhân:</strong> ${detailView.patientCode}</div>
+                <div><strong>Mã hồ sơ:</strong> ${detailView.recordCode}</div>
                 <div><strong>Ngày khám:</strong> ${detailView.examDate}</div>
+                <div><strong>Loại hồ sơ:</strong> ${detailView.encounterTypeLabel}</div>
+                <div><strong>Khoa khám:</strong> ${detailView.department}</div>
                 <div><strong>Bác sĩ khám:</strong> ${detailView.doctorName}</div>
-                <div><strong>${detailView.department}</strong></div>
             </div>
         </div>
     </div>
 
+    <c:if test="${detailView.sinhHoaMau}">
     <c:forEach items="${detailView.biochemistry.alerts}" var="alert">
         <div class="alert-banner">
             <i class="fa-solid fa-triangle-exclamation"></i> ${alert}
         </div>
     </c:forEach>
 
-    <!-- CORE METRICS -->
     <div class="core-panel">
         <div class="core-metric ${detailView.biochemistry.glucose.abnormal ? 'critical' : ''}">
             <div class="label"><i class="fa-solid fa-droplet"></i> Glucose</div>
@@ -133,7 +147,9 @@
             <div class="ref">Tham chiếu: ${detailView.biochemistry.hba1c.referenceRange}</div>
         </div>
     </div>
+    </c:if>
 
+    <c:if test="${detailView.taiKhamNoiTiet}">
     <!-- A. BỆNH ÁN TÁI KHÁM NỘI TIẾT -->
     <div class="section" id="section-internal">
         <div class="section-title">
@@ -144,56 +160,120 @@
             </a>
         </div>
 
-        <div class="med-card">
-            <h3><i class="fa-solid fa-stethoscope"></i> Thông tin lâm sàng</h3>
-            <c:forEach items="${detailView.internalMedicine.clinicalInfo}" var="field">
-                <div class="field-row">
-                    <span class="field-label">${field.label}</span>
-                    <span class="field-value ${field.abnormal ? 'abnormal' : ''}">
-                        ${field.displayValue}
-                        <c:if test="${not empty field.referenceRange}">
-                            <span class="field-ref">${field.referenceRange}</span>
-                        </c:if>
-                    </span>
-                </div>
-            </c:forEach>
-        </div>
-
-        <div class="med-card">
-            <h3><i class="fa-solid fa-diagnoses"></i> Chẩn đoán</h3>
-            <c:forEach items="${detailView.internalMedicine.diagnosisInfo}" var="field">
-                <div class="field-row">
-                    <span class="field-label">${field.label}</span>
-                    <span class="field-value">${field.displayValue}</span>
-                </div>
-            </c:forEach>
-        </div>
-
-        <div class="med-card">
-            <h3><i class="fa-solid fa-pills"></i> Điều trị</h3>
-            <div style="margin-bottom:14px;">
-                <div class="field-label" style="margin-bottom:8px;">Đơn thuốc</div>
-                <div class="chip-list">
-                    <c:forEach items="${detailView.internalMedicine.medications}" var="med">
-                        <span class="med-chip">${med.name} <span>· ${med.dose}</span></span>
+        <c:choose>
+            <c:when test="${detailView.internalMedicine.hasData()}">
+                <div class="med-card">
+                    <h3><i class="fa-solid fa-stethoscope"></i> B. Thông tin lâm sàng</h3>
+                    <c:forEach items="${detailView.internalMedicine.clinicalInfo}" var="field">
+                        <div class="field-row">
+                            <span class="field-label">${field.label}</span>
+                            <span class="field-value ${field.abnormal ? 'abnormal' : ''}">
+                                ${field.displayValue}
+                            </span>
+                        </div>
                     </c:forEach>
                 </div>
-            </div>
-            <div>
-                <div class="field-label" style="margin-bottom:8px;">Khuyến nghị</div>
-                <ul class="rec-list">
-                    <c:forEach items="${detailView.internalMedicine.recommendations}" var="rec">
-                        <li>${rec}</li>
+
+                <div class="med-card">
+                    <h3><i class="fa-solid fa-diagnoses"></i> Chẩn đoán</h3>
+                    <c:forEach items="${detailView.internalMedicine.diagnosisInfo}" var="field">
+                        <div class="field-row">
+                            <span class="field-label">${field.label}</span>
+                            <span class="field-value">${field.displayValue}</span>
+                        </div>
                     </c:forEach>
-                </ul>
-            </div>
-        </div>
+                </div>
+
+                <div class="med-card">
+                    <h3><i class="fa-solid fa-clipboard-list"></i> Khuyến nghị &amp; sinh hoạt</h3>
+                    <c:forEach items="${detailView.internalMedicine.recommendationFields}" var="field">
+                        <div class="field-row">
+                            <span class="field-label">${field.label}</span>
+                            <span class="field-value">${field.displayValue}</span>
+                        </div>
+                    </c:forEach>
+                </div>
+
+                <div class="med-card">
+                    <h3><i class="fa-solid fa-heart-pulse"></i> C. Chỉ số sức khỏe</h3>
+                    <c:forEach items="${detailView.internalMedicine.healthMetrics}" var="field">
+                        <div class="field-row">
+                            <span class="field-label">${field.label}</span>
+                            <span class="field-value ${field.abnormal ? 'abnormal' : ''}">
+                                ${field.displayValue}
+                                <c:if test="${not empty field.referenceRange}">
+                                    <span class="field-ref">${field.referenceRange}</span>
+                                </c:if>
+                            </span>
+                        </div>
+                    </c:forEach>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <div class="med-card">
+                    <p class="empty-note">Chưa có dữ liệu bệnh án.</p>
+                </div>
+            </c:otherwise>
+        </c:choose>
     </div>
 
-    <!-- B. XÉT NGHIỆM MÁU TỔNG QUÁT -->
+    <!-- F. ĐƠN THUỐC -->
+    <div class="section" id="section-prescription">
+        <div class="section-title">
+            <h2><span class="dot purple"></span> F. Đơn thuốc</h2>
+            <a class="btn-export"
+               href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=prescription">
+                <i class="fa-solid fa-file-pdf"></i> Export PDF
+            </a>
+        </div>
+
+        <div class="med-card">
+            <c:choose>
+                <c:when test="${detailView.prescriptionDetail.hasData()}">
+                    <table class="rx-table">
+                        <thead>
+                        <tr>
+                            <th>Tên thuốc</th>
+                            <th>Hoạt chất</th>
+                            <th>Liều lượng</th>
+                            <th>Đơn vị</th>
+                            <th>Đường dùng</th>
+                            <th>Tần suất</th>
+                            <th>Thời điểm uống</th>
+                            <th>Số ngày</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <c:forEach items="${detailView.prescriptionDetail.items}" var="med">
+                            <tr>
+                                <td>${med.name}</td>
+                                <td>${med.ingredient}</td>
+                                <td>${med.dose}</td>
+                                <td>${med.unit}</td>
+                                <td>${med.route}</td>
+                                <td>${med.frequency}</td>
+                                <td>${med.usage}</td>
+                                <td>${med.days}</td>
+                                <td>${med.note}</td>
+                            </tr>
+                        </c:forEach>
+                        </tbody>
+                    </table>
+                </c:when>
+                <c:otherwise>
+                    <p class="empty-note">Chưa có đơn thuốc.</p>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </div>
+    </c:if>
+
+    <c:if test="${detailView.mauTongQuat}">
+    <!-- C. XÉT NGHIỆM MÁU TỔNG QUÁT -->
     <div class="section" id="section-blood">
         <div class="section-title">
-            <h2><span class="dot green"></span> B. Kết quả xét nghiệm máu tổng quát</h2>
+            <h2><span class="dot green"></span> C. Kết quả xét nghiệm máu tổng quát</h2>
             <a class="btn-export"
                href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=blood">
                 <i class="fa-solid fa-file-pdf"></i> Export PDF
@@ -219,11 +299,13 @@
             </c:choose>
         </div>
     </div>
+    </c:if>
 
-    <!-- C. SINH HÓA MÁU -->
+    <c:if test="${detailView.sinhHoaMau}">
+    <!-- D. SINH HÓA MÁU -->
     <div class="section" id="section-bio">
         <div class="section-title">
-            <h2><span class="dot red"></span> C. Kết quả sinh hóa máu</h2>
+            <h2><span class="dot red"></span> D. Kết quả sinh hóa máu</h2>
             <a class="btn-export"
                href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=biochemistry">
                 <i class="fa-solid fa-file-pdf"></i> Export PDF
@@ -260,7 +342,7 @@
             </div>
 
             <div class="bio-group">
-                <h4>Gan</h4>
+                <h4>Chức năng gan</h4>
                 <c:forEach items="${detailView.biochemistry.liverEnzymes}" var="field">
                     <div class="field-row">
                         <span class="field-label">${field.label}</span>
@@ -272,7 +354,7 @@
             </div>
 
             <div class="bio-group">
-                <h4>Thận</h4>
+                <h4>Chức năng thận</h4>
                 <c:forEach items="${detailView.biochemistry.kidneyFunction}" var="field">
                     <div class="field-row">
                         <span class="field-label">${field.label}</span>
@@ -284,7 +366,10 @@
             </div>
         </div>
     </div>
+    </c:if>
 
+</div>
+</main>
 </div>
 </body>
 </html>

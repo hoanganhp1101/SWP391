@@ -18,6 +18,10 @@ final class JdbcUtil {
     }
 
     static void setDouble(PreparedStatement ps, int index, Double value) throws SQLException {
+        setNullableDouble(ps, index, value);
+    }
+
+    static void setNullableDouble(PreparedStatement ps, int index, Double value) throws SQLException {
         if (value == null) {
             ps.setNull(index, Types.DOUBLE);
         } else {
@@ -39,5 +43,9 @@ final class JdbcUtil {
         } else {
             ps.setBoolean(index, value);
         }
+    }
+
+    static void setNullDouble(PreparedStatement ps, int index) throws SQLException {
+        ps.setNull(index, Types.DOUBLE);
     }
 }
