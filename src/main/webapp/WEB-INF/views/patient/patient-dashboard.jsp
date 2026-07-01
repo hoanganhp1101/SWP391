@@ -1508,6 +1508,7 @@
                         <div id="formErrorMsg"
                             style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;">
                         </div>
+                        <div id="formErrorMsg" style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;"></div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Đường huyết</label>
@@ -1516,6 +1517,9 @@
                                         class="form-control" placeholder="VD: 110">
                                     <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control"
                                         style="width: 100px;">
+                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet" class="form-control"
+                                        placeholder="VD: 110">
+                                    <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control" style="width: 100px;">
                                         <option value="mg/dL">mg/dL</option>
                                         <option value="mmol/L">mmol/L</option>
                                     </select>
@@ -1525,6 +1529,7 @@
                                 <label>Nhịp tim (BPM)</label>
                                 <input type="number" name="nhip_tim" id="nhip_tim" class="form-control"
                                     placeholder="VD: 75">
+                                <input type="number" name="nhip_tim" id="nhip_tim" class="form-control" placeholder="VD: 75">
                             </div>
                         </div>
                         <div class="form-row">
@@ -1537,6 +1542,11 @@
                                 <label>H/áp Tâm trương (mmHg)</label>
                                 <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control"
                                     placeholder="VD: 80">
+                                <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control" placeholder="VD: 120">
+                            </div>
+                            <div class="form-group">
+                                <label>H/áp Tâm trương (mmHg)</label>
+                                <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control" placeholder="VD: 80">
                             </div>
                         </div>
                         <div class="form-group">
@@ -1814,6 +1824,9 @@
 
                 if (newRecordForm) {
                     newRecordForm.addEventListener('submit', function (e) {
+                
+                if (newRecordForm) {
+                    newRecordForm.addEventListener('submit', function(e) {
                         const dh = document.getElementById('duong_huyet').value;
                         const unit = document.getElementById('don_vi_duong_huyet').value;
                         const hr = document.getElementById('nhip_tim').value;
@@ -1826,6 +1839,13 @@
                         if (!dh && !hr && !sys && !dia) {
                             error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
                         }
+                        
+                        let error = '';
+                        
+                        // Rule 1: At least one metric
+                        if (!dh && !hr && !sys && !dia) {
+                            error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
+                        } 
                         // Rule 2: Blood Pressure logic
                         else if ((sys && !dia) || (!sys && dia)) {
                             error = 'Vui lòng nhập đầy đủ cả Huyết áp Tâm thu và Tâm trương.';
@@ -1854,11 +1874,13 @@
                             }
                         }
 
+                        
                         if (error) {
                             e.preventDefault(); // Dừng submit
                             formErrorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error;
                             formErrorMsg.style.display = 'block';
 
+                            
                             // Lắc nhẹ modal để báo lỗi
                             const modal = document.querySelector('.modal');
                             modal.animate([

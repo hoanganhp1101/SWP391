@@ -13,8 +13,8 @@
         <img src="https://ui-avatars.com/api/?name=${not empty sessionScope.loginUser ? sessionScope.loginUser.hoTen : 'User'}&background=1e293b&color=fff" alt="User Avatar">
         <div>
             <div class="name">
-                <c:out value="${not empty sessionScope.loginUser.hoTen ? sessionScope.loginUser.hoTen : 'Guest'}"/>
-            </div>
+            <c:out value="${not empty sessionScope.adminUser.hoTen ? sessionScope.adminUser.hoTen : 'Admin'}"/>
+        </div>
             <div class="role text-capitalize">
                 <c:choose>
                     <c:when test="${sessionScope.loginUser.vaiTro == 'bac_si'}">Bác sĩ</c:when>
