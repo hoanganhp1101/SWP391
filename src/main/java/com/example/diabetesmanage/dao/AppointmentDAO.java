@@ -25,16 +25,24 @@ public class AppointmentDAO {
                     "LEFT JOIN users bs ON a.bac_si_id = bs.id " +
                     "WHERE 1=1 ";
 
-    public List<Appointment> findAll(String scopeDoctorId, String status, String keyword) {
+    public List<Appointment> findAll(
+            String scopeDoctorId, String status, String keyword, String fromDate, String toDate
+    ) {
         List<Appointment> list = new ArrayList<>();
         String normalizedStatus = Appointment.normalizeStatusFilter(status);
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean hasDate = fromDate != null && !fromDate.isBlank()
+                && toDate != null && !toDate.isBlank();
 
         StringBuilder sql = new StringBuilder(SELECT_BASE);
         appendDoctorScope(sql, scopeDoctorId);
         if (normalizedStatus != null) {
             sql.append("AND a.trang_thai = ? ");
         }
-        if (keyword != null && !keyword.isBlank()) {
+        if (hasDate) {
+            sql.append("AND DATE(a.thoi_gian_hen) BETWEEN ? AND ? ");
+        }
+        if (hasKeyword) {
             sql.append("AND (a.tieu_de LIKE ? " +
                     "OR u.ho_ten LIKE ? " +
                     "OR COALESCE(p.patient_code, LEFT(p.id, 8)) LIKE ?) ");
@@ -52,11 +60,15 @@ public class AppointmentDAO {
             if (normalizedStatus != null) {
                 ps.setString(idx++, normalizedStatus);
             }
-            if (keyword != null && !keyword.isBlank()) {
+            if (hasDate) {
+                ps.setString(idx++, fromDate);
+                ps.setString(idx++, toDate);
+            }
+            if (hasKeyword) {
                 String like = "%" + keyword.trim() + "%";
                 ps.setString(idx++, like);
                 ps.setString(idx++, like);
-                ps.setString(idx, like);
+                ps.setString(idx++, like);
             }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {

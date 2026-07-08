@@ -8,6 +8,11 @@
 </c:if>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
+<%-- Shell + filter dùng chung cho mọi trang doctor --%>
+<link rel="stylesheet" href="${ctx}/css/doctor-layout.css">
+<link rel="stylesheet" href="${ctx}/css/filters.css">
+<script src="${ctx}/js/filters.js" defer></script>
+
 <header class="topbar">
     <div class="logo">HealthAlert</div>
 

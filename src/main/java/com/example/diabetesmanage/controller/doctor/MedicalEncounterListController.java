@@ -32,8 +32,11 @@ public class MedicalEncounterListController extends HttpServlet {
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
         String status = Appointment.normalizeStatusFilter(request.getParameter("status"));
         String keyword = request.getParameter("keyword");
+        String fromDate = request.getParameter("fromDate");
+        String toDate = request.getParameter("toDate");
 
-        List<Appointment> appointments = appointmentDAO.findAll(scopeDoctorId, status, keyword);
+        List<Appointment> appointments =
+                appointmentDAO.findAll(scopeDoctorId, status, keyword, fromDate, toDate);
 
         DoctorLayoutHelper.prepare(request, user, "appointments");
         request.setAttribute("appointments", appointments);

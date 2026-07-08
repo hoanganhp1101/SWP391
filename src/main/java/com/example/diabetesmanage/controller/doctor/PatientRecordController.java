@@ -11,7 +11,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet("/doctor/patient-records")
@@ -32,29 +31,12 @@ public class PatientRecordController extends HttpServlet {
         String startDate = request.getParameter("startDate");
         String endDate = request.getParameter("endDate");
         String keyword = request.getParameter("keyword");
+        String type = request.getParameter("type");
+        String status = request.getParameter("status");
         String patientId = request.getParameter("patientId");
 
-        boolean hasDate = startDate != null && !startDate.isBlank()
-                && endDate != null && !endDate.isBlank();
-        boolean hasKeyword = keyword != null && !keyword.isBlank();
-
-        List<MedicalEncounter> records;
-        if (hasDate || hasKeyword) {
-            records = encounterDAO.searchEncounters(
-                    startDate, endDate, keyword, scopeDoctorId);
-        } else {
-            records = encounterDAO.getEncounters(scopeDoctorId);
-        }
-
-        if (patientId != null && !patientId.isBlank()) {
-            List<MedicalEncounter> filtered = new ArrayList<>();
-            for (MedicalEncounter record : records) {
-                if (patientId.equals(record.getPatientId())) {
-                    filtered.add(record);
-                }
-            }
-            records = filtered;
-        }
+        List<MedicalEncounter> records = encounterDAO.searchEncounters(
+                scopeDoctorId, startDate, endDate, keyword, type, status, patientId);
 
         DoctorLayoutHelper.prepare(request, user, "records");
         request.setAttribute("records", records);

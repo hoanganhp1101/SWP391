@@ -415,98 +415,7 @@
         .btn-complete{ background:#059669; color:#fff; }
         .btn-cancel{ background:#fef2f2; color:#dc2626; }
 
-        .date-range-picker {
-            position: relative;
-            width: 250px;
-        }
-
-        .date-display {
-            height: 44px;           /* trước 48 hoặc lớn hơn */
-            padding: 0 14px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 22px;
-
-            font-size: 14px;
-            font-weight: 500;
-
-            cursor: pointer;
-        }
-
-        .date-display:hover {
-            border-color: #6c63ff;
-        }
-
-        .date-popup {
-            position: absolute;
-            top: 60px;
-            left: 0;
-
-            width: 340px;
-
-            background: white;
-            border-radius: 8px;
-
-            padding: 20px;
-
-            box-shadow: 0 10px 30px rgba(0,0,0,.15);
-
-            display: none;
-            z-index: 999;
-        }
-
-        .date-popup.show {
-            display: block;
-        }
-
-        .date-fields {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .date-fields label {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .date-fields input {
-            height: 40px;
-            padding: 0 12px;
-
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
-
-        .popup-actions {
-            margin-top: 20px;
-
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .popup-actions button {
-            padding: 8px 16px;
-
-            border: none;
-            border-radius: 4px;
-
-            cursor: pointer;
-        }
-
-        .popup-actions button[type="submit"] {
-            background: #6c63ff;
-            color: white;
-        }
-
-
-
+        /* Filter dùng chung: xem /css/filters.css */
 
     </style>
 
@@ -557,6 +466,8 @@
                               action="${pageContext.request.contextPath}/doctor/medical-encounters">
 
                             <input type="hidden" name="status" value="${param.status}">
+                            <input type="hidden" name="fromDate" value="${param.fromDate}">
+                            <input type="hidden" name="toDate" value="${param.toDate}">
 
                             <input
                                     type="text"
@@ -570,23 +481,73 @@
 
                 </div>
 
-                <div class="status-tabs">
-                    <a class="status-tab ${empty param.status ? 'active' : ''}"
-                       href="${pageContext.request.contextPath}/doctor/medical-encounters?keyword=${param.keyword}">
-                        Tất cả
-                    </a>
-                    <a class="status-tab ${param.status eq 'cho_kham' ? 'active' : ''}"
-                       href="${pageContext.request.contextPath}/doctor/medical-encounters?status=cho_kham&keyword=${param.keyword}">
-                        Chờ khám
-                    </a>
-                    <a class="status-tab ${param.status eq 'da_kham' ? 'active' : ''}"
-                       href="${pageContext.request.contextPath}/doctor/medical-encounters?status=da_kham&keyword=${param.keyword}">
-                        Đã khám
-                    </a>
-                    <a class="status-tab ${param.status eq 'da_huy' or param.status eq 'huy' ? 'active' : ''}"
-                       href="${pageContext.request.contextPath}/doctor/medical-encounters?status=da_huy&keyword=${param.keyword}">
-                        Hủy
-                    </a>
+                <c:set var="basePath"
+                       value="${pageContext.request.contextPath}/doctor/medical-encounters"/>
+
+                <c:choose>
+                    <c:when test="${param.status eq 'cho_kham'}"><c:set var="statusLabel" value="Chờ khám"/></c:when>
+                    <c:when test="${param.status eq 'da_kham'}"><c:set var="statusLabel" value="Đã khám"/></c:when>
+                    <c:when test="${param.status eq 'da_huy' or param.status eq 'huy'}"><c:set var="statusLabel" value="Đã hủy"/></c:when>
+                    <c:otherwise><c:set var="statusLabel" value="Trạng thái"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${not empty param.fromDate and not empty param.toDate}">
+                        <c:set var="dateLabel" value="${param.fromDate} → ${param.toDate}"/>
+                    </c:when>
+                    <c:otherwise><c:set var="dateLabel" value="Chọn khoảng ngày"/></c:otherwise>
+                </c:choose>
+
+                <div class="filter-bar">
+
+                    <!-- Chọn khoảng ngày -->
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${dateLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-popup">
+                            <form method="get" action="${basePath}">
+                                <input type="hidden" name="keyword" value="${param.keyword}">
+                                <input type="hidden" name="status" value="${param.status}">
+                                <div class="filter-fields">
+                                    <label>Từ ngày</label>
+                                    <input type="date" name="fromDate" value="${param.fromDate}">
+                                    <label>Đến ngày</label>
+                                    <input type="date" name="toDate" value="${param.toDate}">
+                                </div>
+                                <div class="filter-actions">
+                                    <button type="submit" class="btn-apply">Áp dụng</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${statusLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.status ? 'active' : ''}"
+                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=">
+                                <i class="fa-solid fa-check filter-check"></i> Tất cả
+                            </a>
+                            <a class="filter-item ${param.status eq 'cho_kham' ? 'active' : ''}"
+                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=cho_kham">
+                                <i class="fa-solid fa-check filter-check"></i> Chờ khám
+                            </a>
+                            <a class="filter-item ${param.status eq 'da_kham' ? 'active' : ''}"
+                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=da_kham">
+                                <i class="fa-solid fa-check filter-check"></i> Đã khám
+                            </a>
+                            <a class="filter-item ${(param.status eq 'da_huy' or param.status eq 'huy') ? 'active' : ''}"
+                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=da_huy">
+                                <i class="fa-solid fa-check filter-check"></i> Đã hủy
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="table-wrapper">

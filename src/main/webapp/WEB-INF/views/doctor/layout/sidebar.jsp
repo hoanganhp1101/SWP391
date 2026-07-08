@@ -27,8 +27,8 @@
             <span>Danh sách bệnh nhân</span>
         </a>
 
-        <a
-           class="menu-item">
+        <a href="${ctx}/doctor-dashboard#danger-section"
+           class="menu-item ${activeMenu == 'alerts' ? 'active' : ''}">
             <i class="fa-regular fa-bell"></i>
             <span>Cảnh báo khẩn cấp</span>
         </a>
@@ -45,8 +45,8 @@
             <span>Quản lý lịch khám</span>
         </a>
 
-        <a
-           class="menu-item ">
+        <a href="${ctx}/doctor/patient-list?risk=critical"
+           class="menu-item ${activeMenu == 'analytics' ? 'active' : ''}">
             <i class="fa-solid fa-chart-column"></i>
             <span>Phân tích dữ liệu</span>
         </a>

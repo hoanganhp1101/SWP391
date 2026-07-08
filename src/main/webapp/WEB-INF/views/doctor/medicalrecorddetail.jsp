@@ -94,13 +94,6 @@
                href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=full">
                 <i class="fa-solid fa-file-pdf"></i> Xuất PDF
             </a>
-            <form method="post" action="${pageContext.request.contextPath}/doctor/record-delete"
-                  onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ khám bệnh này?');" style="display:inline;">
-                <input type="hidden" name="id" value="${detailView.recordId}">
-                <button type="submit" class="btn-delete">
-                    <i class="fa-solid fa-trash"></i> Xóa hồ sơ
-                </button>
-            </form>
         </div>
     </div>
 

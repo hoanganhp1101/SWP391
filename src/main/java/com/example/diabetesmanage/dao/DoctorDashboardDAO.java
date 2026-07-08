@@ -1,24 +1,20 @@
 package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
-import com.example.diabetesmanage.model.UrgentPatientAlert;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DoctorDashboardDAO {
 
-    public DashboardStats getDashboardStats(String doctorId) {
+    public DashboardStats getDashboardStats(String doctorId, String startDate, String endDate) {
 
         DashboardStats stats = new DashboardStats();
+        boolean hasDate = startDate != null && !startDate.isBlank()
+                && endDate != null && !endDate.isBlank();
 
-        String riskSql =
+        String sql =
                 "SELECT " +
                         "COUNT(*) AS total_patients, " +
                         "SUM(CASE WHEN vps.duong_huyet_gan_nhat IS NULL OR vps.duong_huyet_gan_nhat < 140 THEN 1 ELSE 0 END) AS risk_low, " +
@@ -28,23 +24,28 @@ public class DoctorDashboardDAO {
                         "COALESCE(SUM(vps.canh_bao_chua_doc), 0) AS active_alerts " +
                         "FROM v_patient_summary vps " +
                         "JOIN patients p ON vps.patient_id = p.id " +
-                        "WHERE p.bac_si_id = ?";
+                        "WHERE p.bac_si_id = ?" +
+                        (hasDate ? " AND p.ngay_tao BETWEEN ? AND ?" : "");
 
         try (
                 Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(riskSql)
+                PreparedStatement ps = con.prepareStatement(sql)
         ) {
             ps.setString(1, doctorId);
-            ResultSet rs = ps.executeQuery();
+            if (hasDate) {
+                ps.setString(2, startDate);
+                ps.setString(3, endDate);
+            }
 
-            if (rs.next()) {
-                stats.setTotalPatients(rs.getInt("total_patients"));
-                stats.setRiskLow(rs.getInt("risk_low"));
-                stats.setRiskMedium(rs.getInt("risk_medium"));
-                stats.setRiskHigh(rs.getInt("risk_high"));
-                stats.setRiskCritical(rs.getInt("risk_critical"));
-                stats.setPriorityLevel1Count(rs.getInt("risk_critical"));
-                stats.setActiveAlerts(rs.getInt("active_alerts"));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    stats.setTotalPatients(rs.getInt("total_patients"));
+                    stats.setRiskLow(rs.getInt("risk_low"));
+                    stats.setRiskMedium(rs.getInt("risk_medium"));
+                    stats.setRiskHigh(rs.getInt("risk_high"));
+                    stats.setRiskCritical(rs.getInt("risk_critical"));
+                    stats.setActiveAlerts(rs.getInt("active_alerts"));
+                }
             }
 
         } catch (Exception e) {
@@ -52,7 +53,7 @@ public class DoctorDashboardDAO {
             loadStatsWithoutAlertsColumn(doctorId, stats);
         }
 
-        stats.setTodayHealthRecords(countTodayEncounters(doctorId));
+        stats.setTodayHealthRecords(countEncounters(doctorId, startDate, endDate, hasDate));
 
         if (stats.getActiveAlerts() == 0) {
             stats.setActiveAlerts(stats.getRiskHigh() + stats.getRiskCritical());
@@ -95,24 +96,31 @@ public class DoctorDashboardDAO {
         }
     }
 
-    private int countTodayEncounters(String doctorId) {
+    private int countEncounters(String doctorId, String startDate, String endDate, boolean hasDate) {
 
         String sql =
                 "SELECT COUNT(*) AS total " +
                         "FROM medical_encounters me " +
                         "JOIN patients p ON me.patient_id = p.id " +
                         "WHERE p.bac_si_id = ? " +
-                        "AND DATE(COALESCE(me.ngay_tao, me.ngay_kham)) = CURDATE()";
+                        (hasDate
+                                ? "AND DATE(COALESCE(me.ngay_tao, me.ngay_kham)) BETWEEN ? AND ?"
+                                : "AND DATE(COALESCE(me.ngay_tao, me.ngay_kham)) = CURDATE()");
 
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
             ps.setString(1, doctorId);
-            ResultSet rs = ps.executeQuery();
+            if (hasDate) {
+                ps.setString(2, startDate);
+                ps.setString(3, endDate);
+            }
 
-            if (rs.next()) {
-                return rs.getInt("total");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
             }
 
         } catch (Exception e) {
@@ -120,129 +128,6 @@ public class DoctorDashboardDAO {
         }
 
         return 0;
-    }
-
-    public List<UrgentPatientAlert> getUrgentPatients(String doctorId, int limit) {
-
-        List<UrgentPatientAlert> list = new ArrayList<>();
-
-        String sql =
-                "SELECT " +
-                        "vps.patient_id, " +
-                        "p.patient_code, " +
-                        "vps.ho_ten, " +
-                        "vps.loai_tieu_duong, " +
-                        "vps.duong_huyet_gan_nhat, " +
-                        "vps.lan_do_cuoi, " +
-                        "hr.huyet_ap_tam_thu, " +
-                        "hr.huyet_ap_tam_truong " +
-                        "FROM v_patient_summary vps " +
-                        "JOIN patients p ON vps.patient_id = p.id " +
-                        "LEFT JOIN health_records hr ON hr.patient_id = p.id " +
-                        "WHERE p.bac_si_id = ? " +
-                        "AND ( " +
-                        "    vps.duong_huyet_gan_nhat >= 180 " +
-                        "    OR hr.huyet_ap_tam_thu >= 140 " +
-                        ") " +
-                        "ORDER BY " +
-                        "    CASE " +
-                        "        WHEN vps.duong_huyet_gan_nhat >= 250 THEN 0 " +
-                        "        WHEN vps.duong_huyet_gan_nhat >= 180 THEN 1 " +
-                        "        ELSE 2 " +
-                        "    END, " +
-                        "    vps.lan_do_cuoi DESC " +
-                        "LIMIT ?";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, doctorId);
-            ps.setInt(2, limit);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                UrgentPatientAlert alert = new UrgentPatientAlert();
-
-                alert.setPatientId(rs.getString("patient_id"));
-                alert.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
-                alert.setPatientName(rs.getString("ho_ten"));
-                alert.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
-
-                double glucose = rs.getDouble("duong_huyet_gan_nhat");
-                if (!rs.wasNull()) {
-                    alert.setDuongHuyetGanNhat(glucose);
-                    alert.setCritical(glucose >= 250);
-                }
-
-                int systolic = rs.getInt("huyet_ap_tam_thu");
-                if (!rs.wasNull()) {
-                    alert.setHuyetApTamThu(systolic);
-                }
-
-                int diastolic = rs.getInt("huyet_ap_tam_truong");
-                if (!rs.wasNull()) {
-                    alert.setHuyetApTamTruong(diastolic);
-                }
-
-                alert.setVitalDisplay(buildVitalDisplay(alert));
-                alert.setDetectedAgo(formatDetectedAgo(rs.getTimestamp("lan_do_cuoi")));
-
-                list.add(alert);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-    private String buildVitalDisplay(UrgentPatientAlert alert) {
-
-        if (alert.getDuongHuyetGanNhat() != null && alert.getDuongHuyetGanNhat() >= 180) {
-            return String.format("Đường huyết: %.0f mg/dL", alert.getDuongHuyetGanNhat());
-        }
-
-        if (alert.getHuyetApTamThu() != null && alert.getHuyetApTamTruong() != null) {
-            return String.format(
-                    "Huyết áp: %d/%d",
-                    alert.getHuyetApTamThu(),
-                    alert.getHuyetApTamTruong()
-            );
-        }
-
-        if (alert.getDuongHuyetGanNhat() != null) {
-            return String.format("Đường huyết: %.0f mg/dL", alert.getDuongHuyetGanNhat());
-        }
-
-        return "Chỉ số bất thường";
-    }
-
-    private String formatDetectedAgo(Timestamp timestamp) {
-
-        if (timestamp == null) {
-            return "Chưa có dữ liệu gần đây";
-        }
-
-        LocalDateTime detectedAt = timestamp.toLocalDateTime();
-        Duration duration = Duration.between(detectedAt, LocalDateTime.now());
-
-        long minutes = duration.toMinutes();
-        if (minutes < 1) {
-            return "Vừa phát hiện";
-        }
-        if (minutes < 60) {
-            return "Phát hiện cách đây " + minutes + " phút";
-        }
-
-        long hours = duration.toHours();
-        if (hours < 24) {
-            return "Phát hiện cách đây " + hours + " giờ";
-        }
-
-        long days = duration.toDays();
-        return "Phát hiện cách đây " + days + " ngày";
     }
 
     public static class DashboardStats {

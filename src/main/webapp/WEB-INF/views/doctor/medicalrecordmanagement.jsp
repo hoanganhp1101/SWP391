@@ -363,99 +363,24 @@
             background:#eff6ff;
             color:#2563eb;
         }
-
-        .date-range-picker {
-            position: relative;
-            width: 250px;
-        }
-
-        .date-display {
-            height: 44px;           /* trước 48 hoặc lớn hơn */
-            padding: 0 14px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 22px;
-
-            font-size: 14px;
-            font-weight: 500;
-
-            cursor: pointer;
-        }
-
-        .date-display:hover {
-            border-color: #6c63ff;
-        }
-
-        .date-popup {
-            position: absolute;
-            top: 60px;
-            left: 0;
-
-            width: 340px;
-
-            background: white;
-            border-radius: 8px;
-
-            padding: 20px;
-
-            box-shadow: 0 10px 30px rgba(0,0,0,.15);
-
-            display: none;
-            z-index: 999;
-        }
-
-        .date-popup.show {
-            display: block;
-        }
-
-        .date-fields {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .date-fields label {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .date-fields input {
-            height: 40px;
-            padding: 0 12px;
-
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
-
-        .popup-actions {
-            margin-top: 20px;
-
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .popup-actions button {
-            padding: 8px 16px;
-
+        .btn-delete {
+            background: none;
             border: none;
-            border-radius: 4px;
-
+            color: #dc3545;
             cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color .2s ease;
         }
 
-        .popup-actions button[type="submit"] {
-            background: #6c63ff;
-            color: white;
+        .btn-delete:hover {
+            color: #b02a37;
         }
 
-
-
+        /* Filter dùng chung: xem /css/filters.css */
 
     </style>
 
@@ -511,6 +436,12 @@
                                     placeholder="Tìm kiếm..."
                             >
 
+                            <input type="hidden" name="type" value="${param.type}">
+                            <input type="hidden" name="status" value="${param.status}">
+                            <input type="hidden" name="startDate" value="${param.startDate}">
+                            <input type="hidden" name="endDate" value="${param.endDate}">
+                            <input type="hidden" name="patientId" value="${param.patientId}">
+
                         </form>
                     </div>
 
@@ -526,59 +457,83 @@
 
                 </div>
 
-                <div class="risk-filter">
+                <c:set var="typeLabel" value="${param.type eq 'tai_kham_noi_tiet' ? 'Bệnh án tái khám Nội tiết'
+                        : (param.type eq 'mau_tong_quat' ? 'Kết quả xét nghiệm máu tổng quát'
+                        : (param.type eq 'sinh_hoa_mau' ? 'Kết quả sinh hóa máu' : 'Loại hồ sơ'))}"/>
+                <c:set var="statusLabel" value="${param.status eq 'da_kham' ? 'Đã khám' : 'Trạng thái'}"/>
 
-                    <form action="${pageContext.request.contextPath}/doctor/patient-records"
-                          method="get">
+                <div class="filter-bar">
 
-                        <div class="date-range-picker">
-
-                            <div class="date-display" id="toggleDatePicker">
-                <span id="dateText">
-                    ${not empty param.startDate && not empty param.endDate
-                            ? param.startDate.concat(' - ').concat(param.endDate)
-                            : 'Chọn khoảng ngày'}
-                </span>
-                                <span>▼</span>
-                            </div>
-
-                            <div class="date-popup" id="datePopup">
-
-                                <div class="date-fields">
-
+                    <!-- Chọn khoảng ngày -->
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${not empty param.startDate && not empty param.endDate
+                                    ? param.startDate.concat(' → ').concat(param.endDate)
+                                    : 'Chọn khoảng ngày'}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-popup">
+                            <form action="${pageContext.request.contextPath}/doctor/patient-records" method="get">
+                                <input type="hidden" name="keyword" value="${param.keyword}">
+                                <input type="hidden" name="type" value="${param.type}">
+                                <input type="hidden" name="status" value="${param.status}">
+                                <input type="hidden" name="patientId" value="${param.patientId}">
+                                <div class="filter-fields">
                                     <label>Từ ngày</label>
-                                    <input
-                                            type="date"
-                                            id="startDate"
-                                            name="startDate"
-                                            value="${param.startDate}"
-                                    >
-
+                                    <input type="date" name="startDate" value="${param.startDate}">
                                     <label>Đến ngày</label>
-                                    <input
-                                            type="date"
-                                            id="endDate"
-                                            name="endDate"
-                                            value="${param.endDate}"
-                                    >
-
+                                    <input type="date" name="endDate" value="${param.endDate}">
                                 </div>
-
-                                <div class="popup-actions">
-                                    <button type="button" id="cancelBtn">
-                                        Cancel
-                                    </button>
-
-                                    <button type="submit">
-                                        OK
-                                    </button>
+                                <div class="filter-actions">
+                                    <button type="submit" class="btn-apply">Áp dụng</button>
                                 </div>
-
-                            </div>
-
+                            </form>
                         </div>
+                    </div>
 
-                    </form>
+                    <!-- Loại hồ sơ -->
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${typeLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.type ? 'active' : ''}"
+                               href="?type=&status=${param.status}&keyword=${param.keyword}&startDate=${param.startDate}&endDate=${param.endDate}&patientId=${param.patientId}">
+                                <i class="fa-solid fa-check filter-check"></i> Tất cả
+                            </a>
+                            <a class="filter-item ${param.type eq 'tai_kham_noi_tiet' ? 'active' : ''}"
+                               href="?type=tai_kham_noi_tiet&status=${param.status}&keyword=${param.keyword}&startDate=${param.startDate}&endDate=${param.endDate}&patientId=${param.patientId}">
+                                <i class="fa-solid fa-check filter-check"></i> Bệnh án tái khám Nội tiết
+                            </a>
+                            <a class="filter-item ${param.type eq 'mau_tong_quat' ? 'active' : ''}"
+                               href="?type=mau_tong_quat&status=${param.status}&keyword=${param.keyword}&startDate=${param.startDate}&endDate=${param.endDate}&patientId=${param.patientId}">
+                                <i class="fa-solid fa-check filter-check"></i> Kết quả xét nghiệm máu tổng quát
+                            </a>
+                            <a class="filter-item ${param.type eq 'sinh_hoa_mau' ? 'active' : ''}"
+                               href="?type=sinh_hoa_mau&status=${param.status}&keyword=${param.keyword}&startDate=${param.startDate}&endDate=${param.endDate}&patientId=${param.patientId}">
+                                <i class="fa-solid fa-check filter-check"></i> Kết quả sinh hóa máu
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${statusLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.status ? 'active' : ''}"
+                               href="?type=${param.type}&status=&keyword=${param.keyword}&startDate=${param.startDate}&endDate=${param.endDate}&patientId=${param.patientId}">
+                                <i class="fa-solid fa-check filter-check"></i> Tất cả
+                            </a>
+                            <a class="filter-item ${param.status eq 'da_kham' ? 'active' : ''}"
+                               href="?type=${param.type}&status=da_kham&keyword=${param.keyword}&startDate=${param.startDate}&endDate=${param.endDate}&patientId=${param.patientId}">
+                                <i class="fa-solid fa-check filter-check"></i> Đã khám
+                            </a>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -648,7 +603,16 @@
                                    title="Xem chi tiết">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
+                                <form method="post"
+                                      action="${pageContext.request.contextPath}/doctor/record-delete"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ khám bệnh này?');"
+                                      style="display:inline;">
+                                    <input type="hidden" name="id" value="${detailView.recordId}">
 
+                                    <button type="submit" class="btn-delete" title="Xóa hồ sơ">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
                             </td>
 
                         </tr>
@@ -671,81 +635,4 @@
 </div>
 
 </body>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-        const toggleDatePicker = document.getElementById("toggleDatePicker");
-        const datePopup = document.getElementById("datePopup");
-        const startDate = document.getElementById("startDate");
-        const endDate = document.getElementById("endDate");
-        const dateText = document.getElementById("dateText");
-        const cancelBtn = document.getElementById("cancelBtn");
-
-        if (!toggleDatePicker || !datePopup) {
-            console.error("Date picker not found");
-            return;
-        }
-
-        toggleDatePicker.onclick = function (e) {
-            e.stopPropagation();
-            datePopup.classList.toggle("show");
-        };
-
-        if (cancelBtn) {
-            cancelBtn.onclick = function () {
-                datePopup.classList.remove("show");
-            };
-        }
-
-        document.addEventListener("click", function (e) {
-
-            if (
-                !datePopup.contains(e.target) &&
-                !toggleDatePicker.contains(e.target)
-            ) {
-                datePopup.classList.remove("show");
-            }
-
-        });
-
-        function formatDate(value) {
-
-            if (!value) return "";
-
-            const date = new Date(value);
-
-            return date.toLocaleDateString("vi-VN");
-        }
-
-        function updateText() {
-
-            if (
-                startDate &&
-                endDate &&
-                startDate.value &&
-                endDate.value
-            ) {
-
-                dateText.textContent =
-                    formatDate(startDate.value) +
-                    " - " +
-                    formatDate(endDate.value);
-
-            } else {
-
-                dateText.textContent = "Chọn khoảng ngày";
-            }
-        }
-
-        if (startDate) {
-            startDate.addEventListener("change", updateText);
-        }
-
-        if (endDate) {
-            endDate.addEventListener("change", updateText);
-        }
-
-        updateText();
-    });
-</script>
 </html>

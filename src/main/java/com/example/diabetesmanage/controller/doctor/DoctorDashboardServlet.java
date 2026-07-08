@@ -2,7 +2,6 @@ package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.DoctorDashboardDAO;
 import com.example.diabetesmanage.dao.DoctorDashboardDAO.DashboardStats;
-import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.UrgentPatientAlert;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.DangerousPatientService;
@@ -28,20 +27,22 @@ public class DoctorDashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         User doctor = AuthContext.requireDoctor(request, response);
         if (doctor == null) {
             return;
         }
 
         String doctorId = doctor.getId().toString();
-        DashboardStats stats = dashboardDAO.getDashboardStats(doctorId);
-        AnalysisResult analysisResult =
-                dangerousPatientService.analyzeDangerousPatients(doctorId);
-
+        DashboardStats stats = dashboardDAO.getDashboardStats(
+                doctorId,
+                request.getParameter("startDate"),
+                request.getParameter("endDate"));
         if (stats == null) {
             stats = new DashboardStats();
         }
+
+        AnalysisResult analysisResult =
+                dangerousPatientService.analyzeDangerousPatients(doctorId);
 
         List<UrgentPatientAlert> dangerousPatients = analysisResult.getDangerousPatients();
         long criticalCount = dangerousPatients.stream()

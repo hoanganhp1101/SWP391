@@ -258,7 +258,8 @@
             background:white;
             border:1px solid #e5e7eb;
             border-radius:24px;
-            overflow:hidden;
+
+            overflow:visible;
         }
 
         .table-top{
@@ -316,6 +317,7 @@
 
         .table-wrapper{
             overflow-x:auto;
+            overflow-y:visible;
         }
 
         table{
@@ -348,8 +350,7 @@
             gap:10px;
         }
 
-        .edit-btn,
-        .delete-btn{
+        .edit-btn{
             width:40px;
             height:40px;
             border:none;
@@ -362,160 +363,7 @@
             color:#2563eb;
         }
 
-        .delete-btn{
-            background:#fef2f2;
-            color:#dc2626;
-        }
-
-        .confirm-toast{
-            position:fixed;
-            top:30px;
-            right:30px;
-            width:340px;
-            background:white;
-            border-radius:20px;
-            padding:20px;
-            box-shadow:0 10px 30px rgba(0,0,0,.15);
-
-            opacity:0;
-            visibility:hidden;
-            transform:translateY(-20px);
-
-            transition:.3s;
-        }
-
-        .confirm-toast.show{
-            opacity:1;
-            visibility:visible;
-            transform:translateY(0);
-        }
-
-        .confirm-content{
-            display:flex;
-            gap:15px;
-        }
-
-        .confirm-actions{
-            margin-top:20px;
-            display:flex;
-            justify-content:flex-end;
-            gap:10px;
-        }
-
-        .cancel-btn,
-        .confirm-btn{
-            border:none;
-            padding:12px 18px;
-            border-radius:10px;
-            cursor:pointer;
-        }
-
-        .confirm-btn{
-            background:#ef4444;
-            color:white;
-        }
-
-        .cancel-btn{
-            background:#e5e7eb;
-        }
-
-        .toast{
-            position:fixed;
-            bottom:30px;
-            right:30px;
-            background:#16a34a;
-            color:white;
-            padding:15px 22px;
-            border-radius:12px;
-
-            opacity:0;
-            visibility:hidden;
-
-            transition:.3s;
-        }
-
-        .toast.show{
-            opacity:1;
-            visibility:visible;
-        }
-        /* ==========================
-RISK FILTER
-========================== */
-
-        .risk-filter{
-            display:flex;
-            gap:12px;
-            padding:14px 26px;
-            border-bottom:1px solid #e5e7eb;
-            flex-wrap:wrap;
-        }
-
-        .filter-btn{
-            border:1px solid #dbe2ea;
-            background:#fff;
-            padding:10px 20px;
-            border-radius:999px;
-            font-size:14px;
-            font-weight:600;
-            cursor:pointer;
-            transition:.2s;
-        }
-
-        .filter-btn.active{
-            background:#eef2ff;
-        }
-
-        .filter-low{
-            border-color:#22c55e;
-            color:#16a34a;
-        }
-
-        .filter-medium{
-            border-color:#f59e0b;
-            color:#d97706;
-        }
-
-        .filter-high{
-            border-color:#f97316;
-            color:#ea580c;
-        }
-
-        .filter-critical{
-            border-color:#ef4444;
-            color:#dc2626;
-        }
-
-        /* ==========================
-           RISK BADGE
-        ========================== */
-
-        .risk-badge{
-            display:inline-block;
-            padding:6px 12px;
-            border-radius:999px;
-            font-size:13px;
-            font-weight:600;
-        }
-
-        .risk-low{
-            background:#dcfce7;
-            color:#16a34a;
-        }
-
-        .risk-medium{
-            background:#fef3c7;
-            color:#d97706;
-        }
-
-        .risk-high{
-            background:#ffedd5;
-            color:#ea580c;
-        }
-
-        .risk-critical{
-            background:#fee2e2;
-            color:#dc2626;
-        }
+        /* Filter dùng chung: xem /css/filters.css */
     </style>
 
     <link rel="stylesheet"
@@ -557,41 +405,98 @@ RISK FILTER
                                     placeholder="Tìm kiếm..."
                             >
 
-                            <input
-                                    type="hidden"
-                                    name="risk"
-                                    value="${param.risk}"
-                            >
+                            <input type="hidden" name="glucose" value="${param.glucose}">
+                            <input type="hidden" name="hba1c" value="${param.hba1c}">
+                            <input type="hidden" name="bmi" value="${param.bmi}">
+                            <input type="hidden" name="action" value="${param.action}">
                         </form>
                     </div>
 </div>
 
-                <div class="risk-filter">
+                <c:set var="basePath" value="${pageContext.request.contextPath}/doctor/patient-list"/>
 
-                    <a href="${pageContext.request.contextPath}/doctor/patient-list"
-                       class="filter-btn ${empty param.risk ? 'active' : ''}">
-                        Tất cả
-                    </a>
+                <c:choose>
+                    <c:when test="${param.glucose eq 'normal'}"><c:set var="glucoseLabel" value="Bình thường"/></c:when>
+                    <c:when test="${param.glucose eq 'high'}"><c:set var="glucoseLabel" value="Cao"/></c:when>
+                    <c:when test="${param.glucose eq 'critical'}"><c:set var="glucoseLabel" value="Rất cao"/></c:when>
+                    <c:when test="${param.glucose eq 'missing'}"><c:set var="glucoseLabel" value="Chưa đo"/></c:when>
+                    <c:otherwise><c:set var="glucoseLabel" value="Glucose"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${param.hba1c eq 'normal'}"><c:set var="hba1cLabel" value="Bình thường"/></c:when>
+                    <c:when test="${param.hba1c eq 'prediabetes'}"><c:set var="hba1cLabel" value="Tiền tiểu đường"/></c:when>
+                    <c:when test="${param.hba1c eq 'high'}"><c:set var="hba1cLabel" value="Cao"/></c:when>
+                    <c:when test="${param.hba1c eq 'missing'}"><c:set var="hba1cLabel" value="Chưa làm"/></c:when>
+                    <c:otherwise><c:set var="hba1cLabel" value="HbA1c"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${param.bmi eq 'normal'}"><c:set var="bmiLabel" value="Bình thường"/></c:when>
+                    <c:when test="${param.bmi eq 'overweight'}"><c:set var="bmiLabel" value="Thừa cân"/></c:when>
+                    <c:when test="${param.bmi eq 'obese'}"><c:set var="bmiLabel" value="Béo phì"/></c:when>
+                    <c:when test="${param.bmi eq 'missing'}"><c:set var="bmiLabel" value="Chưa đo"/></c:when>
+                    <c:otherwise><c:set var="bmiLabel" value="BMI"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${param.action eq 'no-update'}"><c:set var="actionLabel" value="Chưa cập nhật 7 ngày"/></c:when>
+                    <c:when test="${param.action eq 'no-followup'}"><c:set var="actionLabel" value="Chưa tái khám 30 ngày"/></c:when>
+                    <c:otherwise><c:set var="actionLabel" value="Hành động"/></c:otherwise>
+                </c:choose>
 
-                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=low"
-                       class="filter-btn filter-low ${param.risk == 'low' ? 'active' : ''}">
-                        Thấp
-                    </a>
+                <div class="filter-bar">
 
-                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=medium"
-                       class="filter-btn filter-medium ${param.risk == 'medium' ? 'active' : ''}">
-                        Trung bình
-                    </a>
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${glucoseLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.glucose ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.glucose eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=normal&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.glucose eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=high&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Cao</a>
+                            <a class="filter-item ${param.glucose eq 'critical' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=critical&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Rất cao</a>
+                            <a class="filter-item ${param.glucose eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=missing&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
+                        </div>
+                    </div>
 
-                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=high"
-                       class="filter-btn filter-high ${param.risk == 'high' ? 'active' : ''}">
-                        Cao
-                    </a>
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${hba1cLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.hba1c ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.hba1c eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=normal&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.hba1c eq 'prediabetes' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=prediabetes&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tiền tiểu đường</a>
+                            <a class="filter-item ${param.hba1c eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=high&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Cao</a>
+                            <a class="filter-item ${param.hba1c eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=missing&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa làm</a>
+                        </div>
+                    </div>
 
-                    <a href="${pageContext.request.contextPath}/doctor/patient-list?risk=critical"
-                       class="filter-btn filter-critical ${param.risk == 'critical' ? 'active' : ''}">
-                        Nghiêm trọng
-                    </a>
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${bmiLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.bmi ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.bmi eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=normal&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.bmi eq 'overweight' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=overweight&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Thừa cân</a>
+                            <a class="filter-item ${param.bmi eq 'obese' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=obese&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Béo phì</a>
+                            <a class="filter-item ${param.bmi eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=missing&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
+                        </div>
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${actionLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.action ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&action="><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.action eq 'no-update' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&action=no-update"><i class="fa-solid fa-check filter-check"></i> Chưa cập nhật 7 ngày</a>
+                            <a class="filter-item ${param.action eq 'no-followup' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&action=no-followup"><i class="fa-solid fa-check filter-check"></i> Chưa tái khám 30 ngày</a>
+                        </div>
+                    </div>
 
                 </div>
 

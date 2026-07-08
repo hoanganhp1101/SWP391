@@ -45,10 +45,7 @@ public class HealthRecordDAO {
     private static final String HEALTH_RECORD_READ_COLUMNS =
             "hr.id AS hr_id, " +
                     "hr.patient_id AS hr_patient_id, " +
-                    "hr.encounter_id AS hr_encounter_id, " +
-                    "hr.last_encounter_id AS hr_last_encounter_id, " +
                     "hr.health_record_code AS hr_health_record_code, " +
-                    "hr.chieu_cao_cm AS hr_chieu_cao_cm, " +
                     "hr.duong_huyet_mgdl AS hr_duong_huyet_mgdl, " +
                     "hr.thoi_diem_do_duong AS hr_thoi_diem_do_duong, " +
                     "hr.huyet_ap_tam_thu AS hr_huyet_ap_tam_thu, " +
@@ -61,27 +58,6 @@ public class HealthRecordDAO {
                     "hr.hba1c_percent AS hr_hba1c_percent, " +
                     "hr.cholesterol_mmol AS hr_cholesterol_mmol, " +
                     "hr.triglyceride_mmol AS hr_triglyceride_mmol, " +
-                    "hr.hdl_mmol AS hr_hdl_mmol, " +
-                    "hr.ldl_mmol AS hr_ldl_mmol, " +
-                    "hr.wbc AS hr_wbc, " +
-                    "hr.rbc AS hr_rbc, " +
-                    "hr.hgb AS hr_hgb, " +
-                    "hr.hct AS hr_hct, " +
-                    "hr.plt AS hr_plt, " +
-                    "hr.ast AS hr_ast, " +
-                    "hr.alt AS hr_alt, " +
-                    "hr.ure AS hr_ure, " +
-                    "hr.creatinine AS hr_creatinine, " +
-                    "hr.trieu_chung AS hr_trieu_chung, " +
-                    "hr.tien_su_benh AS hr_tien_su_benh, " +
-                    "hr.kham_lam_sang AS hr_kham_lam_sang, " +
-                    "hr.chan_doan_chinh AS hr_chan_doan_chinh, " +
-                    "hr.chan_doan_phu AS hr_chan_doan_phu, " +
-                    "hr.phan_loai_tieu_duong AS hr_phan_loai_tieu_duong, " +
-                    "hr.huong_xu_tri AS hr_huong_xu_tri, " +
-                    "hr.khuyen_nghi_dieu_tri AS hr_khuyen_nghi_dieu_tri, " +
-                    "hr.che_do_an AS hr_che_do_an, " +
-                    "hr.luyen_tap AS hr_luyen_tap, " +
                     "hr.so_buoc_chan AS hr_so_buoc_chan, " +
                     "hr.carbs_g AS hr_carbs_g, " +
                     "hr.so_gio_ngu AS hr_so_gio_ngu, " +
@@ -93,7 +69,6 @@ public class HealthRecordDAO {
                     "hr.fatigue AS hr_fatigue, " +
                     "hr.thoi_gian_do AS hr_thoi_gian_do, " +
                     "hr.ngay_tao AS hr_ngay_tao, " +
-                    "hr.ngay_cap_nhat AS hr_ngay_cap_nhat, " +
                     "hr.nhap_boi AS hr_nhap_boi ";
 
     private static final String SNAPSHOT_SELECT_COLUMNS =
@@ -634,9 +609,8 @@ public class HealthRecordDAO {
                         "duong_huyet_mgdl, thoi_diem_do_duong, huyet_ap_tam_thu, huyet_ap_tam_truong, " +
                         "nhip_tim, nhiet_do_c, nhip_tho, can_nang_kg, bmi, " +
                         "hba1c_percent, cholesterol_mmol, triglyceride_mmol, " +
-                        "carbs_g, lieu_luong_insulin_ui, loai_insulin_tiem, ghi_chu, " +
-                        "wbc, rbc, hgb, hct, plt) " +
-                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                        "carbs_g, lieu_luong_insulin_ui, loai_insulin_tiem, ghi_chu) " +
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             int idx = 1;
@@ -683,12 +657,7 @@ public class HealthRecordDAO {
                         "carbs_g = COALESCE(?, carbs_g), " +
                         "lieu_luong_insulin_ui = COALESCE(?, lieu_luong_insulin_ui), " +
                         "loai_insulin_tiem = COALESCE(?, loai_insulin_tiem), " +
-                        "ghi_chu = COALESCE(?, ghi_chu), " +
-                        "wbc = COALESCE(?, wbc), " +
-                        "rbc = COALESCE(?, rbc), " +
-                        "hgb = COALESCE(?, hgb), " +
-                        "hct = COALESCE(?, hct), " +
-                        "plt = COALESCE(?, plt) " +
+                        "ghi_chu = COALESCE(?, ghi_chu) " +
                         "WHERE id = ?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             int idx = 1;
@@ -729,7 +698,7 @@ public class HealthRecordDAO {
             JdbcUtil.setInteger(ps, idx++, form.getLieuLuongInsulinUi());
             JdbcUtil.setString(ps, idx++, form.getLoaiInsulinTiem());
             JdbcUtil.setString(ps, idx++, form.getGhiChuSucKhoe());
-            return bindBloodCountMetrics(ps, idx, form);
+            return idx;
         }
 
         JdbcUtil.setDouble(ps, idx++, form.getDuongHuyetMgdl());
@@ -764,17 +733,6 @@ public class HealthRecordDAO {
         JdbcUtil.setInteger(ps, idx++, form.getLieuLuongInsulinUi());
         JdbcUtil.setString(ps, idx++, form.getLoaiInsulinTiem());
         JdbcUtil.setString(ps, idx++, resolveGhiChu(form, type));
-        return bindBloodCountMetrics(ps, idx, form);
-    }
-
-    private int bindBloodCountMetrics(PreparedStatement ps, int startIndex, EncounterCreateRequest form)
-            throws SQLException {
-        int idx = startIndex;
-        JdbcUtil.setNullableDouble(ps, idx++, form.getLabWbc());
-        JdbcUtil.setNullableDouble(ps, idx++, form.getLabRbc());
-        JdbcUtil.setNullableDouble(ps, idx++, form.getLabHgb());
-        JdbcUtil.setNullableDouble(ps, idx++, form.getLabHct());
-        JdbcUtil.setNullableDouble(ps, idx++, form.getLabPlt());
         return idx;
     }
 

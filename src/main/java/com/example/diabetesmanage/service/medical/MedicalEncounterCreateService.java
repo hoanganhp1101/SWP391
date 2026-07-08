@@ -86,6 +86,70 @@ public class MedicalEncounterCreateService {
         return errors;
     }
 
+    /**
+     * Validation Bước 1 (trước khi gọi AI / tạo encounter). Nhẹ hơn {@link #validate}:
+     * KHÔNG bắt buộc chẩn đoán / hướng xử trí (những trường này chuyển sang Bước 2 - Treatment Plan).
+     * Chỉ kiểm tra: bệnh nhân, ngày khám, và dữ liệu tối thiểu theo loại hồ sơ (glucose cho nội tiết,
+     * chỉ số xét nghiệm cho hồ sơ máu) để đủ dữ kiện phân tích AI.
+     */
+    public List<String> validateStep1(EncounterCreateRequest form) {
+        List<String> errors = new ArrayList<>();
+        EncounterType type = form.resolveEncounterType();
+
+        if (form.getPatientId() == null || form.getPatientId().isBlank()) {
+            errors.add("Vui lòng chọn bệnh nhân.");
+        } else if (!isValidUuid(form.getPatientId())
+                || form.getPatientId().trim().matches("(?i)(PAT|HR|ENC|LAB)-\\d+")) {
+            errors.add("Mã bệnh nhân không hợp lệ (phải là UUID).");
+        }
+        if (form.getNgayKham() == null || form.getNgayKham().isBlank()) {
+            errors.add("Ngày khám là bắt buộc.");
+        }
+
+        switch (type) {
+            case TAI_KHAM_NOI_TIET:
+                if (form.getDuongHuyetMgdl() == null) {
+                    errors.add("Đường huyết là bắt buộc để phân tích AI.");
+                }
+                validateNonNegative(errors, form.getCanNangKg(), "Cân nặng");
+                validateNonNegative(errors, form.getChieuCaoCm(), "Chiều cao");
+                validateNonNegative(errors, form.getBmi(), "BMI");
+                validateBloodPressure(errors, form.getHuyetApTamThu(), form.getHuyetApTamTruong());
+                validateHeartRate(errors, form.getNhipTim());
+                validateRespiratoryRate(errors, form.getNhipTho());
+                validateTemperature(errors, form.getNhietDoC());
+                break;
+            case MAU_TONG_QUAT:
+                validateBloodCount(errors, form);
+                if (!form.hasBloodCountData()) {
+                    errors.add("Vui lòng nhập ít nhất một chỉ số xét nghiệm máu tổng quát.");
+                }
+                break;
+            case SINH_HOA_MAU:
+                validateLabNumbers(errors, form);
+                if (!form.hasBiochemistryData()) {
+                    errors.add("Vui lòng nhập ít nhất một chỉ số sinh hóa máu.");
+                }
+                break;
+            default:
+                errors.add("Loại hồ sơ không hợp lệ.");
+        }
+
+        return errors;
+    }
+
+    /**
+     * Ở Bước "Tiếp tục kê đơn" encounter được tạo trước khi bác sĩ nhập chẩn đoán (chẩn đoán ở Bước 2).
+     * Cột {@code chan_doan_chinh} là NOT NULL nên đặt placeholder "Đang cập nhật" — giống cách
+     * {@code insertFromAppointment} đang làm. Bước 2 sẽ UPDATE lại bằng chẩn đoán thật.
+     */
+    public void ensureDiagnosisPlaceholder(EncounterCreateRequest form) {
+        if (form.resolveEncounterType().isTaiKhamNoiTiet()
+                && (form.getChanDoanChinh() == null || form.getChanDoanChinh().isBlank())) {
+            form.setChanDoanChinh("Đang cập nhật");
+        }
+    }
+
     public CreateResult create(EncounterCreateRequest form, String doctorId) throws SQLException {
         EncounterType type = form.resolveEncounterType();
         form.calculateBmiIfNeeded();

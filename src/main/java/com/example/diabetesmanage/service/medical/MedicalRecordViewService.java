@@ -72,6 +72,10 @@ public class MedicalRecordViewService {
     private static final DateTimeFormatter EXPORT_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
+    public EncounterDetail loadDetailViewByRecordId(String encounterId, String scopeDoctorId) {
+        return loadDetailViewByEncounterId(encounterId, scopeDoctorId);
+    }
+
     public EncounterDetail loadDetailViewByEncounterId(String encounterId, String scopeDoctorId) {
         MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
         if (encounter == null) {
@@ -89,6 +93,10 @@ public class MedicalRecordViewService {
             return null;
         }
         return buildDetailViewFromEncounter(encounter, scopeDoctorId);
+    }
+
+    public MedicalEncounter getEncounterById(String encounterId, String scopeDoctorId) {
+        return encounterDAO.getEncounterById(encounterId, scopeDoctorId);
     }
 
     public MedicalEncounter getLatestEncounterByPatientId(String patientId, String scopeDoctorId) {
@@ -357,6 +365,22 @@ public class MedicalRecordViewService {
         EncounterDetail.PrescriptionDetailSection section =
                 new EncounterDetail.PrescriptionDetailSection();
         section.setItems(items != null ? items : List.of());
+        return section;
+    }
+
+    private EncounterDetail.UltrasoundSection buildUltrasound(Map<String, String> data) {
+        EncounterDetail.UltrasoundSection section =
+                new EncounterDetail.UltrasoundSection();
+        List<Map<String, String>> fields = new ArrayList<>();
+        if (data != null) {
+            for (Map.Entry<String, String> entry : data.entrySet()) {
+                Map<String, String> field = new LinkedHashMap<>();
+                field.put("label", entry.getKey());
+                field.put("value", entry.getValue());
+                fields.add(field);
+            }
+        }
+        section.setFields(fields);
         return section;
     }
 
@@ -790,6 +814,10 @@ public class MedicalRecordViewService {
             return "—";
         }
         return value;
+    }
+
+    private Double firstNonNull(Double first, Double second) {
+        return first != null ? first : second;
     }
 
     private String firstNonBlank(String... values) {

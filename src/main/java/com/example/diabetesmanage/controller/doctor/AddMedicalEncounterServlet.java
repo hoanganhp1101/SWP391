@@ -85,20 +85,24 @@ public class AddMedicalEncounterServlet extends HttpServlet {
         }
 
         String doctorUuid = doctor.getId().toString();
-        LOG.log(Level.INFO, "POST medical-encounters/add patient_id={0} bac_si_id={1}",
+        LOG.log(Level.INFO, "POST medical-encounters/add (continue) patient_id={0} bac_si_id={1}",
                 new Object[]{form.getPatientId(), doctorUuid});
 
         if (!AuthContext.ensurePatientAccess(doctor, patientDAO, form.getPatientId(), response)) {
             return;
         }
 
-        List<String> errors = createService.validate(form);
+        // Bước "Tiếp tục kê đơn": validate nhẹ Bước 1 (chẩn đoán/đơn thuốc để sang Bước 2).
+        List<String> errors = createService.validateStep1(form);
         if (!errors.isEmpty()) {
             forwardWithErrors(request, response, form, errors, doctor);
             return;
         }
 
         try {
+            // chan_doan_chinh là NOT NULL nhưng chẩn đoán nhập ở Bước 2 → đặt placeholder.
+            createService.ensureDiagnosisPlaceholder(form);
+
             MedicalEncounterCreateService.CreateResult result =
                     createService.create(form, doctorUuid);
             if (result.getEncounterId() == null || result.getEncounterId().isBlank()) {
@@ -114,16 +118,32 @@ public class AddMedicalEncounterServlet extends HttpServlet {
                 throw new SQLException("Cannot reload encounter from database id="
                         + result.getEncounterId());
             }
+            String encounterId = result.getEncounterId();
             LOG.log(Level.INFO,
-                    "Saved medical_encounter id={0} patient_id={1} bac_si_id={2} type={3}",
+                    "Created medical_encounter (step1) id={0} patient_id={1} bac_si_id={2} type={3}",
                     new Object[]{
                             persisted.getId(),
                             persisted.getPatientId(),
                             doctorUuid,
                             persisted.getEncounterTypeLabel()
                     });
-            response.sendRedirect(request.getContextPath()
-                    + "/doctor/patient-records?success=1&patientId=" + form.getPatientId());
+
+            // Chỉ Bệnh án tái khám Nội tiết mới đi tiếp sang Bước 2 (kê đơn).
+            // Hồ sơ xét nghiệm (máu tổng quát / sinh hóa) chỉ lưu Encounter + Lab Result rồi về danh sách.
+            if (form.resolveEncounterType().isTaiKhamNoiTiet()) {
+                // Giữ tạm AI Summary trong session để Bước 2 hiển thị readonly (không có bảng ai_analysis).
+                String aiSummary = request.getParameter("aiSummary");
+                if (aiSummary != null && !aiSummary.isBlank()) {
+                    request.getSession(true).setAttribute("aiSummary:" + encounterId, aiSummary.trim());
+                }
+                // PRG: redirect sang Bước 2 → F5 an toàn, không tạo encounter trùng.
+                response.sendRedirect(request.getContextPath()
+                        + "/doctor/treatment-plan?id=" + encounterId);
+            } else {
+                // PRG: lưu xong về danh sách hồ sơ.
+                response.sendRedirect(request.getContextPath()
+                        + "/doctor/patient-records?success=1&patientId=" + form.getPatientId());
+            }
         } catch (SQLException ex) {
             LOG.log(Level.SEVERE,
                     "Failed to save medical encounter patient_id=" + form.getPatientId()

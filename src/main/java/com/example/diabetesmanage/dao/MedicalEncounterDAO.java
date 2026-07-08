@@ -95,28 +95,75 @@ public class MedicalEncounterDAO {
                     "JOIN users u ON p.user_id = u.id " +
                     "LEFT JOIN users bs ON me.bac_si_id = bs.id ";
 
-    public List<MedicalEncounter> getEncounters(String scopeDoctorId) {
-        StringBuilder sql = new StringBuilder(ENCOUNTER_SELECT + ENCOUNTER_FROM);
-        sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE p.bac_si_id = ? ");
-        sql.append("ORDER BY me.ngay_kham DESC");
-        return queryEncounters(sql.toString(), scopeDoctorId, null, null, null);
-    }
-
+    /**
+     * Bộ lọc hồ sơ khám bệnh dùng chung. Điều kiện SQL chỉ được thêm khi tham số có giá trị
+     * (khoảng ngày, từ khóa, bệnh nhân). Loại hồ sơ và trạng thái không phải cột thật trong
+     * medical_encounters (loại suy ra từ kham_lam_sang, trạng thái luôn "da_kham") nên được lọc
+     * theo đúng giá trị đã resolve của từng bản ghi.
+     */
     public List<MedicalEncounter> searchEncounters(
-            String startDate, String endDate, String keyword, String scopeDoctorId
+            String scopeDoctorId, String startDate, String endDate,
+            String keyword, String encounterType, String status, String patientId
     ) {
+        boolean hasDate = startDate != null && !startDate.isBlank()
+                && endDate != null && !endDate.isBlank();
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean hasPatient = patientId != null && !patientId.isBlank();
+
         StringBuilder sql = new StringBuilder(ENCOUNTER_SELECT + ENCOUNTER_FROM);
         sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE p.bac_si_id = ? ");
-
-        if (startDate != null && !startDate.isBlank() && endDate != null && !endDate.isBlank()) {
+        if (hasPatient) {
+            sql.append("AND me.patient_id = ? ");
+        }
+        if (hasDate) {
             sql.append("AND DATE(me.ngay_kham) BETWEEN ? AND ? ");
         }
-        if (keyword != null && !keyword.isBlank()) {
+        if (hasKeyword) {
             sql.append("AND (me.encounter_code LIKE ? OR p.patient_code LIKE ? OR u.ho_ten LIKE ? " +
                     "OR me.ly_do_kham LIKE ? OR me.chan_doan_chinh LIKE ?) ");
         }
         sql.append("ORDER BY me.ngay_kham DESC");
-        return queryEncounters(sql.toString(), scopeDoctorId, startDate, endDate, keyword);
+
+        EncounterType typeFilter = EncounterType.fromCodeOrNull(encounterType);
+        boolean hasStatus = status != null && !status.isBlank();
+
+        List<MedicalEncounter> list = new ArrayList<>();
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())
+        ) {
+            int idx = 1;
+            if (scopeDoctorId != null) {
+                ps.setString(idx++, scopeDoctorId);
+            }
+            if (hasPatient) {
+                ps.setString(idx++, patientId.trim());
+            }
+            if (hasDate) {
+                ps.setString(idx++, startDate);
+                ps.setString(idx++, endDate);
+            }
+            if (hasKeyword) {
+                String like = "%" + keyword.trim() + "%";
+                for (int i = 0; i < 5; i++) {
+                    ps.setString(idx++, like);
+                }
+            }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                MedicalEncounter enc = mapWithPatient(rs);
+                if (typeFilter != null && enc.getEncounterType() != typeFilter) {
+                    continue;
+                }
+                if (hasStatus && !status.equalsIgnoreCase(enc.getTrangThai())) {
+                    continue;
+                }
+                list.add(enc);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     public MedicalEncounter getEncounterById(String encounterId, String scopeDoctorId) {
@@ -255,42 +302,6 @@ public class MedicalEncounterDAO {
             }
         }
         return null;
-    }
-
-    private List<MedicalEncounter> queryEncounters(
-            String sql,
-            String scopeDoctorId,
-            String startDate,
-            String endDate,
-            String keyword
-    ) {
-        List<MedicalEncounter> list = new ArrayList<>();
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            int idx = 1;
-            if (scopeDoctorId != null) {
-                ps.setString(idx++, scopeDoctorId);
-            }
-            if (startDate != null && !startDate.isBlank() && endDate != null && !endDate.isBlank()) {
-                ps.setString(idx++, startDate);
-                ps.setString(idx++, endDate);
-            }
-            if (keyword != null && !keyword.isBlank()) {
-                String like = "%" + keyword.trim() + "%";
-                for (int i = 0; i < 5; i++) {
-                    ps.setString(idx++, like);
-                }
-            }
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapWithPatient(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
     }
 
     /** Schema cố định theo diabcare_db — không chạy DDL runtime. */
@@ -674,6 +685,38 @@ public class MedicalEncounterDAO {
     private void putIfPresent(Map<String, String> target, String key, String value) {
         if (value != null && !value.isBlank()) {
             target.put(key, value.trim());
+        }
+    }
+
+    /**
+     * Bước 2 (Treatment Plan): cập nhật chẩn đoán và hướng xử trí cho encounter đã tồn tại.
+     * KHÔNG tạo lại encounter. chan_doan_chinh là NOT NULL nên chỉ ghi khi có giá trị.
+     */
+    public void updateTreatmentPlan(
+            Connection con,
+            String encounterId,
+            String chanDoanChinh,
+            String chanDoanPhu,
+            String huongXuTri
+    ) throws SQLException {
+        if (encounterId == null || encounterId.isBlank()) {
+            throw new SQLException("encounter_id is required for updateTreatmentPlan");
+        }
+        String diagnosis = (chanDoanChinh != null && !chanDoanChinh.isBlank())
+                ? chanDoanChinh.trim() : "Đang cập nhật";
+        String sql =
+                "UPDATE medical_encounters " +
+                        "SET chan_doan_chinh = ?, chan_doan_phu = ?, huong_xu_tri = ? " +
+                        "WHERE id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, diagnosis);
+            JdbcUtil.setString(ps, 2, chanDoanPhu);
+            JdbcUtil.setString(ps, 3, huongXuTri);
+            ps.setString(4, encounterId.trim());
+            int rows = ps.executeUpdate();
+            if (rows <= 0) {
+                throw new SQLException("UPDATE medical_encounters affected 0 rows for id=" + encounterId);
+            }
         }
     }
 

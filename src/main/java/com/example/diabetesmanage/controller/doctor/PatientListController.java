@@ -28,18 +28,16 @@ public class PatientListController extends HttpServlet {
         }
 
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
-        String risk = request.getParameter("risk");
         String keyword = request.getParameter("keyword");
+        String glucose = request.getParameter("glucose");
+        String hba1c = request.getParameter("hba1c");
+        String bmi = request.getParameter("bmi");
+        String action = request.getParameter("action");
 
-        List<Patient> patients;
-        if (risk == null || risk.isBlank()) {
-            patients = patientDAO.getPatients(scopeDoctorId);
-        } else {
-            patients = patientDAO.searchPatients(keyword, risk, scopeDoctorId);
-        }
+        List<Patient> patients =
+                patientDAO.searchPatients(keyword, glucose, hba1c, bmi, action, scopeDoctorId);
 
-        String activeMenu = "critical".equalsIgnoreCase(risk) ? "analytics" : "patients";
-        DoctorLayoutHelper.prepare(request, user, activeMenu);
+        DoctorLayoutHelper.prepare(request, user, "patients");
         request.setAttribute("patients", patients);
         request.getRequestDispatcher("/WEB-INF/views/doctor/patientmanagement.jsp")
                 .forward(request, response);

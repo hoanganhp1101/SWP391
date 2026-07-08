@@ -604,6 +604,7 @@
             border:2px solid #1d4ed8;
             border-radius:12px;
         }
+            /* Filter dùng chung: xem /css/filters.css */
 
     </style>
 
@@ -635,7 +636,38 @@
                 <div class="stat-card">
                     <div class="card-top">
                         <div>
-                            <span class="card-title">Tổng số bệnh nhân</span>
+                            <span class="card-title">Tổng số bệnh nhân </span>
+                            <div class="risk-filter">
+
+                                <form action="${pageContext.request.contextPath}/doctor-dashboard"
+                                      method="get">
+
+                                    <div class="filter-dropdown">
+
+                                        <button type="button" class="filter-button">
+                                            <span class="filter-label">${not empty param.startDate && not empty param.endDate
+                                                    ? param.startDate.concat(' → ').concat(param.endDate)
+                                                    : 'Chọn khoảng ngày'}</span>
+                                            <i class="fa-solid fa-chevron-down"></i>
+                                        </button>
+
+                                        <div class="filter-popup">
+                                            <div class="filter-fields">
+                                                <label>Từ ngày</label>
+                                                <input type="date" name="startDate" value="${param.startDate}">
+                                                <label>Đến ngày</label>
+                                                <input type="date" name="endDate" value="${param.endDate}">
+                                            </div>
+                                            <div class="filter-actions">
+                                                <button type="submit" class="btn-apply">Áp dụng</button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </form>
+
+                            </div>
                             <h2><fmt:formatNumber value="${stats.totalPatients}" groupingUsed="true"/></h2>
                         </div>
 
@@ -661,12 +693,43 @@
                 <div class="stat-card">
                     <div class="card-top">
                         <div>
-                            <span class="card-title">Hồ sơ khám bệnh hôm nay</span>
+                            <span class="card-title">Hồ sơ khám bệnh hôm nay </span>
+                            <div class="risk-filter">
+
+                                <form action="${pageContext.request.contextPath}/doctor-dashboard"
+                                      method="get">
+
+                                    <div class="filter-dropdown">
+
+                                        <button type="button" class="filter-button">
+                                            <span class="filter-label">${not empty param.startDate && not empty param.endDate
+                                                    ? param.startDate.concat(' → ').concat(param.endDate)
+                                                    : 'Chọn khoảng ngày'}</span>
+                                            <i class="fa-solid fa-chevron-down"></i>
+                                        </button>
+
+                                        <div class="filter-popup">
+                                            <div class="filter-fields">
+                                                <label>Từ ngày</label>
+                                                <input type="date" name="startDate" value="${param.startDate}">
+                                                <label>Đến ngày</label>
+                                                <input type="date" name="endDate" value="${param.endDate}">
+                                            </div>
+                                            <div class="filter-actions">
+                                                <button type="submit" class="btn-apply">Áp dụng</button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </form>
+
+                            </div>
                             <h2><fmt:formatNumber value="${stats.todayHealthRecords}" groupingUsed="true"/></h2>
                         </div>
 
                         <div class="icon green">
-                            <i class="fa-regular fa-file-lines"></i>
+                        <i class="fa-regular fa-file-lines"></i>
                         </div>
                     </div>
                 </div>
@@ -781,10 +844,6 @@
 
                                             <div class="danger-vital">
                                                 <div class="value">${alert.vitalDisplay}</div>
-                                                <div class="time">
-                                                    <i class="fa-regular fa-clock"></i>
-                                                    ${alert.timeAgo}
-                                                </div>
                                             </div>
                                         </div>
 

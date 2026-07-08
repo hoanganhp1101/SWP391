@@ -9,153 +9,111 @@
     <title>Thêm hồ sơ bệnh án - HealthAlert</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        *{ margin:0; padding:0; box-sizing:border-box; font-family:Inter, sans-serif; }
-        body{ background:#f5f6fa; }
-        .layout{ display:flex; height:calc(100vh - 80px); }
-        .topbar{
-            height:80px; background:white; display:flex; align-items:center;
-            padding:0 48px; border-bottom:1px solid #e5e7eb;
+        .page-header { margin-bottom: 28px; }
+        .step .num {
+            width: 22px; height: 22px; border-radius: 50%; background: #4338ca; color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 12px;
         }
-        .sidebar{
-            width:240px; background:#fff; border-right:1px solid #e5e7eb;
-            display:flex; flex-direction:column;
+        .step.muted .num { background: #cbd5e1; }
+        .card {
+            background: white; border: 1px solid #e5e7eb; border-radius: 24px;
+            margin-bottom: 24px;
         }
-        .doctor-profile{ padding:28px 20px; display:flex; align-items:center; gap:12px; }
-        .doctor-profile img{ width:42px; height:42px; border-radius:10px; object-fit:cover; }
-        .doctor-profile h4{ font-size:16px; color:#1554c7; }
-        .doctor-profile p{ font-size:12px; color:#666; }
-        .menu{ padding:0 16px; }
-        .menu-item{
-            display:flex; align-items:center; gap:14px; height:52px; margin-bottom:8px;
-            padding:0 16px; border-radius:12px; color:#374151; text-decoration:none; cursor:pointer;
+        .card-top {
+            padding: 22px 26px; display: flex; justify-content: space-between; align-items: center;
+            gap: 20px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 18px;
         }
-        .menu-item i{ font-size:18px; }
-        .menu-item.active{ background:#1557d5; color:white; font-weight:600; }
-        .sidebar-bottom{ margin-top:auto; padding:20px 16px; }
-        .new-record{
-            width:100%; height:48px; border:none; border-radius:10px;
-            background:#0d4bb5; color:white; font-size:15px; font-weight:600; cursor:pointer;
-        }
-        .new-record i{ margin-right:8px; }
-        .bottom-link{
-            display:flex; align-items:center; gap:12px; padding:14px 12px;
-            text-decoration:none; color:#374151; cursor:pointer;
-        }
-        .main-content{ flex:1; overflow-y:auto; }
-        .logo{ font-size:20px; font-weight:700; color:#0d4bb5; }
-        .top-nav{ display:flex; gap:36px; margin-left:40px; }
-        .top-actions{ display:flex; align-items:center; gap:22px; margin-left:auto; }
-        .top-nav a{ color:#555; cursor:pointer; font-size:16px; text-decoration:none; }
-        .top-nav .active{ color:#1557d5; font-weight:600; position:relative; }
-        .top-nav .active::after{
-            content:""; position:absolute; left:0; bottom:-28px;
-            width:100%; height:3px; background:#1557d5;
-        }
-        .search-box{
-            width:290px; height:42px; display:flex; align-items:center;
-            padding:0 16px; border:1px solid #d1d5db; border-radius:10px; background:#fff;
-        }
-        .search-box i{ color:#777; }
-        .search-box input{ border:none; outline:none; width:100%; margin-left:10px; font-size:14px; }
-        .icon-btn{ font-size:22px; color:#4b5563; cursor:pointer; }
-        .avatar{ width:38px; height:38px; border-radius:50%; object-fit:cover; }
-        .page-content{ padding:32px; }
-        .page-header{ margin-bottom:28px; }
-        .page-header h1{ font-size:38px; font-weight:700; margin-bottom:10px; }
-        .page-header p{ color:#64748b; }
-        .breadcrumb{ margin-bottom:20px; font-size:14px; color:#64748b; }
-        .breadcrumb a{ color:#1557d5; text-decoration:none; }
-        .breadcrumb span{ margin:0 8px; }
-        .card{
-            background:white; border:1px solid #e5e7eb; border-radius:24px;
-            overflow:visible; margin-bottom:24px;
-        }
-        .card-top{
-            padding:26px; display:flex; justify-content:space-between; align-items:center;
-            gap:20px; border-bottom:1px solid #e5e7eb; font-weight:600; font-size:18px;
-        }
-        .card-body{ padding:26px; }
-        .form-container{
-            display:grid; grid-template-columns:repeat(2, 1fr); gap:24px;
-        }
-        .form-group{ display:flex; flex-direction:column; }
-        .form-group label{ margin-bottom:10px; font-weight:600; color:#374151; }
-        .form-group label .req{ color:#dc2626; }
+        .card-body { padding: 26px; }
+        .form-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 10px; font-weight: 600; color: #374151; }
+        .form-group label .req { color: #dc2626; }
         .form-group input,
         .form-group select,
-        .form-group textarea{
-            border:1px solid #d1d5db; border-radius:14px; padding:14px 18px;
-            font-size:15px; outline:none;
+        .form-group textarea {
+            border: 1px solid #d1d5db; border-radius: 14px; padding: 14px 18px;
+            font-size: 15px; outline: none;
         }
         .form-group input:focus,
         .form-group select:focus,
-        .form-group textarea:focus{ border-color:#1557d5; }
-        .form-group input[readonly]{ background:#f8fafc; color:#374151; }
-        .full-width{ grid-column:span 2; }
-        .record-search-box{ position:relative; }
-        .record-search-box i{
-            position:absolute; top:50%; left:16px; transform:translateY(-50%); color:#94a3b8;
+        .form-group textarea:focus { border-color: #1557d5; }
+        .form-group input[readonly] { background: #f8fafc; color: #374151; }
+        .full-width { grid-column: span 2; }
+        .record-search-box { position: relative; }
+        .record-search-box i {
+            position: absolute; top: 50%; left: 16px; transform: translateY(-50%); color: #94a3b8;
         }
-        .record-search-box input{
-            width:100%; padding:16px 18px 16px 48px; border:1px solid #dbe2ea;
-            border-radius:14px; outline:none; font-size:15px;
+        .record-search-box input {
+            width: 100%; padding: 16px 18px 16px 48px; border: 1px solid #dbe2ea;
+            border-radius: 14px; outline: none; font-size: 15px;
         }
-        .patient-results{
-            max-height:220px; overflow-y:auto; border:1px solid #e5e7eb;
-            border-radius:14px; margin-top:12px; display:none;
+        .patient-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+
+            max-height: 220px;
+
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+
+            display: none;
+            z-index: 9999;
+
+            box-shadow: 0 10px 25px rgba(0,0,0,.12);
         }
-        .patient-results.show{ display:block; }
-        .patient-item{
-            padding:14px 18px; cursor:pointer; border-bottom:1px solid #f1f5f9;
+
+        .patient-results.show {
+            display: block;
         }
-        .patient-item:hover{ background:#f8fafc; }
-        .patient-item.selected{ background:#eff6ff; }
-        .patient-item strong{ color:#1557d5; margin-right:8px; }
-        .patient-info-panel{
-            margin-top:24px; padding:20px; background:#f8fafc;
-            border-radius:16px; border:1px solid #e5e7eb; display:none;
+        .patient-item { padding: 14px 18px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .patient-item:hover { background: #f8fafc; }
+        .patient-item.selected { background: #eff6ff; }
+        .patient-item strong { color: #1557d5; margin-right: 8px; }
+        .patient-info-panel {
+            margin-top: 24px; padding: 20px; background: #f8fafc;
+            border-radius: 16px; border: 1px solid #e5e7eb; display: none;
         }
-        .patient-info-panel.show{ display:block; }
-        .patient-info-grid{
-            display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:12px;
+        .patient-info-panel.show { display: block; }
+        .patient-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; }
+        .info-field label { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .info-field span { font-weight: 600; color: #1e293b; }
+        .alert-error {
+            background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b;
+            padding: 14px 20px; border-radius: 12px; margin-bottom: 20px;
         }
-        .info-field label{ display:block; font-size:12px; color:#64748b; margin-bottom:4px; }
-        .info-field span{ font-weight:600; color:#1e293b; }
-        .alert-error{
-            background:#fee2e2; border:1px solid #fca5a5; color:#991b1b;
-            padding:14px 20px; border-radius:12px; margin-bottom:20px;
+        .alert-error ul { margin: 8px 0 0 18px; }
+        .btn {
+            border: none; padding: 14px 22px; border-radius: 14px; font-size: 15px; font-weight: 600;
+            cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
         }
-        .alert-error ul{ margin:8px 0 0 18px; }
-        .med-row{
-            border:1px dashed #d1d5db; border-radius:12px; padding:16px;
-            margin-bottom:12px; background:#fafbfc;
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        .btn-outline { background: white; border: 1px solid #dbe2ea; color: #374151; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-ai { background: #4338ca; color: white; }
+        .form-actions {
+            display: flex; justify-content: flex-end; gap: 16px; margin-top: 8px; margin-bottom: 32px;
         }
-        .med-row-header{ display:flex; justify-content:space-between; margin-bottom:12px; }
-        .btn{
-            border:none; padding:14px 22px; border-radius:14px;
-            font-size:15px; font-weight:600; cursor:pointer; text-decoration:none;
-            display:inline-flex; align-items:center; gap:8px;
+        .ai-card { display: none; }
+        .ai-card.show { display: block; }
+        .ai-badge {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+            padding: 4px 10px; border-radius: 999px;
         }
-        .btn-outline{ background:white; border:1px solid #dbe2ea; color:#374151; }
-        .btn-primary{ background:#2563eb; color:white; }
-        .btn-sm{ padding:8px 14px; font-size:13px; border-radius:10px; }
-        .btn-danger-outline{ background:#fff; border:1px solid #fca5a5; color:#dc2626; }
-        .btn-add-outline{ background:#fff; border:1px solid #93c5fd; color:#2563eb; }
-        .form-actions{
-            display:flex; justify-content:flex-end; gap:16px; margin-top:8px; margin-bottom:32px;
+        .ai-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .ai-block h4 {
+            font-size: 13px; color: #64748b; text-transform: uppercase;
+            letter-spacing: .04em; margin-bottom: 8px;
         }
-        .section-toggle{
-            background:none; border:none; font-size:18px; font-weight:600;
-            cursor:pointer; color:#1e293b; display:flex; align-items:center; gap:8px;
-        }
-        .collapsible{ display:block; }
-        .collapsible.hidden{ display:none; }
+        .ai-block ul { margin: 0 0 0 18px; color: #334155; line-height: 1.7; }
+        .ai-block p { color: #334155; line-height: 1.7; }
+        .ai-note { margin-top: 16px; font-size: 12px; color: #94a3b8; }
+        .ai-status { font-size: 13px; color: #64748b; }
     </style>
 </head>
 <body>
-
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -164,19 +122,8 @@
     <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
     <main class="main-content">
 
-        <div class="page-content">
-
-            <nav class="breadcrumb">
-                <a href="${pageContext.request.contextPath}/doctor-dashboard">Dashboard</a>
-                <span>/</span>
-                <a href="${pageContext.request.contextPath}/doctor/patient-records">Quản lý hồ sơ khám bệnh</a>
-                <span>/</span>
-                <span>Thêm hồ sơ bệnh án</span>
-            </nav>
-
             <div class="page-header">
-                <h1>Thêm hồ sơ bệnh án mới</h1>
-                <p>Chọn bệnh nhân và nhập thông tin khám, chỉ số sức khỏe, xét nghiệm và đơn thuốc</p>
+                <h1>Thêm hồ sơ bệnh án</h1>
             </div>
 
             <c:if test="${not empty errors}">
@@ -190,10 +137,16 @@
                 </div>
             </c:if>
 
+            <div class="alert-error" id="ajaxErrors" style="display:none;"></div>
+
             <form method="post" action="${pageContext.request.contextPath}/medical-encounters/add" id="encounterForm">
                 <input type="hidden" name="patientId" id="patientId" value="${form.patientId}">
                 <input type="hidden" name="thoiDiemDoDuong" value="luc_doi">
+                <input type="hidden" name="aiSummary" id="aiSummary" value="">
+                <input type="hidden" name="aiRiskLevel" id="aiRiskLevel" value="">
+                <input type="hidden" name="aiRiskScore" id="aiRiskScore" value="">
 
+                <!-- A. Thông tin chung -->
                 <div class="card">
                     <div class="card-top"><i class="fa-solid fa-clipboard-list"></i> A. Thông tin chung</div>
                     <div class="card-body">
@@ -202,14 +155,19 @@
                                 <label>Tìm và chọn bệnh nhân <span class="req">*</span></label>
                                 <div class="record-search-box">
                                     <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="patientSearch" placeholder="Tìm theo mã bệnh nhân hoặc họ tên..." autocomplete="off">
+
+                                    <input
+                                            type="text"
+                                            id="patientSearch"
+                                            placeholder="Tìm theo mã bệnh nhân hoặc họ tên..."
+                                            autocomplete="off">
+
+                                    <div class="patient-results" id="patientResults"></div>
                                 </div>
-                                <div class="patient-results" id="patientResults"></div>
-                                <div id="selectedPatientLabel" style="margin-top:12px;font-size:14px;color:#64748b;"></div>
-                            </div>
-                            <div class="form-group">
-                                <label>Mã hồ sơ</label>
-                                <input type="text" readonly value="Tự sinh sau khi lưu">
+
+                                <div id="selectedPatientLabel"
+                                     style="margin-top:12px;font-size:14px;color:#64748b;">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Ngày khám <span class="req">*</span></label>
@@ -276,8 +234,8 @@
                     <div class="card-body">
                         <div class="form-container">
                             <div class="form-group full-width">
-                                <label>Triệu chứng <span class="req tai-kham-required">*</span></label>
-                                <textarea name="trieuChung" rows="2" data-tai-kham-required="true">${not empty form.trieuChung ? form.trieuChung : form.lyDoKham}</textarea>
+                                <label>Triệu chứng</label>
+                                <textarea name="trieuChung" rows="2">${not empty form.trieuChung ? form.trieuChung : form.lyDoKham}</textarea>
                             </div>
                             <div class="form-group full-width">
                                 <label>Tiền sử bệnh</label>
@@ -286,40 +244,6 @@
                             <div class="form-group full-width">
                                 <label>Khám lâm sàng</label>
                                 <textarea name="khamLamSang" rows="2">${form.khamLamSang}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Chẩn đoán chính <span class="req tai-kham-required">*</span></label>
-                                <input type="text" name="chanDoanChinh" value="${form.chanDoanChinh}" data-tai-kham-required="true">
-                            </div>
-                            <div class="form-group">
-                                <label>Chẩn đoán phụ</label>
-                                <input type="text" name="chanDoanPhu" value="${form.chanDoanPhu}">
-                            </div>
-                            <div class="form-group">
-                                <label>Phân loại tiểu đường</label>
-                                <select name="phanLoaiTieuDuong">
-                                    <option value="">-- Chọn --</option>
-                                    <option value="Type 1" ${form.phanLoaiTieuDuong eq 'Type 1' ? 'selected' : ''}>Type 1</option>
-                                    <option value="Type 2" ${form.phanLoaiTieuDuong eq 'Type 2' ? 'selected' : ''}>Type 2</option>
-                                    <option value="Tiền đái tháo đường" ${form.phanLoaiTieuDuong eq 'Tiền đái tháo đường' ? 'selected' : ''}>Tiền đái tháo đường</option>
-                                    <option value="Khác" ${form.phanLoaiTieuDuong eq 'Khác' ? 'selected' : ''}>Khác</option>
-                                </select>
-                            </div>
-                            <div class="form-group full-width">
-                                <label>Hướng xử trí</label>
-                                <textarea name="huongXuTri" rows="2">${form.huongXuTri}</textarea>
-                            </div>
-                            <div class="form-group full-width">
-                                <label>Khuyến nghị điều trị</label>
-                                <textarea name="khuyenNghiDieuTri" rows="2">${form.khuyenNghiDieuTri}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Chế độ ăn</label>
-                                <input type="text" name="cheDoAn" value="${form.cheDoAn}" placeholder="VD: Hạn chế tinh bột, ăn nhiều rau xanh">
-                            </div>
-                            <div class="form-group">
-                                <label>Luyện tập</label>
-                                <input type="text" name="luyenTap" value="${form.luyenTap}" placeholder="VD: Đi bộ 30 phút/ngày">
                             </div>
                         </div>
                     </div>
@@ -330,6 +254,14 @@
                     <div class="card-top"><i class="fa-solid fa-heart-pulse"></i> C. Chỉ số sức khỏe</div>
                     <div class="card-body">
                         <div class="form-container">
+                            <div class="form-group">
+                                <label>Đường huyết (mg/dL) <span class="req tai-kham-required">*</span></label>
+                                <input type="number" step="0.1" min="0" name="duongHuyetMgdl" value="${form.duongHuyetMgdl}" data-tai-kham-required="true">
+                            </div>
+                            <div class="form-group">
+                                <label>HbA1c (%)</label>
+                                <input type="number" step="0.1" min="0" name="hba1cPercent" value="${form.hba1cPercent}">
+                            </div>
                             <div class="form-group">
                                 <label>Chiều cao (cm)</label>
                                 <input type="number" step="0.1" min="0" name="chieuCaoCm" id="chieuCaoCm" value="${form.chieuCaoCm}">
@@ -368,7 +300,7 @@
 
                 <!-- D. Kết quả sinh hóa -->
                 <div class="card" data-encounter-section="sinh_hoa_mau">
-                    <div class="card-top"><i class="fa-solid fa-flask"></i> D. Kết quả sinh hóa máu (tùy chọn)</div>
+                    <div class="card-top"><i class="fa-solid fa-flask"></i> D. Kết quả sinh hóa máu</div>
                     <div class="card-body">
                         <div class="form-container">
                             <div class="form-group"><label>Glucose (mmol/L)</label><input type="number" step="0.01" min="0" name="labGlucoseMau" value="${form.labGlucoseMau}"></div>
@@ -387,7 +319,7 @@
 
                 <!-- E. Xét nghiệm máu tổng quát -->
                 <div class="card" data-encounter-section="mau_tong_quat">
-                    <div class="card-top"><i class="fa-solid fa-vial"></i> E. Xét nghiệm máu tổng quát (tùy chọn)</div>
+                    <div class="card-top"><i class="fa-solid fa-vial"></i> E. Xét nghiệm máu tổng quát</div>
                     <div class="card-body">
                         <div class="form-container">
                             <div class="form-group"><label>WBC (G/L)</label><input type="number" step="0.01" min="0" name="labWbc" value="${form.labWbc}"></div>
@@ -399,82 +331,64 @@
                     </div>
                 </div>
 
-                <!-- F. Đơn thuốc -->
-                <div class="card" data-encounter-section="tai_kham_noi_tiet">
-                    <div class="card-top" style="justify-content:space-between;">
-                        <span><i class="fa-solid fa-pills"></i> F. Đơn thuốc (tùy chọn)</span>
-                        <button type="button" class="btn btn-sm btn-add-outline" id="btnAddMed">
-                            <i class="fa-solid fa-plus"></i> Thêm thuốc
-                        </button>
+                <!-- Kết quả phân tích AI -->
+                <div class="card ai-card" id="aiCard">
+                    <div class="card-top">
+                        <span><i class="fa-solid fa-robot"></i> Kết quả phân tích AI</span>
+                        <span class="ai-badge" id="aiRiskBadge">—</span>
                     </div>
-                    <div class="card-body" id="medicationList">
-                        <c:choose>
-                            <c:when test="${not empty form.medications}">
-                                <c:forEach var="med" items="${form.medications}" varStatus="st">
-                                    <div class="med-row" data-med-row>
-                                        <div class="med-row-header">
-                                            <strong>Thuốc #<span class="med-index">${st.index + 1}</span></strong>
-                                            <button type="button" class="btn btn-sm btn-danger-outline btn-remove-med"><i class="fa-solid fa-xmark"></i></button>
-                                        </div>
-                                        <div class="form-container">
-                                            <div class="form-group"><input name="medTenThuoc" placeholder="Tên thuốc *" value="${med.tenThuoc}"></div>
-                                            <div class="form-group"><input name="medHoatChat" placeholder="Hoạt chất" value="${med.hoatChat}"></div>
-                                            <div class="form-group"><input name="medLieuLuong" placeholder="Liều lượng *" value="${med.lieuLuong}"></div>
-                                            <div class="form-group"><input name="medDonVi" placeholder="Đơn vị" value="${med.donVi}"></div>
-                                            <div class="form-group"><input name="medDuongDung" placeholder="Đường dùng" value="${med.duongDung}"></div>
-                                            <div class="form-group"><input name="medTanSuat" placeholder="Tần suất *" value="${med.tanSuat}"></div>
-                                            <div class="form-group"><input type="number" min="0" name="medThoiGianDungNgay" placeholder="Số ngày dùng" value="${med.thoiGianDungNgay}"></div>
-                                            <div class="form-group full-width"><input name="medGhiChu" placeholder="Ghi chú" value="${med.ghiChu}"></div>
-                                        </div>
-                                    </div>
-                                </c:forEach>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="med-row" data-med-row>
-                                    <div class="med-row-header">
-                                        <strong>Thuốc #<span class="med-index">1</span></strong>
-                                        <button type="button" class="btn btn-sm btn-danger-outline btn-remove-med"><i class="fa-solid fa-xmark"></i></button>
-                                    </div>
-                                    <div class="form-container">
-                                        <div class="form-group"><input name="medTenThuoc" placeholder="Tên thuốc *"></div>
-                                        <div class="form-group"><input name="medHoatChat" placeholder="Hoạt chất"></div>
-                                        <div class="form-group"><input name="medLieuLuong" placeholder="Liều lượng *"></div>
-                                        <div class="form-group"><input name="medDonVi" placeholder="Đơn vị"></div>
-                                        <div class="form-group"><input name="medDuongDung" placeholder="Đường dùng"></div>
-                                        <div class="form-group"><input name="medTanSuat" placeholder="Tần suất *"></div>
-                                        <div class="form-group"><input type="number" min="0" name="medThoiGianDungNgay" placeholder="Số ngày dùng"></div>
-                                        <div class="form-group full-width"><input name="medGhiChu" placeholder="Ghi chú"></div>
-                                    </div>
-                                </div>
-                            </c:otherwise>
-                        </c:choose>
+                    <div class="card-body">
+                        <div class="ai-status" id="aiStatus"></div>
+                        <div class="ai-grid" style="margin-top:16px;">
+                            <div class="ai-block">
+                                <h4>Bệnh khả năng</h4>
+                                <p id="aiDisease">—</p>
+                            </div>
+                            <div class="ai-block">
+                                <h4>Điểm rủi ro</h4>
+                                <p id="aiScore">—</p>
+                            </div>
+                            <div class="ai-block">
+                                <h4>Yếu tố nguy cơ</h4>
+                                <ul id="aiFactors"></ul>
+                            </div>
+                            <div class="ai-block">
+                                <h4>Xét nghiệm đề xuất</h4>
+                                <ul id="aiTests"></ul>
+                            </div>
+                            <div class="ai-block full-width" style="grid-column:span 2;">
+                                <h4>Khuyến nghị</h4>
+                                <ul id="aiRecs"></ul>
+                            </div>
+                            <div class="ai-block full-width" style="grid-column:span 2;">
+                                <h4>Giải thích ngắn</h4>
+                                <p id="aiExplain">—</p>
+                            </div>
+                        </div>
+                        <p class="ai-note">AI chỉ hỗ trợ, không kê đơn và không đưa quyết định cuối cùng. Bác sĩ chịu trách nhiệm chẩn đoán và điều trị ở Bước 2.</p>
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <a href="${pageContext.request.contextPath}/doctor/patient-records" class="btn btn-outline">Hủy</a>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Lưu bệnh án</button>
+                    <button type="button" class="btn btn-ai" id="btnAnalyze"><i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích AI</button>
+                    <button type="submit" class="btn btn-primary" id="btnContinue" disabled><i class="fa-solid fa-arrow-right"></i> Tiếp tục kê đơn</button>
+                    <button type="submit" class="btn btn-primary" id="btnSave" disabled style="display:none;"><i class="fa-solid fa-save"></i> Lưu hồ sơ</button>
                 </div>
             </form>
-        </div>
     </main>
 </div>
 
 <script>
 (function () {
+    const ctx = '${pageContext.request.contextPath}';
     const store = document.getElementById('patientStore');
     const patients = Array.from(store.querySelectorAll('.patient-option')).map(function (el) {
         return {
-            id: el.dataset.id,
-            code: el.dataset.code || '',
-            name: el.dataset.name || '',
-            gender: el.dataset.gender || '—',
-            dob: el.dataset.dob || '—',
-            age: el.dataset.age || '—',
-            diabetes: el.dataset.diabetes || '—',
-            address: el.dataset.address || '—',
-            insurance: el.dataset.insurance || '—',
-            height: el.dataset.height || ''
+            id: el.dataset.id, code: el.dataset.code || '', name: el.dataset.name || '',
+            gender: el.dataset.gender || '—', dob: el.dataset.dob || '—', age: el.dataset.age || '—',
+            diabetes: el.dataset.diabetes || '—', address: el.dataset.address || '—',
+            insurance: el.dataset.insurance || '—', height: el.dataset.height || ''
         };
     });
 
@@ -507,7 +421,7 @@
 
     function escapeHtml(text) {
         const d = document.createElement('div');
-        d.textContent = text;
+        d.textContent = text == null ? '' : text;
         return d.innerHTML;
     }
 
@@ -549,7 +463,6 @@
     const heightInput = document.getElementById('chieuCaoCm');
     const weightInput = document.getElementById('canNangKg');
     const bmiInput = document.getElementById('bmi');
-
     function calcBmi() {
         const h = parseFloat(heightInput.value);
         const w = parseFloat(weightInput.value);
@@ -561,35 +474,25 @@
     weightInput.addEventListener('input', calcBmi);
     calcBmi();
 
-    const medList = document.getElementById('medicationList');
-    document.getElementById('btnAddMed').addEventListener('click', function () {
-        const tpl = medList.querySelector('[data-med-row]');
-        if (!tpl) return;
-        const clone = tpl.cloneNode(true);
-        clone.querySelectorAll('input').forEach(function (i) { i.value = ''; });
-        medList.appendChild(clone);
-        reindexMeds();
-    });
+    const encounterTypeSelect = document.getElementById('encounterType');
+    const btnContinue = document.getElementById('btnContinue');
+    const btnSave = document.getElementById('btnSave');
+    let analyzed = false; // đã phân tích AI thành công chưa
 
-    medList.addEventListener('click', function (e) {
-        const btn = e.target.closest('.btn-remove-med');
-        if (!btn) return;
-        const rows = medList.querySelectorAll('[data-med-row]');
-        if (rows.length <= 1) {
-            rows[0].querySelectorAll('input').forEach(function (i) { i.value = ''; });
-            return;
-        }
-        btn.closest('[data-med-row]').remove();
-        reindexMeds();
-    });
-
-    function reindexMeds() {
-        medList.querySelectorAll('[data-med-row]').forEach(function (row, idx) {
-            row.querySelector('.med-index').textContent = idx + 1;
-        });
+    // Nút submit đang hiển thị theo loại hồ sơ (Nội tiết → kê đơn, còn lại → lưu hồ sơ).
+    function activeSubmitButton() {
+        return encounterTypeSelect.value === 'tai_kham_noi_tiet' ? btnContinue : btnSave;
     }
 
-    const encounterTypeSelect = document.getElementById('encounterType');
+    function toggleActionButtons() {
+        const isTaiKham = encounterTypeSelect.value === 'tai_kham_noi_tiet';
+        btnContinue.style.display = isTaiKham ? '' : 'none';
+        btnSave.style.display = isTaiKham ? 'none' : '';
+        // Chỉ nút đang hiển thị mới có thể bấm, và phải sau khi phân tích AI.
+        btnContinue.disabled = !isTaiKham || !analyzed;
+        btnSave.disabled = isTaiKham || !analyzed;
+    }
+
     function toggleEncounterSections() {
         const type = encounterTypeSelect.value;
         const isTaiKham = type === 'tai_kham_noi_tiet';
@@ -597,45 +500,152 @@
             card.style.display = card.getAttribute('data-encounter-section') === type ? '' : 'none';
         });
         document.querySelectorAll('[data-tai-kham-required]').forEach(function (field) {
-            if (isTaiKham) {
-                field.setAttribute('required', 'required');
-            } else {
-                field.removeAttribute('required');
-            }
+            if (isTaiKham) { field.setAttribute('required', 'required'); }
+            else { field.removeAttribute('required'); }
         });
         document.querySelectorAll('.tai-kham-required').forEach(function (mark) {
             mark.style.display = isTaiKham ? '' : 'none';
         });
+        toggleActionButtons();
+    }
+    encounterTypeSelect.addEventListener('change', function () {
+        resetAI();
+        toggleEncounterSections();
+    });
+    function resetAI() {
+        analyzed = false;
+
+        aiCard.classList.remove("show");
+
+        document.getElementById("aiSummary").value = "";
+        document.getElementById("aiRiskLevel").value = "";
+        document.getElementById("aiRiskScore").value = "";
+
+        ajaxErrors.style.display = "none";
+
+        btnAnalyze.disabled = false;
+        btnAnalyze.innerHTML =
+            '<i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích AI';
+
+        toggleActionButtons();
+    }
+    toggleEncounterSections();
+
+    // ---- Phân tích AI (AJAX, không lưu DB) ----
+    const form = document.getElementById('encounterForm');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const ajaxErrors = document.getElementById('ajaxErrors');
+    const aiCard = document.getElementById('aiCard');
+
+    function showErrors(list) {
+        ajaxErrors.innerHTML = '<strong>Vui lòng kiểm tra lại:</strong><ul>' +
+            list.map(function (e) { return '<li>' + escapeHtml(e) + '</li>'; }).join('') + '</ul>';
+        ajaxErrors.style.display = 'block';
+        ajaxErrors.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    document.getElementById('encounterForm').addEventListener('submit', function (e) {
+    function fillList(id, items) {
+        const ul = document.getElementById(id);
+        ul.innerHTML = '';
+        (items || []).forEach(function (it) {
+            const li = document.createElement('li');
+            li.textContent = it;
+            ul.appendChild(li);
+        });
+    }
+
+    function riskClass(level) {
+        switch ((level || '').toLowerCase()) {
+            case 'critical': return 'risk-critical';
+            case 'high': return 'risk-high';
+            case 'medium': return 'risk-medium';
+            default: return 'risk-low';
+        }
+    }
+
+    btnAnalyze.addEventListener('click', function () {
+        ajaxErrors.style.display = 'none';
         if (!patientIdInput.value) {
-            e.preventDefault();
-            alert('Vui lòng chọn bệnh nhân trước khi lưu.');
+            showErrors(['Vui lòng chọn bệnh nhân trước khi phân tích AI.']);
             searchInput.focus();
             return;
         }
-        const type = encounterTypeSelect.value;
-        if (type === 'tai_kham_noi_tiet') {
-            const trieuChung = document.querySelector('[name="trieuChung"]');
-            if (trieuChung && !trieuChung.value.trim()) {
-                e.preventDefault();
-                alert('Vui lòng nhập triệu chứng.');
-                trieuChung.focus();
+        btnAnalyze.disabled = true;
+        btnAnalyze.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...';
+
+        fetch(ctx + '/doctor/medical-encounter/analyze', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(new FormData(form))
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            btnAnalyze.disabled = false;
+            btnAnalyze.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích lại';
+            if (!data.ok) {
+                showErrors(data.errors || ['Không thể phân tích AI.']);
                 return;
             }
-            const chanDoanChinh = document.querySelector('[name="chanDoanChinh"]');
-            if (chanDoanChinh && !chanDoanChinh.value.trim()) {
-                e.preventDefault();
-                alert('Vui lòng nhập chẩn đoán chính.');
-                chanDoanChinh.focus();
-            }
-        }
+            const ai = data.ai || {};
+            const badge = document.getElementById('aiRiskBadge');
+            badge.className = 'ai-badge ' + riskClass(ai.riskLevel);
+            badge.textContent = 'Mức độ: ' + ((ai.riskLevel || '—').toUpperCase());
+            document.getElementById('aiDisease').textContent = ai.possibleDisease || '—';
+            document.getElementById('aiScore').textContent = (ai.riskScore != null ? ai.riskScore : '—') + ' / 100';
+            fillList('aiFactors', ai.riskFactors);
+            fillList('aiTests', ai.recommendedTests);
+            fillList('aiRecs', ai.recommendations);
+            document.getElementById('aiExplain').textContent = ai.shortExplanation || '—';
+            document.getElementById('aiStatus').textContent = data.used
+                ? 'Nguồn: Gemini AI'
+                : (data.error || 'Nguồn: phân tích theo quy tắc y khoa');
+
+            document.getElementById('aiSummary').value = data.summaryText || '';
+            document.getElementById('aiRiskLevel').value = ai.riskLevel || '';
+            document.getElementById('aiRiskScore').value = (ai.riskScore != null ? ai.riskScore : '');
+
+            aiCard.classList.add('show');
+            aiCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            analyzed = true;
+            toggleActionButtons();
+        }).catch(function () {
+            btnAnalyze.disabled = false;
+            btnAnalyze.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích AI';
+            showErrors(['Lỗi kết nối khi gọi phân tích AI. Vui lòng thử lại.']);
+        });
     });
 
-    encounterTypeSelect.addEventListener('change', toggleEncounterSections);
-    toggleEncounterSections();
+    form.addEventListener('submit', function (e) {
+        if (!patientIdInput.value) {
+            e.preventDefault();
+            showErrors(['Vui lòng chọn bệnh nhân.']);
+            searchInput.focus();
+            return;
+        }
+        if (!analyzed) {
+            e.preventDefault();
+            showErrors(['Vui lòng nhấn "Phân tích AI" trước khi lưu hồ sơ.']);
+            return;
+        }
+        const submitBtn = activeSubmitButton();
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+    });
 })();
+const encounterType = document.getElementById("encounterType");
+const btnContinue = document.getElementById("btnContinue");
+
+function updatePrescriptionButton() {
+    if (encounterType.value === "tai_kham_noi_tiet") {
+        btnContinue.style.display = "inline-flex";
+    } else {
+        btnContinue.style.display = "none";
+    }
+}
+
+// chạy khi load trang
+updatePrescriptionButton();
+
+// chạy khi đổi loại hồ sơ
+encounterType.addEventListener("change", updatePrescriptionButton);
 </script>
 </body>
 </html>
