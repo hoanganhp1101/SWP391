@@ -10,10 +10,10 @@
 
 <aside class="sidebar">
     <div class="user-profile-sm">
-        <img src="https://ui-avatars.com/api/?name=${not empty sessionScope.loginUser ? sessionScope.loginUser.hoTen : 'User'}&background=1e293b&color=fff" alt="User Avatar">
+        <img src="https://ui-avatars.com/api/?name=${not empty sessionScope.loginUser ? sessionScope.loginUser.hoTen : 'User'}&background=1e293b&color=fff" alt="Ảnh đại diện">
         <div>
             <div class="name">
-                <c:out value="${not empty sessionScope.loginUser.hoTen ? sessionScope.loginUser.hoTen : 'Guest'}"/>
+                <c:out value="${not empty sessionScope.adminUser.hoTen ? sessionScope.adminUser.hoTen : 'Admin'}"/>
             </div>
             <div class="role text-capitalize">
                 <c:choose>
@@ -25,22 +25,12 @@
         </div>
     </div>
 
-    <div class="px-3 pb-3">
-        <button class="btn btn-primary w-100 rounded-1" style="background-color: var(--primary-blue); border:none;">
-            <i class="fas fa-plus me-1"></i> New Patient
-        </button>
-    </div>
-
     <ul class="sidebar-menu">
-        <li><a href="${pageContext.request.contextPath}/dashboard" class="${param.activeMenu == 'dashboard' ? 'active' : ''}"><i class="fas fa-th-large"></i> Overview</a></li>
-        <li><a href="${pageContext.request.contextPath}/admin/users" class="${param.activeMenu == 'users' ? 'active' : ''}"><i class="fas fa-users-cog"></i> User Management</a></li>
-        <li><a href="${pageContext.request.contextPath}/patient-manager" class="${param.activeMenu == 'patients' ? 'active' : ''}"><i class="fas fa-user-injured"></i> Patient List</a></li>
-    </ul>
+        <li><a href="${pageContext.request.contextPath}/dashboard" class="${param.activeMenu == 'dashboard' ? 'active' : ''}"><i class="fas fa-th-large"></i> Tổng quan</a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/users" class="${param.activeMenu == 'users' ? 'active' : ''}"><i class="fas fa-users-cog"></i> Quản lý người dùng</a></li>
+        <li><a href="${pageContext.request.contextPath}/patient-manager" class="${param.activeMenu == 'patients' ? 'active' : ''}"><i class="fas fa-user-injured"></i> Danh sách bệnh nhân</a></li>
 
-    <div class="sidebar-footer">
-        <ul class="sidebar-menu p-0 m-0">
-            <li><a href="#"><i class="far fa-question-circle"></i> Support</a></li>
-            <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i> Sign Out</a></li>
-        </ul>
-    </div>
+        <li><a href="${pageContext.request.contextPath}/admin/master-foods" class="${param.activeMenu == 'master-foods' ? 'active' : ''}"><i class="fas fa-apple-alt"></i> Dữ liệu Thực phẩm</a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/master-medications" class="${param.activeMenu == 'master-medications' ? 'active' : ''}"><i class="fas fa-pills"></i> Dữ liệu Thuốc</a></li>
+    </ul>
 </aside>

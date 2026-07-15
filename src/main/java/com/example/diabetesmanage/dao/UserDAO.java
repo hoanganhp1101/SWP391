@@ -12,6 +12,73 @@ import java.util.List;
 
 public class UserDAO {
 
+    public List<User> getUsersByRole(String role) {
+        List<User> userList = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE vai_tro = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, role);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getString("id"));
+                    user.setHoTen(rs.getString("ho_ten"));
+                    user.setEmail(rs.getString("email"));
+                    // Đừng quên ánh xạ các trường khác nếu Model User của bạn có
+                    // Ví dụ: user.setSoDienThoai(rs.getString("so_dien_thoai"));
+                    user.setVaiTro(rs.getString("vai_tro"));
+
+                    userList.add(user);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return userList;
+    }
+
+    public User authenticateAdmin(String email, String rawPassword) {
+        String sql = "SELECT * FROM users WHERE email = ? AND mat_khau_hash = ? AND vai_tro = 'quan_tri_vien' AND kich_hoat = 1";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            // TỰ ĐỘNG BĂM MẬT KHẨU THÔ THÀNH SHA-256 TRƯỚC KHI SO SÁNH
+            String hashedPassword = hashSHA256(rawPassword);
+            ps.setString(2, hashedPassword);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToUser(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi xác thực đăng nhập Admin: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private String hashSHA256(String input) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] messageDigest = md.digest(input.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : messageDigest) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString(); // Trả về chuỗi hash viết thường giống hệt trong DB
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean updateUser(User u) {
         String sql = "UPDATE users SET ho_ten = ?, email = ?, so_dien_thoai = ?, vai_tro = ?, ngay_cap_nhat = NOW() WHERE id = ?";
 

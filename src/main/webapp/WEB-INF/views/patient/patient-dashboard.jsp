@@ -926,13 +926,24 @@
                     font-size: 2.75rem;
                     font-weight: 800;
                     line-height: 1;
-                    text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
                 }
 
-                .ai-risk-score.safe { color: #34d399; }
-                .ai-risk-score.medium { color: #fbbf24; }
-                .ai-risk-score.high { color: #fb923c; }
-                .ai-risk-score.danger { color: #f87171; }
+                .ai-risk-score.safe {
+                    color: #34d399;
+                }
+
+                .ai-risk-score.medium {
+                    color: #fbbf24;
+                }
+
+                .ai-risk-score.high {
+                    color: #fb923c;
+                }
+
+                .ai-risk-score.danger {
+                    color: #f87171;
+                }
 
                 .ai-risk-bar {
                     flex: 1;
@@ -940,7 +951,7 @@
                     background: rgba(255, 255, 255, 0.1);
                     border-radius: 6px;
                     overflow: hidden;
-                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+                    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
                 }
 
                 .ai-risk-fill {
@@ -949,24 +960,47 @@
                     transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
                     position: relative;
                 }
-                
+
                 .ai-risk-fill::after {
                     content: '';
                     position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
                     animation: shimmer 2s infinite;
                 }
-                
+
                 @keyframes shimmer {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(100%); }
+                    0% {
+                        transform: translateX(-100%);
+                    }
+
+                    100% {
+                        transform: translateX(100%);
+                    }
                 }
 
-                .ai-risk-fill.safe { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(52,211,153,0.5); }
-                .ai-risk-fill.medium { background: linear-gradient(90deg, #d97706, #fbbf24); box-shadow: 0 0 10px rgba(251,191,36,0.5); }
-                .ai-risk-fill.high { background: linear-gradient(90deg, #ea580c, #fb923c); box-shadow: 0 0 10px rgba(251,146,60,0.5); }
-                .ai-risk-fill.danger { background: linear-gradient(90deg, #dc2626, #f87171); box-shadow: 0 0 10px rgba(248,113,113,0.5); }
+                .ai-risk-fill.safe {
+                    background: linear-gradient(90deg, #10b981, #34d399);
+                    box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+                }
+
+                .ai-risk-fill.medium {
+                    background: linear-gradient(90deg, #d97706, #fbbf24);
+                    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+                }
+
+                .ai-risk-fill.high {
+                    background: linear-gradient(90deg, #ea580c, #fb923c);
+                    box-shadow: 0 0 10px rgba(251, 146, 60, 0.5);
+                }
+
+                .ai-risk-fill.danger {
+                    background: linear-gradient(90deg, #dc2626, #f87171);
+                    box-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
+                }
 
                 .ai-risk-label {
                     font-size: 0.85rem;
@@ -977,10 +1011,29 @@
                     letter-spacing: 0.5px;
                 }
 
-                .ai-risk-label.safe { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
-                .ai-risk-label.medium { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
-                .ai-risk-label.high { background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
-                .ai-risk-label.danger { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+                .ai-risk-label.safe {
+                    background: rgba(52, 211, 153, 0.15);
+                    color: #34d399;
+                    border: 1px solid rgba(52, 211, 153, 0.3);
+                }
+
+                .ai-risk-label.medium {
+                    background: rgba(251, 191, 36, 0.15);
+                    color: #fbbf24;
+                    border: 1px solid rgba(251, 191, 36, 0.3);
+                }
+
+                .ai-risk-label.high {
+                    background: rgba(251, 146, 60, 0.15);
+                    color: #fb923c;
+                    border: 1px solid rgba(251, 146, 60, 0.3);
+                }
+
+                .ai-risk-label.danger {
+                    background: rgba(248, 113, 113, 0.15);
+                    color: #f87171;
+                    border: 1px solid rgba(248, 113, 113, 0.3);
+                }
 
                 .ai-detail {
                     font-size: 0.95rem;
@@ -1012,7 +1065,7 @@
                     gap: 0.75rem;
                     transition: all 0.2s;
                 }
-                
+
                 .ai-rec-tag:hover {
                     background: rgba(139, 92, 246, 0.15);
                     border-color: rgba(139, 92, 246, 0.6);
@@ -1344,7 +1397,8 @@
                                 <div>
                                     <h3>AI Phân tích sức khỏe</h3>
                                     <span><i class="far fa-clock"></i> Cập nhật: ${aiAnalysis.thoiGianPhanTich != null ?
-                                        aiAnalysis.thoiGianPhanTich.toString().substring(0,16) : 'N/A'} • <i class="fas fa-cube" style="margin-left: 0.25rem;"></i> Model:
+                                        aiAnalysis.thoiGianPhanTich.toString().substring(0,16) : 'N/A'} • <i
+                                            class="fas fa-cube" style="margin-left: 0.25rem;"></i> Model:
                                         ${aiAnalysis.modelVersion}</span>
                                 </div>
                             </div>
@@ -1365,21 +1419,24 @@
                                             'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ
                                             CAO' : 'NGUY HIỂM'))}
                                         </span>
-                                        <c:if test="${aiAnalysis.doTinCay != null}">
+                                        <!-- <c:if test="${aiAnalysis.doTinCay != null}">
                                             <span style="font-size:0.8rem;color:#94a3b8;font-weight:500;">Độ tin cậy:
                                                 ${aiAnalysis.doTinCay}</span>
-                                        </c:if>
+                                        </c:if> -->
                                     </div>
                                 </div>
                             </div>
                             <div class="ai-detail">${aiAnalysis.phanTichChiTiet}</div>
                             <c:if test="${not empty aiAnalysis.khuyenNghi}">
-                                <h4 style="font-size:1.05rem;font-weight:600;color:#f8fafc;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+                                <h4
+                                    style="font-size:1.05rem;font-weight:600;color:#f8fafc;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
                                     <i class="fas fa-magic" style="color:#a78bfa;"></i> Gợi ý từ AI
                                 </h4>
                                 <div class="ai-recommendations" id="aiRecommendations"></div>
                             </c:if>
-                            <div class="ai-disclaimer"><i class="fas fa-exclamation-triangle" style="color: #fbbf24;"></i> Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết định y tế cần được bác sĩ xác nhận.</div>
+                            <div class="ai-disclaimer"><i class="fas fa-exclamation-triangle"
+                                    style="color: #fbbf24;"></i> Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết
+                                định y tế cần được bác sĩ xác nhận.</div>
                         </div>
                     </c:if>
 
@@ -1601,11 +1658,18 @@
                         <button class="close-btn" id="closeModalBtn"><i class="fas fa-times"></i></button>
                     </div>
                     <form action="logData" method="POST" id="newRecordForm">
+                        <div id="formErrorMsg"
+                            style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;">
+                        </div>
                         <div id="formErrorMsg" style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;"></div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Đường huyết</label>
                                 <div style="display: flex; gap: 0.5rem;">
+                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet"
+                                        class="form-control" placeholder="VD: 110">
+                                    <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control"
+                                        style="width: 100px;">
                                     <input type="number" step="0.1" name="duong_huyet" id="duong_huyet" class="form-control"
                                         placeholder="VD: 110">
                                     <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control" style="width: 100px;">
@@ -1616,12 +1680,21 @@
                             </div>
                             <div class="form-group">
                                 <label>Nhịp tim (BPM)</label>
+                                <input type="number" name="nhip_tim" id="nhip_tim" class="form-control"
+                                    placeholder="VD: 75">
                                 <input type="number" name="nhip_tim" id="nhip_tim" class="form-control" placeholder="VD: 75">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>H/áp Tâm thu (mmHg)</label>
+                                <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control"
+                                    placeholder="VD: 120">
+                            </div>
+                            <div class="form-group">
+                                <label>H/áp Tâm trương (mmHg)</label>
+                                <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control"
+                                    placeholder="VD: 80">
                                 <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control" placeholder="VD: 120">
                             </div>
                             <div class="form-group">
@@ -1641,14 +1714,20 @@
                         <div class="form-group">
                             <label>Triệu chứng</label>
                             <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                    <input type="checkbox" name="chest_pain" value="1" style="width: 16px; height: 16px;"> Đau tức ngực
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="chest_pain" value="1"
+                                        style="width: 16px; height: 16px;"> Đau tức ngực
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                    <input type="checkbox" name="dizziness" value="1" style="width: 16px; height: 16px;"> Hoa mắt, chóng mặt
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="dizziness" value="1"
+                                        style="width: 16px; height: 16px;"> Hoa mắt, chóng mặt
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                    <input type="checkbox" name="fatigue" value="1" style="width: 16px; height: 16px;"> Mệt mỏi kéo dài
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" name="fatigue" value="1" style="width: 16px; height: 16px;">
+                                    Mệt mỏi kéo dài
                                 </label>
                             </div>
                         </div>
@@ -1953,6 +2032,9 @@
                 // Form validation
                 const newRecordForm = document.getElementById('newRecordForm');
                 const formErrorMsg = document.getElementById('formErrorMsg');
+
+                if (newRecordForm) {
+                    newRecordForm.addEventListener('submit', function (e) {
                 
                 if (newRecordForm) {
                     newRecordForm.addEventListener('submit', function(e) {
@@ -1961,6 +2043,13 @@
                         const hr = document.getElementById('nhip_tim').value;
                         const sys = document.getElementById('huyet_ap_thu').value;
                         const dia = document.getElementById('huyet_ap_truong').value;
+
+                        let error = '';
+
+                        // Rule 1: At least one metric
+                        if (!dh && !hr && !sys && !dia) {
+                            error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
+                        }
                         
                         let error = '';
                         
@@ -1995,11 +2084,13 @@
                                 error = 'Chỉ số Đường huyết (mmol/L) có vẻ không hợp lệ.';
                             }
                         }
+
                         
                         if (error) {
                             e.preventDefault(); // Dừng submit
                             formErrorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error;
                             formErrorMsg.style.display = 'block';
+
                             
                             // Lắc nhẹ modal để báo lỗi
                             const modal = document.querySelector('.modal');

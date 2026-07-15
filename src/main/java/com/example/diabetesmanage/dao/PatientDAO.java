@@ -13,11 +13,38 @@ import java.util.UUID;
 public class PatientDAO {
 
     public boolean deletePatient(String patientId) {
-        String sql = "DELETE FROM patients WHERE id=?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, patientId);
-            return ps.executeUpdate() > 0;
+        // Đã thêm logic xóa luôn tài khoản user tương ứng để tránh rác dữ liệu
+        String sqlGetUserId = "SELECT user_id FROM patients WHERE id=?";
+        String sqlDelPatient = "DELETE FROM patients WHERE id=?";
+        String sqlDelUser = "DELETE FROM users WHERE id=?";
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            String userId = null;
+
+            try (PreparedStatement psGet = conn.prepareStatement(sqlGetUserId)) {
+                psGet.setString(1, patientId);
+                try (ResultSet rs = psGet.executeQuery()) {
+                    if (rs.next()) {
+                        userId = rs.getString("user_id");
+                    }
+                }
+            }
+
+            try (PreparedStatement psPat = conn.prepareStatement(sqlDelPatient)) {
+                psPat.setString(1, patientId);
+                psPat.executeUpdate();
+            }
+
+            if (userId != null) {
+                try (PreparedStatement psUser = conn.prepareStatement(sqlDelUser)) {
+                    psUser.setString(1, userId);
+                    psUser.executeUpdate();
+                }
+            }
+
+            conn.commit();
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -25,16 +52,36 @@ public class PatientDAO {
     }
 
     public boolean updatePatient(Patient p) {
-        String sql = "UPDATE patients SET ho_ten=?, email=?, so_dien_thoai=?, ngay_sinh=?, loai_tieu_duong=? WHERE id=?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, p.getTenBenhNhan());
-            ps.setString(2, p.getEmail());
-            ps.setString(3, p.getSoDienThoai());
-            ps.setDate(4, p.getNgaySinh());
-            ps.setString(5, p.getLoaiTieuDuong());
-            ps.setString(6, p.getId());
-            return ps.executeUpdate() > 0;
+        // ĐÃ SỬA: Chỉ update thông tin y khoa vào bảng patients
+        String sqlPatient = "UPDATE patients SET ngay_sinh=?, loai_tieu_duong=? WHERE id=?";
+        // Cập nhật thông tin cá nhân vào bảng users dựa trên user_id của bệnh nhân
+        String sqlUser = "UPDATE users SET ho_ten=?, email=?, so_dien_thoai=? WHERE id=(SELECT user_id FROM patients WHERE id=?)";
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement psPat = conn.prepareStatement(sqlPatient);
+                 PreparedStatement psUser = conn.prepareStatement(sqlUser)) {
+
+                // Update bảng patients
+                psPat.setDate(1, p.getNgaySinh());
+                psPat.setString(2, p.getLoaiTieuDuong());
+                psPat.setString(3, p.getId());
+                psPat.executeUpdate();
+
+                // Update bảng users
+                psUser.setString(1, p.getTenBenhNhan());
+                psUser.setString(2, p.getEmail());
+                psUser.setString(3, p.getSoDienThoai());
+                psUser.setString(4, p.getId());
+                psUser.executeUpdate();
+
+                conn.commit();
+                return true;
+            } catch (Exception ex) {
+                conn.rollback();
+                ex.printStackTrace();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -46,7 +93,9 @@ public class PatientDAO {
         String patientId = UUID.randomUUID().toString();
 
         String sqlUser = "INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash) VALUES (?, ?, ?, ?, 'benh_nhan', 'hash_mac_dinh_123')";
-        String sqlPatient = "INSERT INTO patients (id, user_id, ho_ten, email, so_dien_thoai, ngay_sinh, loai_tieu_duong) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        // ĐÃ SỬA: Bỏ insert ho_ten, email, sdt vào bảng patients vì chúng thuộc về bảng users
+        String sqlPatient = "INSERT INTO patients (id, user_id, ngay_sinh, loai_tieu_duong) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false); // Bắt đầu Transaction
@@ -61,11 +110,8 @@ public class PatientDAO {
 
                 psPat.setString(1, patientId);
                 psPat.setString(2, userId);
-                psPat.setString(3, p.getTenBenhNhan());
-                psPat.setString(4, p.getEmail());
-                psPat.setString(5, p.getSoDienThoai());
-                psPat.setDate(6, p.getNgaySinh());
-                psPat.setString(7, p.getLoaiTieuDuong());
+                psPat.setDate(3, p.getNgaySinh());
+                psPat.setString(4, p.getLoaiTieuDuong());
                 psPat.executeUpdate();
 
                 conn.commit();
@@ -74,12 +120,18 @@ public class PatientDAO {
                 conn.rollback();
                 ex.printStackTrace();
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
     public Patient getPatientByIdAdmin(String id) {
-        String sql = "SELECT * FROM patients WHERE id = ?";
+        // ĐÃ SỬA: JOIN với bảng users để lấy các cột ho_ten, email, so_dien_thoai
+        String sql = "SELECT p.*, u.ho_ten, u.email, u.so_dien_thoai " +
+                "FROM patients p " +
+                "JOIN users u ON p.user_id = u.id " +
+                "WHERE p.id = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -90,10 +142,14 @@ public class PatientDAO {
                 if (rs.next()) {
                     Patient p = new Patient();
                     p.setId(rs.getString("id"));
+                    p.setUserId(rs.getString("user_id"));
+                    p.setNgaySinh(rs.getDate("ngay_sinh"));
+                    p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
+
+                    // Lấy thông tin cá nhân từ bảng users
                     p.setTenBenhNhan(rs.getString("ho_ten"));
                     p.setSoDienThoai(rs.getString("so_dien_thoai"));
                     p.setEmail(rs.getString("email"));
-                    p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
                     return p;
                 }
             }
