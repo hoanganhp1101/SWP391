@@ -70,6 +70,13 @@
         .btn-pdf { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary); color: white; text-decoration: none; padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.8125rem; }
         .btn-disabled { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--bg-body); color: var(--text-muted); padding: 0.55rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.8125rem; }
         .empty-state { color: var(--text-muted); text-align: center; padding: 2rem 1rem; }
+        .pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; }
+        .pagination-info { color: var(--text-muted); font-size: 0.875rem; }
+        .pagination { display: flex; align-items: center; gap: 0.35rem; }
+        .page-link { min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 0 0.75rem; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 0.875rem; background: var(--bg-white); }
+        .page-link:hover { border-color: var(--primary); color: var(--primary); }
+        .page-link.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .page-link.disabled { pointer-events: none; opacity: 0.45; background: var(--bg-body); }
     </style>
 </head>
 <body>
@@ -173,6 +180,27 @@
                                 </c:forEach>
                             </tbody>
                         </table>
+                        <div class="pagination-bar">
+                            <div class="pagination-info">
+                                Tổng ${totalRecords} hồ sơ - Trang ${currentPage}/${totalPages}
+                            </div>
+                            <div class="pagination">
+                                <a class="page-link ${currentPage <= 1 ? 'disabled' : ''}"
+                                   href="patient-medical-history?page=${currentPage - 1}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                                <c:forEach var="pageNum" begin="1" end="${totalPages}">
+                                    <a class="page-link ${pageNum == currentPage ? 'active' : ''}"
+                                       href="patient-medical-history?page=${pageNum}">
+                                        ${pageNum}// bắt đầu page từ 1 kết thúc khi nhiều nhất nếu database có 
+                                    </a>
+                                </c:forEach>
+                                <a class="page-link ${currentPage >= totalPages ? 'disabled' : ''}"
+                                   href="patient-medical-history?page=${currentPage + 1}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
                     </c:when>
                     <c:otherwise>
                         <div class="empty-state">Chưa có hồ sơ khám bệnh hoặc PDF nào được bác sĩ tải lên.</div>
