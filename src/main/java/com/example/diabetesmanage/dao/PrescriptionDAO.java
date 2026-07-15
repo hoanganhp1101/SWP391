@@ -4,10 +4,12 @@ import com.example.diabetesmanage.model.Medication;
 import com.example.diabetesmanage.model.Prescription;
 import com.example.diabetesmanage.model.PrescriptionDetail;
 import com.example.diabetesmanage.context.DBContext;
+import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -187,5 +189,38 @@ public class PrescriptionDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public String insert(Connection con, EncounterCreateRequest form, String patientId,
+                         String doctorId, String encounterId) throws SQLException {
+        String id = UUID.randomUUID().toString();
+
+        String sql =
+                "INSERT INTO prescriptions " +
+                        "(id, patient_id, bac_si_id, encounter_id, chan_doan, huong_dieu_tri, " +
+                        "che_do_an, luyen_tap, ghi_chu) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, id);
+            ps.setString(2, patientId);
+            ps.setString(3, doctorId);
+            ps.setString(4, encounterId);
+            JdbcUtil.setString(ps, 5, form.getChanDoanChinh());
+            JdbcUtil.setString(ps, 6, form.getKhuyenNghiDieuTri());
+            JdbcUtil.setString(ps, 7, form.getCheDoAn());
+            JdbcUtil.setString(ps, 8, form.getLuyenTap());
+            JdbcUtil.setString(ps, 9, null);
+            ps.executeUpdate();
+        }
+        return id;
+    }
+
+    public void deleteByEncounterId(Connection con, String encounterId) throws SQLException {
+        String sql = "DELETE FROM prescriptions WHERE encounter_id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, encounterId);
+            ps.executeUpdate();
+        }
     }
 }

@@ -1,6 +1,6 @@
 package com.example.diabetesmanage;
 
-import com.example.diabetesmanage.util.DBContext;
+import com.example.diabetesmanage.context.DBContext;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;

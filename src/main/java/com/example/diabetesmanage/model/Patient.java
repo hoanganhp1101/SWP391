@@ -2,11 +2,18 @@ package com.example.diabetesmanage.model;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 
 public class Patient {
     private String id;
     private String userId;
     private String bacSiId;
+    private String patientCode;
+
+    private User user;
+    private User doctor;
+    private Integer tuoi;
+
     private Date ngaySinh;
     private String gioiTinh;
     private Double chieuCaoCm;
@@ -19,6 +26,7 @@ public class Patient {
     private String nhomMau;
     private Date ngayChanDoanTieuDuong;
     private Timestamp ngayTao;
+    private Timestamp ngayCapNhat;
 
     private String hoTen;
     private String tenBenhNhan;
@@ -27,6 +35,13 @@ public class Patient {
     private String tenBacSi;
     private String anhDaiDien;
 
+    private Double duongHuyetGanNhat;
+    private Double bmiGanNhat;
+    private Double hba1cGanNhat;
+    private String mucNguyCo;
+    private Double diemNguyCo;
+    private Timestamp lanDoCuoi;
+    private Integer canhBaoChuaDoc;
 
     public Patient() {
     }
@@ -55,12 +70,52 @@ public class Patient {
         this.bacSiId = bacSiId;
     }
 
+    public String getPatientCode() {
+        return patientCode;
+    }
+
+    public void setPatientCode(String patientCode) {
+        this.patientCode = patientCode;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public User getDoctor() {
+        return doctor;
+    }
+
+    public void setDoctor(User doctor) {
+        this.doctor = doctor;
+    }
+
+    public Integer getTuoi() {
+        return tuoi;
+    }
+
+    public void setTuoi(Integer tuoi) {
+        this.tuoi = tuoi;
+    }
+
     public Date getNgaySinh() {
         return ngaySinh;
     }
 
     public void setNgaySinh(Date ngaySinh) {
         this.ngaySinh = ngaySinh;
+    }
+
+    public LocalDate getNgaySinhLocalDate() {
+        return ngaySinh != null ? ngaySinh.toLocalDate() : null;
+    }
+
+    public void setNgaySinh(LocalDate ngaySinh) {
+        this.ngaySinh = ngaySinh != null ? Date.valueOf(ngaySinh) : null;
     }
 
     public String getGioiTinh() {
@@ -111,8 +166,22 @@ public class Patient {
         this.ngayTao = ngayTao;
     }
 
+    public Timestamp getNgayCapNhat() {
+        return ngayCapNhat;
+    }
+
+    public void setNgayCapNhat(Timestamp ngayCapNhat) {
+        this.ngayCapNhat = ngayCapNhat;
+    }
+
     public String getHoTen() {
-        return hoTen;
+        if (hoTen != null && !hoTen.isBlank()) {
+            return hoTen;
+        }
+        if (user != null && user.getHoTen() != null && !user.getHoTen().isBlank()) {
+            return user.getHoTen();
+        }
+        return tenBenhNhan;
     }
 
     public void setHoTen(String hoTen) {
@@ -159,6 +228,14 @@ public class Patient {
         this.ngayChanDoanTieuDuong = ngayChanDoanTieuDuong;
     }
 
+    public LocalDate getNgayChanDoanTieuDuongLocalDate() {
+        return ngayChanDoanTieuDuong != null ? ngayChanDoanTieuDuong.toLocalDate() : null;
+    }
+
+    public void setNgayChanDoanTieuDuong(LocalDate ngayChanDoanTieuDuong) {
+        this.ngayChanDoanTieuDuong = ngayChanDoanTieuDuong != null ? Date.valueOf(ngayChanDoanTieuDuong) : null;
+    }
+
     public String getTenBenhNhan() {
         return tenBenhNhan;
     }
@@ -168,7 +245,10 @@ public class Patient {
     }
 
     public String getEmail() {
-        return email;
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+        return user != null ? user.getEmail() : null;
     }
 
     public void setEmail(String email) {
@@ -176,7 +256,10 @@ public class Patient {
     }
 
     public String getSoDienThoai() {
-        return soDienThoai;
+        if (soDienThoai != null && !soDienThoai.isBlank()) {
+            return soDienThoai;
+        }
+        return user != null ? user.getSoDienThoai() : null;
     }
 
     public void setSoDienThoai(String soDienThoai) {
@@ -197,5 +280,61 @@ public class Patient {
 
     public void setAnhDaiDien(String anhDaiDien) {
         this.anhDaiDien = anhDaiDien;
+    }
+
+    public Double getDuongHuyetGanNhat() {
+        return duongHuyetGanNhat;
+    }
+
+    public void setDuongHuyetGanNhat(Double duongHuyetGanNhat) {
+        this.duongHuyetGanNhat = duongHuyetGanNhat;
+    }
+
+    public Double getBmiGanNhat() {
+        return bmiGanNhat;
+    }
+
+    public void setBmiGanNhat(Double bmiGanNhat) {
+        this.bmiGanNhat = bmiGanNhat;
+    }
+
+    public Double getHba1cGanNhat() {
+        return hba1cGanNhat;
+    }
+
+    public void setHba1cGanNhat(Double hba1cGanNhat) {
+        this.hba1cGanNhat = hba1cGanNhat;
+    }
+
+    public String getMucNguyCo() {
+        return mucNguyCo;
+    }
+
+    public void setMucNguyCo(String mucNguyCo) {
+        this.mucNguyCo = mucNguyCo;
+    }
+
+    public Double getDiemNguyCo() {
+        return diemNguyCo;
+    }
+
+    public void setDiemNguyCo(Double diemNguyCo) {
+        this.diemNguyCo = diemNguyCo;
+    }
+
+    public Timestamp getLanDoCuoi() {
+        return lanDoCuoi;
+    }
+
+    public void setLanDoCuoi(Timestamp lanDoCuoi) {
+        this.lanDoCuoi = lanDoCuoi;
+    }
+
+    public Integer getCanhBaoChuaDoc() {
+        return canhBaoChuaDoc;
+    }
+
+    public void setCanhBaoChuaDoc(Integer canhBaoChuaDoc) {
+        this.canhBaoChuaDoc = canhBaoChuaDoc;
     }
 }

@@ -1,0 +1,171 @@
+/* Shared shell only — for pages without inline layout styles */
+.layout {
+    display: flex;
+    height: calc(100vh - 80px);
+}
+
+.main-content {
+    flex: 1;
+    overflow: auto;
+}
+
+.topbar {
+    height: 80px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 48px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0d4bb5;
+}
+
+.top-nav {
+    display: flex;
+    gap: 36px;
+    margin-left: 40px;
+}
+
+.top-nav a {
+    color: #555;
+    text-decoration: none;
+}
+
+.top-nav .active {
+    color: #1557d5;
+    font-weight: 600;
+    position: relative;
+}
+
+.top-nav .active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -28px;
+    width: 100%;
+    height: 3px;
+    background: #1557d5;
+}
+
+.top-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.search-box {
+    width: 290px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: white;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    width: 100%;
+    margin-left: 10px;
+}
+
+.icon-btn {
+    font-size: 22px;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.topbar-avatar,
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sidebar {
+    width: 240px;
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+}
+
+.doctor-profile {
+    padding: 28px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.doctor-profile img {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.doctor-profile h4 {
+    color: #1554c7;
+}
+
+.doctor-profile p {
+    font-size: 12px;
+    color: #666;
+}
+
+.menu {
+    padding: 0 16px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 52px;
+    padding: 0 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    color: #374151;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.menu-item.active {
+    background: #1557d5;
+    color: white;
+    font-weight: 600;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding: 20px 16px;
+}
+
+.new-record {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 10px;
+    background: #0d4bb5;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bottom-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 12px;
+    text-decoration: none;
+    color: #374151;
+    cursor: pointer;
+}

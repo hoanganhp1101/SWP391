@@ -18,9 +18,15 @@
         </a>
     </div>
 
-    <div>
+    <div class="mb-3">
         <a href="${pageContext.request.contextPath}/patient-dashboard" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm">
             <i class="fas fa-user-injured me-2"></i> Cổng Bệnh Nhân (Patient Portal)
+        </a>
+    </div>
+
+    <div>
+        <a href="${pageContext.request.contextPath}/Logincontroller" class="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm">
+            <i class="fas fa-user-md me-2"></i> Cổng Bác Sĩ (Doctor Portal)
         </a>
     </div>
 </div>
