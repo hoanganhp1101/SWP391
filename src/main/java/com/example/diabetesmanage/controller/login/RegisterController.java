@@ -14,10 +14,10 @@ import com.example.diabetesmanage.util.Encode;
 
 
 /**
- * RegisterController — xử lý đăng ký tài khoản hệ thống Diabetes Support System.
- * URL: /RegisterController
+ * RegisterController — xử lý đăng ký tài khoản hệ thống Diabetes Support
+ * System. URL: /RegisterController
  */
-@WebServlet(name = "RegisterController", urlPatterns = { "/RegisterController" })
+@WebServlet(name = "RegisterController", urlPatterns = {"/RegisterController"})
 public class RegisterController extends HttpServlet {
 
     // Đường dẫn trỏ tới view register.jsp trong thư mục bảo mật WEB-INF
@@ -54,43 +54,59 @@ public class RegisterController extends HttpServlet {
 
             boolean hasError = false;
 
+            // 2. Định nghĩa các quy tắc (Regex)
+            // Tên: Chứa chữ cái (bao gồm tiếng Việt) và khoảng trắng, từ 3-50 ký tự
+            String nameRegex = "^[\\p{L}\\s]{1,50}$";
+            // SĐT: Bắt đầu bằng số 0, theo sau là 9 chữ số (chuẩn VN)
+            String phoneRegex = "^0\\d{9}$";
+            // Email: Định dạng cơ bản chuẩn
+            String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
             // ─── Validate Họ tên ──────────────────────────────────────────────
-            if (inputHoTen == null || inputHoTen.isBlank()) {
+            if (inputHoTen == null || inputHoTen.trim().isEmpty()) {
                 request.setAttribute("hoTenError", "Vui lòng nhập họ và tên của bạn");
+                hasError = true;
+            } else if (!inputHoTen.trim().matches(nameRegex)) {
+                request.setAttribute("hoTenError", "Họ tên phải từ 3-50 ký tự và không chứa số hay ký tự đặc biệt.");
                 hasError = true;
             }
 
             // ─── Validate Số điện thoại (Định dạng Việt Nam chuẩn) ────────────
-            if (inputSoDienThoai == null || inputSoDienThoai.isBlank()) {
+            if (inputSoDienThoai == null || inputSoDienThoai.trim().isEmpty()) {
                 request.setAttribute("phoneError", "Vui lòng nhập số điện thoại");
                 hasError = true;
-            } else if (!inputSoDienThoai.matches("^0[0-9]{9}$")) {
+            } else if (!inputSoDienThoai.matches(phoneRegex)) {
                 request.setAttribute("phoneError", "Số điện thoại không hợp lệ (phải gồm 10 số và bắt đầu bằng số 0)");
                 hasError = true;
             }
 
             // ─── Validate dữ liệu Email ────────────────────────────────────────
-            if (inputEmail == null || inputEmail.isBlank()) {
+            if (inputEmail == null || inputEmail.trim().isEmpty()) {
                 request.setAttribute("emailError", "Vui lòng nhập địa chỉ email");
                 hasError = true;
-            } else if (!inputEmail.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            } else if (!inputEmail.matches(emailRegex)) {
                 request.setAttribute("emailError", "Định dạng email không hợp lệ");
                 hasError = true;
             }
 
             // ─── Validate dữ liệu Mật khẩu ────────────────────────────────────
-            if (inputPass == null || inputPass.isBlank()) {
+            if (inputPass == null || inputPass.isEmpty()) {
                 request.setAttribute("passError", "Vui lòng nhập mật khẩu");
                 hasError = true;
-            }
-            if (!hasError && (inputConfirmPass == null || !inputConfirmPass.equals(inputPass))) {
-                request.setAttribute("passError", "Mật khẩu xác nhận không trùng khớp");
+            } else if (inputPass.length() < 6) {
+                request.setAttribute("passError", "Mật khẩu phải chứa ít nhất 6 ký tự.");
                 hasError = true;
             }
 
+            // Kiểm tra Xác nhận mật khẩu
+            if (inputConfirmPass == null || !inputConfirmPass.equals(inputPass)) {
+                request.setAttribute("passError", "Xác nhận mật khẩu không khớp.");
+                hasError = true;
+            }
+
+            // 4. Nếu có bất kỳ lỗi nào, trả về lại form đăng ký
             if (hasError) {
                 request.getRequestDispatcher(REGISTER_VIEW).forward(request, response);
-                return;
+                return; // Dừng luồng chạy tại đây, không cho lưu vào DB
             }
 
             UserDAO dao = UserDAO.getInstance();

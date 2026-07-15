@@ -13,7 +13,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Register — Diabetes Support System</title>
-        <style>
+         <style>
             * {
                 box-sizing: border-box;
                 margin: 0;
@@ -22,7 +22,7 @@
 
             body {
                 font-family: 'Arial', sans-serif;
-                background: linear-gradient(135deg, #4169e1 0%, #ff7f50 100%);
+                background: #f0f4f8; /* Nền xám xanh nhạt đồng bộ */
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -31,10 +31,10 @@
             }
 
             .container {
-                background: #fff;
+                background: #ffffff;
                 padding: 2.5rem 2rem;
                 border-radius: 12px;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                box-shadow: 0 4px 20px rgba(21, 87, 213, 0.08); /* Đổ bóng tone xanh */
                 max-width: 420px;
                 width: 100%;
                 text-align: center;
@@ -47,8 +47,18 @@
             }
 
             .logo { font-size: 2rem; margin-bottom: 6px; }
-            h1 { color: #333; margin-bottom: 4px; font-size: 1.6rem; }
-            .subtitle { color: #777; margin-bottom: 1.8rem; font-size: 0.9rem; }
+            
+            h1 { 
+                color: #1a1a1a; 
+                margin-bottom: 4px; 
+                font-size: 1.6rem; 
+            }
+            
+            .subtitle { 
+                color: #666; 
+                margin-bottom: 1.8rem; 
+                font-size: 0.9rem; 
+            }
 
             input[type="text"],
             input[type="email"],
@@ -56,35 +66,44 @@
                 width: 100%;
                 padding: 12px 14px;
                 margin-bottom: 10px;
-                border: 1.5px solid #ddd;
+                border: 1.5px solid #e0e4e8;
                 border-radius: 8px;
                 font-size: 1rem;
-                transition: border-color 0.2s;
+                transition: all 0.3s ease;
                 outline: none;
+                background-color: #fafbfc;
             }
 
             input[type="text"]:focus,
             input[type="email"]:focus,
             input[type="password"]:focus {
-                border-color: #4169e1;
+                border-color: #1557d5; /* Viền xanh chủ đạo khi focus */
+                background-color: #ffffff;
+                box-shadow: 0 0 0 3px rgba(21, 87, 213, 0.1);
             }
 
             .register-btn {
                 width: 100%;
                 padding: 12px;
-                background: #ff7f50; 
-                color: #fff;
+                background: #1557d5; /* Nút bấm xanh chủ đạo */
+                color: #ffffff;
                 border: none;
                 border-radius: 8px;
                 font-size: 1rem;
                 cursor: pointer;
                 font-weight: bold;
-                transition: background 0.2s;
+                transition: background 0.2s, transform 0.1s;
                 margin-top: 8px;
                 margin-bottom: 12px;
             }
 
-            .register-btn:hover { background: #e06c40; }
+            .register-btn:hover { 
+                background: #1046ab; 
+            }
+            
+            .register-btn:active {
+                transform: scale(0.98);
+            }
 
             .error-text {
                 color: #e74c3c;
@@ -104,6 +123,22 @@
                 font-size: 0.88rem;
                 margin-bottom: 10px;
                 text-align: left;
+            }
+            
+            .login-link-container {
+                margin-top: 10px; 
+                font-size: 0.9rem; 
+                color: #555;
+            }
+            
+            .login-link-container a {
+                color: #1557d5; 
+                text-decoration: none; 
+                font-weight: bold;
+            }
+            
+            .login-link-container a:hover {
+                text-decoration: underline;
             }
         </style>
     </head>
@@ -151,7 +186,7 @@
             </form>
 
             <div style="margin-top: 10px; font-size: 0.9rem; color: #555;">
-                Already have an account? <a href="login.jsp" style="color: #4169e1; text-decoration: none; font-weight: bold;">Login here</a>
+                Already have an account? <a href="Logincontroller" style="color: #4169e1; text-decoration: none; font-weight: bold;">Login here</a>
             </div>
         </div>
     </body>

@@ -9,12 +9,12 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Quên Mật Khẩu — Fashion Warehouse</title>
-        <style>
+          <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
 
             body {
                 font-family: 'Arial', sans-serif;
-                background: linear-gradient(135deg, #4169e1, #ff7f50);
+                background: #f0f4f8; /* Nền xám xanh nhạt đồng bộ */
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -23,10 +23,10 @@
             }
 
             .container {
-                background: #fff;
+                background: #ffffff;
                 padding: 2.5rem 2rem;
                 border-radius: 12px;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                box-shadow: 0 4px 20px rgba(21, 87, 213, 0.08); /* Đổ bóng tone xanh êm dịu */
                 max-width: 420px;
                 width: 100%;
                 text-align: center;
@@ -44,13 +44,13 @@
             }
 
             h1 {
-                color: #333;
+                color: #1a1a1a;
                 margin-bottom: 8px;
                 font-size: 1.6rem;
             }
 
             .subtitle {
-                color: #777;
+                color: #666;
                 font-size: 0.95rem;
                 margin-bottom: 1.8rem;
                 line-height: 1.5;
@@ -60,40 +60,48 @@
                 width: 100%;
                 padding: 12px 14px;
                 margin-bottom: 1rem;
-                border: 1.5px solid #ddd;
+                border: 1.5px solid #e0e4e8;
                 border-radius: 8px;
                 font-size: 1rem;
-                transition: border-color 0.2s;
+                transition: all 0.3s ease;
                 outline: none;
+                background-color: #fafbfc;
             }
 
             input[type="email"]:focus {
-                border-color: #4169e1;
+                border-color: #1557d5; /* Đổi màu viền khi focus */
+                background-color: #ffffff;
+                box-shadow: 0 0 0 3px rgba(21, 87, 213, 0.1);
             }
 
             .btn-submit {
                 width: 100%;
                 padding: 12px;
-                background: #4169e1;
-                color: #fff;
+                background: #1557d5; /* Nút bấm màu xanh chủ đạo */
+                color: #ffffff;
                 border: none;
                 border-radius: 8px;
                 font-size: 1rem;
                 cursor: pointer;
                 font-weight: bold;
-                transition: background 0.2s;
+                transition: background 0.2s, transform 0.1s;
                 margin-bottom: 1rem;
             }
 
             .btn-submit:hover {
-                background: #374bb5;
+                background: #1046ab;
+            }
+
+            .btn-submit:active {
+                transform: scale(0.98);
             }
 
             .btn-back {
                 display: inline-block;
-                color: #4169e1;
+                color: #1557d5; /* Đồng bộ màu chữ link */
                 text-decoration: none;
                 font-size: 0.9rem;
+                font-weight: 500;
             }
 
             .btn-back:hover {
