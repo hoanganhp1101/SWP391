@@ -1209,7 +1209,7 @@
                 </aside>
 
                 <!-- Main Content -->
-                <main class="content">
+                <main class="content" style="box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.1); background-color: var(--bg-body); border-radius: 12px; margin-top: 1rem; margin-right: 1rem; margin-bottom: 1rem; width: calc(100% - 280px - 2rem);">
                     <h1 class="page-title">Tổng quan sức khỏe</h1>
 
                     <!-- Top Cards -->
@@ -1322,7 +1322,7 @@
 
                     <!-- AI Analysis Card -->
                     <c:if test="${not empty aiAnalysis}">
-                        <div class="ai-card">
+                        <div class="ai-card" style="margin-bottom: 2rem;">
                             <div class="ai-card-header">
                                 <div class="ai-icon"><i class="fas fa-sparkles"></i></div>
                                 <div>
@@ -1347,8 +1347,7 @@
                                     <div style="display:flex;justify-content:space-between;margin-top:0.75rem">
                                         <span class="ai-risk-label ${riskClass}">
                                             ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao ==
-                                            'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ
-                                            CAO' : 'NGUY HIỂM'))}
+                                            'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ CAO' : 'NGUY HIỂM'))}
                                         </span>
                                         <!-- <c:if test="${aiAnalysis.doTinCay != null}">
                                             <span style="font-size:0.8rem;color:#94a3b8;font-weight:500;">Độ tin cậy:
@@ -1380,10 +1379,14 @@
                                     <h3>Biểu đồ theo dõi chỉ số</h3>
                                     <p>Chi tiết các lần đo: Đường huyết, Nhịp tim, Huyết áp</p>
                                 </div>
-                                <div class="chart-controls">
+                                <div class="chart-controls" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                                     <button class="active" id="btn-7days">7 Ngày</button>
                                     <button id="btn-30days">30 Ngày</button>
-                                    <input type="date" class="date-picker" id="datePicker" title="Chọn ngày cụ thể">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-white); padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
+                                        <input type="date" class="date-picker" id="startDatePicker" title="Từ ngày" style="border: none; background: transparent; padding: 0; outline: none; font-family: inherit; color: var(--text-dark);">
+                                        <span style="color: var(--text-muted); font-weight: 500;">-</span>
+                                        <input type="date" class="date-picker" id="endDatePicker" title="Đến ngày" style="border: none; background: transparent; padding: 0; outline: none; font-family: inherit; color: var(--text-dark);">
+                                    </div>
                                 </div>
                             </div>
                             <div class="chart-container" style="height: 350px;">
@@ -1505,20 +1508,12 @@
                         <button class="close-btn" id="closeModalBtn"><i class="fas fa-times"></i></button>
                     </div>
                     <form action="logData" method="POST" id="newRecordForm">
-                        <div id="formErrorMsg"
-                            style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;">
-                        </div>
                         <div id="formErrorMsg" style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;"></div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Đường huyết</label>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet"
-                                        class="form-control" placeholder="VD: 110">
-                                    <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control"
-                                        style="width: 100px;">
-                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet" class="form-control"
-                                        placeholder="VD: 110">
+                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet" class="form-control" placeholder="VD: 110">
                                     <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control" style="width: 100px;">
                                         <option value="mg/dL">mg/dL</option>
                                         <option value="mmol/L">mmol/L</option>
@@ -1527,21 +1522,12 @@
                             </div>
                             <div class="form-group">
                                 <label>Nhịp tim (BPM)</label>
-                                <input type="number" name="nhip_tim" id="nhip_tim" class="form-control"
-                                    placeholder="VD: 75">
                                 <input type="number" name="nhip_tim" id="nhip_tim" class="form-control" placeholder="VD: 75">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>H/áp Tâm thu (mmHg)</label>
-                                <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control"
-                                    placeholder="VD: 120">
-                            </div>
-                            <div class="form-group">
-                                <label>H/áp Tâm trương (mmHg)</label>
-                                <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control"
-                                    placeholder="VD: 80">
                                 <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control" placeholder="VD: 120">
                             </div>
                             <div class="form-group">
@@ -1717,7 +1703,8 @@
                 // Interactivity for controls
                 const btn7 = document.getElementById('btn-7days');
                 const btn30 = document.getElementById('btn-30days');
-                const datePicker = document.getElementById('datePicker');
+                const startDatePicker = document.getElementById('startDatePicker');
+                const endDatePicker = document.getElementById('endDatePicker');
 
                 function updateChart(dataset) {
                     trendsChart.data.labels = dataset.labels;
@@ -1754,10 +1741,35 @@
                     });
                 }
 
+                function filterByDateRange() {
+                    const startVal = startDatePicker.value;
+                    const endVal = endDatePicker.value;
+                    
+                    if (startVal || endVal) {
+                        btn7.classList.remove('active');
+                        btn30.classList.remove('active');
+                        
+                        let filteredData = dbData.filter(item => {
+                            if (!item.time) return false;
+                            const itemDate = item.time.substring(0, 10); // YYYY-MM-DD
+                            
+                            let isValid = true;
+                            if (startVal && itemDate < startVal) isValid = false;
+                            if (endVal && itemDate > endVal) isValid = false;
+                            
+                            return isValid;
+                        });
+                        updateChart(processData(filteredData));
+                    } else {
+                        btn7.click();
+                    }
+                }
+
                 btn7.addEventListener('click', () => {
                     btn7.classList.add('active');
                     btn30.classList.remove('active');
-                    datePicker.value = '';
+                    startDatePicker.value = '';
+                    endDatePicker.value = '';
                     const filteredData = filterByDays(dbData, 7);
                     updateChart(processData(filteredData.length > 0 ? filteredData : dbData));
                 });
@@ -1765,26 +1777,14 @@
                 btn30.addEventListener('click', () => {
                     btn30.classList.add('active');
                     btn7.classList.remove('active');
-                    datePicker.value = '';
+                    startDatePicker.value = '';
+                    endDatePicker.value = '';
                     const filteredData = filterByDays(dbData, 30);
                     updateChart(processData(filteredData.length > 0 ? filteredData : dbData));
                 });
 
-                datePicker.addEventListener('change', (e) => {
-                    if (e.target.value) {
-                        btn7.classList.remove('active');
-                        btn30.classList.remove('active');
-
-                        const selectedDate = e.target.value; // format: YYYY-MM-DD
-                        const filteredData = dbData.filter(item => {
-                            if (!item.time) return false;
-                            return item.time.startsWith(selectedDate);
-                        });
-                        updateChart(processData(filteredData));
-                    } else {
-                        btn7.click();
-                    }
-                });
+                startDatePicker.addEventListener('change', filterByDateRange);
+                endDatePicker.addEventListener('change', filterByDateRange);
 
                 // Kích hoạt mặc định xem 7 ngày gần nhất
                 setTimeout(() => {
@@ -1823,9 +1823,6 @@
                 const formErrorMsg = document.getElementById('formErrorMsg');
 
                 if (newRecordForm) {
-                    newRecordForm.addEventListener('submit', function (e) {
-                
-                if (newRecordForm) {
                     newRecordForm.addEventListener('submit', function(e) {
                         const dh = document.getElementById('duong_huyet').value;
                         const unit = document.getElementById('don_vi_duong_huyet').value;
@@ -1835,13 +1832,6 @@
 
                         let error = '';
 
-                        // Rule 1: At least one metric
-                        if (!dh && !hr && !sys && !dia) {
-                            error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
-                        }
-                        
-                        let error = '';
-                        
                         // Rule 1: At least one metric
                         if (!dh && !hr && !sys && !dia) {
                             error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
