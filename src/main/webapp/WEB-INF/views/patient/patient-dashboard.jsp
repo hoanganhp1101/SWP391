@@ -1,10 +1,10 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Dashboard - DiabetesCare</title>
+    <title>Bảng điều khiển bệnh nhân - DiabetesCare</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
@@ -449,18 +449,18 @@
             </div>
             <div class="brand-text">
                 <span class="brand-name">DiabetesCare</span>
-                <span class="brand-subtitle">Patient Portal</span>
+                <span class="brand-subtitle">Cổng thông tin bệnh nhân</span>
             </div>
         </div>
 
         <ul class="nav-menu">
-            <li><a href="#" class="nav-item active"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Glucose Logs</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Trends</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-calendar-alt"></i> Appointments</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-user"></i> Profile</a></li>
-            <li><a href="#" class="nav-item"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" class="nav-item active"><i class="fas fa-home"></i> Tổng quan</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Nhật ký đường huyết</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Xu hướng</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-calendar-alt"></i> Lịch hẹn</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-file-alt"></i> Báo cáo</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-user"></i> Hồ sơ cá nhân</a></li>
+            <li><a href="#" class="nav-item"><i class="fas fa-cog"></i> Cài đặt</a></li>
         </ul>
 
         <div class="user-profile">
@@ -484,9 +484,9 @@
                     <div class="trend-icon" style="color: var(--text-muted);"><i class="fas fa-minus"></i></div>
                 </div>
                 <div>
-                    <div class="card-title">Latest Glucose</div>
+                    <div class="card-title">Đường huyết gần nhất</div>
                     <div class="card-value">${latestGlucose != null ? latestGlucose : 113} <span class="card-unit">mg/dL</span></div>
-                    <div class="card-subtitle">${glucoseTime != null ? glucoseTime : '2 hours ago'}</div>
+                    <div class="card-subtitle">${glucoseTime != null ? glucoseTime : '2 giờ trước'}</div>
                 </div>
             </div>
 
@@ -496,9 +496,9 @@
                     <div class="icon-box blue"><i class="fas fa-wave-square"></i></div>
                 </div>
                 <div>
-                    <div class="card-title">Last HbA1c</div>
+                    <div class="card-title">HbA1c gần nhất</div>
                     <div class="card-value">${hba1c != null ? hba1c : 6.8} <span class="card-unit">%</span></div>
-                    <div class="card-subtitle">Target: &lt; 7.0%</div>
+                    <div class="card-subtitle">Mục tiêu: &lt; 7,0%</div>
                 </div>
             </div>
 
@@ -509,9 +509,9 @@
                     <div class="trend-icon" style="color: var(--success);"><i class="fas fa-arrow-down"></i></div>
                 </div>
                 <div>
-                    <div class="card-title">Daily Carb Intake</div>
+                    <div class="card-title">Lượng tinh bột trong ngày</div>
                     <div class="card-value">${dailyCarb != null ? dailyCarb : 180} <span class="card-unit">g</span></div>
-                    <div class="card-subtitle">Today's total</div>
+                    <div class="card-subtitle">Tổng hôm nay</div>
                 </div>
             </div>
 
@@ -521,9 +521,9 @@
                     <div class="icon-box purple"><i class="fas fa-calendar-day"></i></div>
                 </div>
                 <div>
-                    <div class="card-title">Next Appointment</div>
-                    <div class="card-value" style="font-size: 1.75rem;">${nextAppointmentDate != null ? nextAppointmentDate : 'May 20'}</div>
-                    <div class="card-subtitle">${nextAppointmentDoctor != null ? nextAppointmentDoctor : 'Dr. Smith - Endocrinology'}</div>
+                    <div class="card-title">Lịch hẹn tiếp theo</div>
+                    <div class="card-value" style="font-size: 1.75rem;">${nextAppointmentDate != null ? nextAppointmentDate : '20 tháng 5'}</div>
+                    <div class="card-subtitle">${nextAppointmentDoctor != null ? nextAppointmentDoctor : 'Bác sĩ chuyên khoa Nội tiết'}</div>
                 </div>
             </div>
         </div>
@@ -535,12 +535,12 @@
             <div class="chart-section">
                 <div class="chart-header">
                     <div class="chart-title">
-                        <h3>Glucose Trends</h3>
-                        <p>7-day daily averages</p>
+                        <h3>Xu hướng đường huyết</h3>
+                        <p>Trung bình hằng ngày trong 7 ngày</p>
                     </div>
                     <div class="chart-filters">
                         <button class="filter-btn insulin"><i class="fas fa-wave-square"></i> Insulin</button>
-                        <button class="filter-btn meals"><i class="fas fa-utensils"></i> Meals</button>
+                        <button class="filter-btn meals"><i class="fas fa-utensils"></i> Bữa ăn</button>
                     </div>
                 </div>
                 <div class="chart-container">
@@ -553,22 +553,22 @@
                 
                 <!-- Quick Log -->
                 <div class="quick-log">
-                    <h3>Quick Log</h3>
-                    <p>Fast data entry</p>
+                    <h3>Ghi nhanh</h3>
+                    <p>Nhập dữ liệu nhanh</p>
                     <form action="logData" method="POST">
                         <div class="form-group">
-                            <label class="red"><i class="fas fa-tint"></i> Glucose (mg/dL)</label>
+                            <label class="red"><i class="fas fa-tint"></i> Đường huyết (mg/dL)</label>
                             <input type="number" class="form-control" placeholder="120" name="glucose">
                         </div>
                         <div class="form-group">
-                            <label class="orange"><i class="fas fa-utensils"></i> Carbs (g)</label>
+                            <label class="orange"><i class="fas fa-utensils"></i> Tinh bột (g)</label>
                             <input type="number" class="form-control" placeholder="45" name="carbs">
                         </div>
                         <div class="form-group">
-                            <label class="purple"><i class="fas fa-wave-square"></i> Insulin (units)</label>
+                            <label class="purple"><i class="fas fa-wave-square"></i> Insulin (đơn vị)</label>
                             <input type="number" class="form-control" placeholder="8" name="insulin">
                         </div>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Log Data</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu dữ liệu</button>
                     </form>
                 </div>
 
@@ -577,18 +577,18 @@
                     <div class="foot-header">
                         <div class="foot-icon"><i class="fas fa-shoe-prints"></i></div>
                         <div class="foot-title">
-                            <h3>Daily Foot Check</h3>
-                            <p>Not completed today</p>
+                            <h3>Kiểm tra bàn chân hằng ngày</h3>
+                            <p>Hôm nay chưa hoàn thành</p>
                         </div>
                     </div>
                     <div class="foot-checklist">
                         <ul>
-                            <li>Check for cuts, blisters, or redness</li>
-                            <li>Inspect between toes</li>
-                            <li>Look for swelling or color changes</li>
+                            <li>Kiểm tra vết cắt, phồng rộp hoặc vùng da đỏ</li>
+                            <li>Kiểm tra kẽ giữa các ngón chân</li>
+                            <li>Kiểm tra dấu hiệu sưng hoặc thay đổi màu da</li>
                         </ul>
                     </div>
-                    <button class="btn btn-primary"><i class="fas fa-check"></i> Mark as Complete</button>
+                    <button class="btn btn-primary"><i class="fas fa-check"></i> Đánh dấu đã hoàn thành</button>
                 </div>
 
             </div>
@@ -601,7 +601,7 @@
         const ctx = document.getElementById('glucoseChart').getContext('2d');
         
         // Mock data similar to the image
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
         const glucoseData = [107, 120, 106, 118, 115, 122, 110];
         const insulinData = [10, 12, 11, 14, 12, 13, 11]; // Bottom line data
 
@@ -611,7 +611,7 @@
                 labels: days,
                 datasets: [
                     {
-                        label: 'Glucose',
+                        label: 'Đường huyết',
                         data: glucoseData,
                         borderColor: '#1a56db',
                         backgroundColor: '#1a56db',

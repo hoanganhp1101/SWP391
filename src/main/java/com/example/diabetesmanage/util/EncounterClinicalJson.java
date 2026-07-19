@@ -1,7 +1,9 @@
 package com.example.diabetesmanage.util;
 
-import com.example.diabetesmanage.model.EncounterType;
-import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
+import com.example.diabetesmanage.dto.EncounterCreateDTO;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Đọc/ghi chỉ số lâm sàng trong cột {@code medical_encounters.kham_lam_sang} (JSON).
@@ -11,10 +13,10 @@ public final class EncounterClinicalJson {
     private EncounterClinicalJson() {
     }
 
-    public static String buildFromForm(EncounterCreateRequest form) {
-        EncounterType type = form.resolveEncounterType();
+    public static String buildFromForm(EncounterCreateDTO form) {
+        String type = form.resolveEncounterType();
         StringBuilder json = new StringBuilder("{\"loai_encounter\":\"");
-        json.append(type.getCode()).append('"');
+        json.append(type).append('"');
         boolean first = false;
         first = appendField(json, first, "khoa_kham", form.resolveKhoaKham());
         first = appendField(json, first, "noi_dung",
@@ -33,56 +35,40 @@ public final class EncounterClinicalJson {
         first = appendNumber(json, first, "carbs_g", form.getCarbsG());
         first = appendField(json, first, "loai_insulin_tiem", form.getLoaiInsulinTiem());
         first = appendNumber(json, first, "lieu_luong_insulin_ui", form.getLieuLuongInsulinUi());
+        first = appendNumber(json, first, "hba1c_percent",
+                form.getHba1cPercent());
+
+        first = appendNumber(json, first, "cholesterol_mmol",
+                form.getCholesterolMmol());
+
+        first = appendNumber(json, first, "triglyceride_mmol",
+                form.getTriglycerideMmol());
+
+        first = appendField(json, first, "phan_loai_tieu_duong",
+                form.getPhanLoaiTieuDuong());
+
+        first = appendField(json, first, "ghi_chu_suc_khoe",
+                form.getGhiChuSucKhoe());
         json.append('}');
         return json.toString();
     }
 
     public static String parseString(String json, String key) {
-        if (json == null || json.isBlank() || key == null) {
-            return null;
-        }
-        String marker = "\"" + key + "\":\"";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            return null;
-        }
-        start += marker.length();
-        int end = json.indexOf('"', start);
-        if (end < 0) {
-            return json.substring(start);
-        }
-        return json.substring(start, end)
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
-    }
+        if (json == null || key == null) return null;
 
-    public static Double parseDouble(String json, String key) {
-        if (json == null || json.isBlank() || key == null) {
-            return null;
-        }
-        String marker = "\"" + key + "\":";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            return null;
-        }
-        start += marker.length();
-        int end = start;
-        while (end < json.length() && "0123456789.-".indexOf(json.charAt(end)) >= 0) {
-            end++;
-        }
-        if (end == start) {
-            return null;
-        }
-        try {
-            return Double.parseDouble(json.substring(start, end));
-        } catch (NumberFormatException ex) {
-            return null;
-        }
-    }
+        Pattern p = Pattern.compile(
+                "\"" + Pattern.quote(key) + "\"\\s*:\\s*\"(.*?)\""
+        );
 
-    public static Integer parseInteger(String json, String key) {
-        Double value = parseDouble(json, key);
-        return value != null ? value.intValue() : null;
+        Matcher m = p.matcher(json);
+
+        if (m.find()) {
+            return m.group(1)
+                    .replace("\\\"", "\"")
+                    .replace("\\\\", "\\");
+        }
+
+        return null;
     }
 
     private static boolean appendField(StringBuilder json, boolean first, String key, String value) {

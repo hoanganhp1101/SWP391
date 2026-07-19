@@ -10,7 +10,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthAlert Dashboard</title>
+    <title>Quản lý lịch hẹn - HealthAlert</title>
     <style>
         *{
             margin:0;
@@ -463,7 +463,7 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
 
                         <form method="get"
-                              action="${pageContext.request.contextPath}/doctor/medical-encounters">
+                              action="${pageContext.request.contextPath}/doctor/appointments">
 
                             <input type="hidden" name="status" value="${param.status}">
                             <input type="hidden" name="fromDate" value="${param.fromDate}">
@@ -482,7 +482,7 @@
                 </div>
 
                 <c:set var="basePath"
-                       value="${pageContext.request.contextPath}/doctor/medical-encounters"/>
+                       value="${pageContext.request.contextPath}/doctor/appointments"/>
 
                 <c:choose>
                     <c:when test="${param.status eq 'cho_kham'}"><c:set var="statusLabel" value="Chờ khám"/></c:when>
@@ -595,7 +595,7 @@
                             <td>
                                 <% if (Appointment.STATUS_CHO_KHAM.equals(appt.getTrangThai())) { %>
                                 <form method="post"
-                                      action="${pageContext.request.contextPath}/doctor/appointments/status"
+                                      action="${pageContext.request.contextPath}/doctor/appointments"
                                       style="display:inline;"
                                       onsubmit="return confirm('Đánh dấu đã khám và tạo hồ sơ lần khám?');">
                                     <input type="hidden" name="id" value="<%= appt.getId() %>">
@@ -606,7 +606,7 @@
                                     </button>
                                 </form>
                                 <form method="post"
-                                      action="${pageContext.request.contextPath}/doctor/appointments/status"
+                                      action="${pageContext.request.contextPath}/doctor/appointments"
                                       style="display:inline;"
                                       onsubmit="return confirm('Hủy lịch hẹn này?');">
                                     <input type="hidden" name="id" value="<%= appt.getId() %>">

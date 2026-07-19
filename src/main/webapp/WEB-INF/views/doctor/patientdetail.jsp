@@ -180,7 +180,7 @@
                     </div>
                     <div class="form-group">
                         <label>Loại tiểu đường</label>
-                        <input type="text" value="${patient.loaiTieuDuong}" readonly>
+                        <input type="text" value="${patient.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (patient.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : patient.loaiTieuDuong)}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Tiền sử bệnh</label>
@@ -217,7 +217,7 @@
 
                 <c:if test="${param.hrReadOnly eq '1'}">
                     <div class="hr-error-banner">
-                        Hồ sơ sức khỏe chỉ đọc. Dữ liệu được tổng hợp tự động vào snapshot.
+                        Hồ sơ sức khỏe chỉ đọc. Dữ liệu được tổng hợp từ health_records và lab_results.
                     </div>
                 </c:if>
 

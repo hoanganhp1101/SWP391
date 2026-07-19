@@ -1,10 +1,12 @@
-package com.example.diabetesmanage.model;
+package com.example.diabetesmanage.dto;
+
+import com.example.diabetesmanage.model.HealthRecord;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DangerousPatientDetail {
+public class HighRiskPatientDTO {
 
     private String patientId;
     private String patientCode;

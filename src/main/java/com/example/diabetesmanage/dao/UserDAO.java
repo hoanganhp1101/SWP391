@@ -25,6 +25,23 @@ public class UserDAO extends DBContext {
         return instance;
     }
 
+    public String getNameById(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String sql = "SELECT ho_ten FROM users WHERE id = ?";
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, userId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() ? rs.getString("ho_ten") : null;
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName())
+                    .log(Level.SEVERE, "getNameById error", e);
+            return null;
+        }
+    }
+
     // ── Mapper ───────────────────────────────────────────────────────────────
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
         User u = new User();
@@ -66,14 +83,6 @@ public class UserDAO extends DBContext {
         return null;
     }
 
-    /**
-     * @deprecated Dùng getUserByEmail(email) thay thế.
-     */
-    @Deprecated
-    public User findUserByUsername(String email) {
-        return getUserByEmail(email);
-    }
-
     public User checkLogin(String email, String hashedPassword) {
         if (email == null || hashedPassword == null) {
 
@@ -111,68 +120,6 @@ public class UserDAO extends DBContext {
         return false;
     }
 
-    // ── Google OAuth ─────────────────────────────────────────────────────────
-    /**
-     * Tìm user theo GoogleId.
-     */
-    public User getUserByGoogleId(String googleId) {
-        if (googleId == null || googleId.trim().isEmpty()) {
-            return null;
-        }
-        String sql = "SELECT Id, Username, PasswordHash, FullName, email, Role, CreatedAt, UpdatedAt FROM User WHERE GoogleId = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, googleId.trim());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToUser(rs);
-                }
-            }
-        } catch (SQLException e) {
-            Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "getUserByGoogleId error", e);
-        }
-        return null;
-    }
-
-    public User createOrUpdateGoogleUser(String email, String fullName, String googleId) {
-        // Kiểm tra xem email đã có chưa
-        User existing = getUserByEmail(email);
-        if (existing != null) {
-            // Gắn GoogleId vào account hiện có
-            String sql = "UPDATE User SET GoogleId = ? WHERE Id = ?";
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                ps.setString(1, googleId);
-                ps.setString(2, existing.getId().toString());
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "Link GoogleId error", e);
-            }
-
-            return existing;
-        }
-
-        // Tạo user mới từ Google
-//        String username = email.split("@")[0]; // lấy phần trước @ làm username
-//        String sql = """
-//                INSERT INTO User (Username, PasswordHash, FullName, Email, Role, GoogleId)
-//                VALUES (?, '', ?, ?, 'Employee', ?)
-//                """;
-//        try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-//            ps.setString(1, username);
-//            ps.setString(2, fullName);
-//            ps.setString(3, email);
-//            ps.setString(4, googleId);
-//            ps.executeUpdate();
-//            try (ResultSet keys = ps.getGeneratedKeys()) {
-//                if (keys.next()) {
-//                    return getUserByEmail(email); // reload fresh record
-//                }
-//            }
-//        } catch (SQLException e) {
-//            Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "createOrUpdateGoogleUser error", e);
-//        }
-        return null;
-    }
-
     // ================= CHECK DUPLICATE =================
     public boolean isEmailExists(String email) {
         // Kiểm tra xem chữ 'email' và 'users' có viết hoa/thường chuẩn khớp với DB không
@@ -191,31 +138,6 @@ public class UserDAO extends DBContext {
             e.printStackTrace(); // <-- Lỗi thật sự sẽ in ra ở đây trong tab Console
         }
         return false;
-    }
-
-    public boolean isemailExistsForUpdate(String email, UUID id) {
-        String sql = "SELECT 1 FROM users WHERE email=? AND id<>?";
-        try (
-                PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setString(1, email);
-            ps.setString(2, id.toString());
-
-            return ps.executeQuery().next();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private boolean checkExists(String sql, String value) {
-        try (
-                PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setString(1, value);
-            return ps.executeQuery().next();
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     /**

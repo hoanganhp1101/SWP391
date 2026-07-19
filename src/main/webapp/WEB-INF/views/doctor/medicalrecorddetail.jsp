@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    <c:if test="${detailView.sinhHoaMau}">
+    <c:if test="${detailView.biochemistry.hasData()}">
     <c:forEach items="${detailView.biochemistry.alerts}" var="alert">
         <div class="alert-banner">
             <i class="fa-solid fa-triangle-exclamation"></i> ${alert}
@@ -142,7 +142,7 @@
     </div>
     </c:if>
 
-    <c:if test="${detailView.taiKhamNoiTiet}">
+    <c:if test="${detailView.encounterType == 'tai_kham_noi_tiet'}">
     <!-- A. BỆNH ÁN TÁI KHÁM NỘI TIẾT -->
     <div class="section" id="section-internal">
         <div class="section-title">
@@ -262,7 +262,7 @@
     </div>
     </c:if>
 
-    <c:if test="${detailView.mauTongQuat}">
+    <c:if test="${detailView.bloodCount.hasData()}">
     <!-- C. XÉT NGHIỆM MÁU TỔNG QUÁT -->
     <div class="section" id="section-blood">
         <div class="section-title">
@@ -294,7 +294,7 @@
     </div>
     </c:if>
 
-    <c:if test="${detailView.sinhHoaMau}">
+    <c:if test="${detailView.biochemistry.hasData()}">
     <!-- D. SINH HÓA MÁU -->
     <div class="section" id="section-bio">
         <div class="section-title">

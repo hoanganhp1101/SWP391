@@ -1,6 +1,7 @@
-package com.example.diabetesmanage.service.medical;
+package com.example.diabetesmanage.service;
 
 import com.example.diabetesmanage.config.GeminiConfig;
+import com.example.diabetesmanage.dto.EncounterCreateDTO;
 import com.example.diabetesmanage.model.Patient;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -20,19 +21,128 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Bước 1 của workflow Medical Encounter: gọi Gemini để phân tích hỗ trợ.
- *
- * <p>Service này KHÔNG ghi database. Nó chỉ dựng prompt, gọi Gemini và trả về
- * {@link EncounterAiAnalysis}. Nếu Gemini chưa cấu hình hoặc lỗi thì rơi về phân tích
- * theo quy tắc y khoa để workflow không bị chặn (AI chỉ mang tính hỗ trợ).
- *
- * <p>Prompt yêu cầu AI trả: riskLevel, riskScore, possibleDisease, riskFactors,
- * recommendedTests, recommendations, shortExplanation. AI KHÔNG kê đơn, KHÔNG quyết định cuối.
- */
-public class EncounterAiAnalysisService {
+public class EncounterAiAnalysis {
 
-    private static final Logger LOG = Logger.getLogger(EncounterAiAnalysisService.class.getName());
+    private boolean used;         // true nếu kết quả đến từ Gemini
+    private boolean configured;   // true nếu Gemini API key đã cấu hình
+    private String error;         // thông báo lỗi (nếu có), không chặn workflow
+
+    private String riskLevel;                 // low | medium | high | critical
+    private int riskScore;                    // 0-100
+    private String possibleDisease;           // bệnh khả năng
+    private List<String> riskFactors = new ArrayList<>();
+    private List<String> recommendedTests = new ArrayList<>();
+    private List<String> recommendations = new ArrayList<>();
+    private String shortExplanation;          // giải thích ngắn
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
+    public boolean isConfigured() {
+        return configured;
+    }
+
+    public void setConfigured(boolean configured) {
+        this.configured = configured;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public void setRiskLevel(String riskLevel) {
+        this.riskLevel = riskLevel;
+    }
+
+    public int getRiskScore() {
+        return riskScore;
+    }
+
+    public void setRiskScore(int riskScore) {
+        this.riskScore = riskScore;
+    }
+
+    public String getPossibleDisease() {
+        return possibleDisease;
+    }
+
+    public void setPossibleDisease(String possibleDisease) {
+        this.possibleDisease = possibleDisease;
+    }
+
+    public List<String> getRiskFactors() {
+        return riskFactors;
+    }
+
+    public void setRiskFactors(List<String> riskFactors) {
+        this.riskFactors = riskFactors != null ? riskFactors : new ArrayList<>();
+    }
+
+    public List<String> getRecommendedTests() {
+        return recommendedTests;
+    }
+
+    public void setRecommendedTests(List<String> recommendedTests) {
+        this.recommendedTests = recommendedTests != null ? recommendedTests : new ArrayList<>();
+    }
+
+    public List<String> getRecommendations() {
+        return recommendations;
+    }
+
+    public void setRecommendations(List<String> recommendations) {
+        this.recommendations = recommendations != null ? recommendations : new ArrayList<>();
+    }
+
+    public String getShortExplanation() {
+        return shortExplanation;
+    }
+
+    public void setShortExplanation(String shortExplanation) {
+        this.shortExplanation = shortExplanation;
+    }
+
+    /** Tóm tắt dạng văn bản để hiển thị readonly ở Bước 2 (Treatment Plan). */
+    public String buildSummaryText() {
+        StringBuilder sb = new StringBuilder();
+        if (riskLevel != null && !riskLevel.isBlank()) {
+            sb.append("Mức độ rủi ro: ").append(riskLevel.toUpperCase());
+            sb.append(" (").append(riskScore).append("/100)\n");
+        }
+        if (possibleDisease != null && !possibleDisease.isBlank()) {
+            sb.append("Bệnh khả năng: ").append(possibleDisease).append("\n");
+        }
+        appendList(sb, "Yếu tố nguy cơ", riskFactors);
+        appendList(sb, "Xét nghiệm đề xuất", recommendedTests);
+        appendList(sb, "Khuyến nghị", recommendations);
+        if (shortExplanation != null && !shortExplanation.isBlank()) {
+            sb.append("Giải thích: ").append(shortExplanation);
+        }
+        return sb.toString().trim();
+    }
+
+    private void appendList(StringBuilder sb, String label, List<String> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        sb.append(label).append(": ");
+        sb.append(String.join("; ", items));
+        sb.append("\n");
+    }
+    private static final Logger LOG = Logger.getLogger(EncounterAiAnalysis.class.getName());
 
     private static final String GENERATE_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
@@ -50,7 +160,7 @@ public class EncounterAiAnalysisService {
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 
-    public EncounterAiAnalysis analyze(EncounterCreateRequest form, Patient patient) {
+    public EncounterAiAnalysis analyze(EncounterCreateDTO form, Patient patient) {
         EncounterAiAnalysis analysis = new EncounterAiAnalysis();
         analysis.setConfigured(geminiConfig.isConfigured());
 
@@ -74,7 +184,7 @@ public class EncounterAiAnalysisService {
         return analysis;
     }
 
-    private String buildPrompt(EncounterCreateRequest form, Patient patient) {
+    private String buildPrompt(EncounterCreateDTO form, Patient patient) {
         StringBuilder sb = new StringBuilder();
         sb.append("Bạn là bác sĩ nội tiết chuyên tiểu đường. Phân tích dữ liệu lần khám và trả về ")
                 .append("JSON THUẦN (không markdown). AI chỉ hỗ trợ, KHÔNG kê đơn, KHÔNG đưa quyết định cuối cùng.\n\n");
@@ -96,7 +206,7 @@ public class EncounterAiAnalysisService {
             sb.append("- Giới tính: ").append(nz(patient.getGioiTinh())).append("\n");
             sb.append("- Loại tiểu đường: ").append(nz(patient.getLoaiTieuDuong())).append("\n");
         }
-        sb.append("- Loại hồ sơ: ").append(form.resolveEncounterType().getLabel()).append("\n");
+        sb.append("- Loại hồ sơ: ").append(encounterTypeLabel(form.resolveEncounterType())).append("\n");
         sb.append("- Triệu chứng: ").append(nz(form.getTrieuChung())).append("\n");
         sb.append("- Tiền sử bệnh: ").append(nz(form.getTienSuBenh())).append("\n");
         sb.append("- Khám lâm sàng: ").append(nz(form.getKhamLamSang())).append("\n\n");
@@ -153,7 +263,7 @@ public class EncounterAiAnalysisService {
     /**
      * Phân tích dự phòng theo ngưỡng y khoa khi Gemini không khả dụng.
      */
-    private void applyRuleBasedFallback(EncounterAiAnalysis analysis, EncounterCreateRequest form) {
+    private void applyRuleBasedFallback(EncounterAiAnalysis analysis, EncounterCreateDTO form) {
         List<String> factors = new ArrayList<>();
         List<String> tests = new ArrayList<>();
         List<String> recommendations = new ArrayList<>();
@@ -213,7 +323,7 @@ public class EncounterAiAnalysisService {
 
         analysis.setRiskScore(Math.min(score, 100));
         analysis.setRiskLevel(score >= 70 ? "critical" : score >= 45 ? "high" : score >= 20 ? "medium" : "low");
-        analysis.setPossibleDisease(form.resolveEncounterType().getLabel());
+        analysis.setPossibleDisease(encounterTypeLabel(form.resolveEncounterType()));
         analysis.setRiskFactors(new ArrayList<>(new LinkedHashSet<>(factors)));
         analysis.setRecommendedTests(tests);
         analysis.setRecommendations(recommendations);
@@ -279,6 +389,16 @@ public class EncounterAiAnalysisService {
             throw new RuntimeException("Gemini API lỗi (" + response.statusCode() + ", model=" + model + ")");
         }
         return extractText(response.body());
+    }
+
+    private static String encounterTypeLabel(String typeCode) {
+        if ("mau_tong_quat".equalsIgnoreCase(typeCode)) {
+            return "Kết quả xét nghiệm máu tổng quát";
+        }
+        if ("sinh_hoa_mau".equalsIgnoreCase(typeCode)) {
+            return "Kết quả sinh hóa máu";
+        }
+        return "Bệnh án tái khám Nội tiết";
     }
 
     private String extractText(String responseBody) {

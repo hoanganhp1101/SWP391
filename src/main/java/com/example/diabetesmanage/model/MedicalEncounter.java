@@ -1,6 +1,9 @@
 package com.example.diabetesmanage.model;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class MedicalEncounter {
 
@@ -158,14 +161,6 @@ public class MedicalEncounter {
         this.loaiEncounter = loaiEncounter;
     }
 
-    public EncounterType getEncounterType() {
-        return EncounterType.fromCode(loaiEncounter);
-    }
-
-    public String getEncounterTypeLabel() {
-        return getEncounterType().getLabel();
-    }
-
     public String getStatusLabel() {
         if (trangThai == null || trangThai.isBlank()) {
             return "Đã khám";
@@ -181,6 +176,36 @@ public class MedicalEncounter {
                 return "Đã hủy";
             default:
                 return trangThai;
+        }
+    }
+    public String getEncounterTypeLabel() {
+
+        if (loaiEncounter == null || loaiEncounter.isBlank()) {
+            return "Không xác định";
+        }
+
+        switch (loaiEncounter.trim().toLowerCase()) {
+
+            case "tai_kham_noi_tiet":
+            case "internal_examination":
+            case "noi_tiet":
+            case "kham_noi_tiet":
+                return "Bệnh án tái khám Nội tiết";
+
+            case "mau_tong_quat":
+            case "general_blood_test":
+            case "blood_test":
+            case "cbc":
+                return "Kết quả xét nghiệm máu tổng quát";
+
+            case "sinh_hoa_mau":
+            case "biochemistry_test":
+            case "biochemistry":
+            case "sinh_hoa":
+                return "Kết quả sinh hóa máu";
+
+            default:
+                return loaiEncounter;
         }
     }
 }

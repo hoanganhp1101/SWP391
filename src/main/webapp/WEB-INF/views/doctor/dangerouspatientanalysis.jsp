@@ -8,7 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phân tích hồ sơ nguy hiểm - ${detail.patientName}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/doctor-layout.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
         body{background:#f5f7fb;color:#111827;}
@@ -75,7 +74,7 @@
                 <div class="avatar">${detail.initials}</div>
                 <div>
                     <h1>${detail.patientName} <span class="code">${detail.patientCode}</span></h1>
-                    <div class="type">${not empty detail.loaiTieuDuong ? detail.loaiTieuDuong : 'Tiểu đường'}</div>
+                    <div class="type">${detail.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (detail.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : (not empty detail.loaiTieuDuong ? detail.loaiTieuDuong : 'Tiểu đường'))}</div>
                     <c:if test="${detail.needsUrgentReview}">
                         <div class="urgent-badge">
                             <i class="fa-solid fa-triangle-exclamation"></i> Cần xem xét ngay

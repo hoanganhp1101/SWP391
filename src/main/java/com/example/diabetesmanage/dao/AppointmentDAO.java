@@ -35,7 +35,9 @@ public class AppointmentDAO {
                 && toDate != null && !toDate.isBlank();
 
         StringBuilder sql = new StringBuilder(SELECT_BASE);
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
         if (normalizedStatus != null) {
             sql.append("AND a.trang_thai = ? ");
         }
@@ -96,7 +98,9 @@ public class AppointmentDAO {
                         "JOIN users u ON p.user_id = u.id " +
                         "LEFT JOIN users bs ON a.bac_si_id = bs.id " +
                         "WHERE 1=1 ");
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
         if (status != null) {
             sql.append("AND a.trang_thai = ? ");
         }
@@ -167,7 +171,9 @@ public class AppointmentDAO {
         }
 
         StringBuilder sql = new StringBuilder(SELECT_BASE + "AND a.id = ? ");
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
 
         try (
                 Connection con = DBContext.getConnection();
@@ -189,39 +195,15 @@ public class AppointmentDAO {
         return null;
     }
 
-    public boolean updateStatusInTransaction(
-            Connection con,
-            String appointmentId,
-            String newStatus,
-            String scopeDoctorId
-    ) throws SQLException {
-        if (appointmentId == null || appointmentId.isBlank()) {
-            return false;
-        }
-        if (!Appointment.STATUS_DA_KHAM.equals(newStatus) && !Appointment.STATUS_HUY.equals(newStatus)) {
-            return false;
-        }
-
-        try (PreparedStatement ps = con.prepareStatement(buildUpdateSql(scopeDoctorId))) {
-            bindUpdate(ps, appointmentId, newStatus, scopeDoctorId);
-            if (ps.executeUpdate() > 0) {
-                return true;
-            }
-            if (Appointment.STATUS_HUY.equals(newStatus)) {
-                bindUpdate(ps, appointmentId, "huy", scopeDoctorId);
-                return ps.executeUpdate() > 0;
-            }
-        }
-        return false;
-    }
-
     private String buildUpdateSql(String scopeDoctorId) {
         StringBuilder sql = new StringBuilder(
                 "UPDATE appointments a " +
                         "JOIN patients p ON a.patient_id = p.id " +
                         "SET a.trang_thai = ? " +
                         "WHERE a.id = ? AND a.trang_thai = ? ");
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
         return sql.toString();
     }
 
@@ -240,12 +222,6 @@ public class AppointmentDAO {
         }
     }
 
-    private void appendDoctorScope(StringBuilder sql, String scopeDoctorId) {
-        if (scopeDoctorId != null) {
-            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
-        }
-    }
-
     private int bindDoctorScope(PreparedStatement ps, int startIdx, String scopeDoctorId) throws SQLException {
         if (scopeDoctorId == null) {
             return startIdx;
@@ -259,7 +235,13 @@ public class AppointmentDAO {
         Appointment a = new Appointment();
         a.setId(rs.getString("id"));
         a.setPatientId(rs.getString("patient_id"));
-        a.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
+        String patientCode = rs.getString("patient_code");
+        if (patientCode == null || patientCode.isBlank()) {
+            String patientId = rs.getString("patient_id");
+            patientCode = patientId != null && patientId.length() >= 8
+                    ? patientId.substring(0, 8).toUpperCase() : "N/A";
+        }
+        a.setPatientCode(patientCode);
         a.setPatientName(rs.getString("patient_name"));
         a.setBacSiId(rs.getString("bac_si_id"));
         a.setDoctorName(rs.getString("doctor_name"));

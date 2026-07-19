@@ -6,9 +6,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treatment Plan - HealthAlert</title>
+    <title>Kế hoạch điều trị - HealthAlert</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
+        body{background:#f5f7fb;color:#111827;
+            .layout{
+                display:flex;
+                height:calc(100vh - 80px);
+            }
+
+            .main-content{
+                flex:1;
+                background:#f5f7fb;
+                padding:28px;
+                overflow:auto;
+            }
         .page-header { margin-bottom: 28px; }
         .card { background: white; border: 1px solid #e5e7eb; border-radius: 24px; margin-bottom: 24px; }
         .card-top {
@@ -28,6 +41,8 @@
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus { border-color: #1557d5; }
+        .form-group .input-error { border-color: #dc2626; background: #fff7f7; }
+        .field-error { min-height: 18px; margin-top: 6px; color: #dc2626; font-size: 13px; }
         .full-width { grid-column: span 2; }
         .patient-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .info-field label { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
@@ -71,18 +86,8 @@
     <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
     <main class="main-content">
 
-            <nav class="breadcrumb">
-                <a href="${pageContext.request.contextPath}/doctor-dashboard">Dashboard</a>
-                <span>/</span>
-                <a href="${pageContext.request.contextPath}/doctor/patient-records">Quản lý hồ sơ khám bệnh</a>
-                <span>/</span>
-                <span>Treatment Plan</span>
-            </nav>
-
             <div class="page-header">
-                <h1>Bước 2 · Treatment Plan</h1>
-                <p>Xem lại phân tích AI và hoàn tất chẩn đoán, đơn thuốc, hướng xử trí cho lần khám
-                    <strong>${encounter.displayCode}</strong>.</p>
+                <h1>Đưa ra chẩn đoán, đơn thuốc</h1>
             </div>
 
             <c:if test="${not empty errors}">
@@ -105,7 +110,7 @@
                         <div class="info-field"><label>Họ và tên</label><span><c:out value="${not empty patient.user ? patient.user.hoTen : encounter.patientName}"/></span></div>
                         <div class="info-field"><label>Giới tính</label><span><c:out value="${not empty patient.gioiTinh ? patient.gioiTinh : '—'}"/></span></div>
                         <div class="info-field"><label>Tuổi</label><span><c:out value="${not empty patient.tuoi ? patient.tuoi : '—'}"/></span></div>
-                        <div class="info-field"><label>Loại tiểu đường</label><span><c:out value="${not empty patient.loaiTieuDuong ? patient.loaiTieuDuong : '—'}"/></span></div>
+                        <div class="info-field"><label>Loại tiểu đường</label><span><c:out value="${patient.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (patient.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : (not empty patient.loaiTieuDuong ? patient.loaiTieuDuong : '—'))}"/></span></div>
                         <div class="info-field"><label>Triệu chứng</label><span><c:out value="${not empty encounter.lyDoKham ? encounter.lyDoKham : '—'}"/></span></div>
                     </div>
                 </div>
@@ -114,7 +119,7 @@
             <!-- AI Summary (readonly) -->
             <div class="card">
                 <div class="card-top">
-                    <span><i class="fa-solid fa-robot"></i> AI Summary</span>
+                    <span><i class="fa-solid fa-robot"></i> Tóm tắt phân tích AI</span>
                     <span class="ai-badge"><i class="fa-solid fa-circle-info"></i> Chỉ tham khảo</span>
                 </div>
                 <div class="card-body">
@@ -126,7 +131,7 @@
                 </div>
             </div>
 
-            <form method="post" action="${pageContext.request.contextPath}/doctor/treatment-plan" id="treatmentForm">
+            <form method="post" action="${pageContext.request.contextPath}/doctor/treatment-plan" id="treatmentForm" novalidate>
                 <input type="hidden" name="encounterId" value="${encounter.id}">
 
                 <!-- Chẩn đoán -->
@@ -137,6 +142,7 @@
                             <div class="form-group">
                                 <label>Chẩn đoán chính <span class="req">*</span></label>
                                 <input type="text" name="chanDoanChinh" value="${currentDiagnosis}" required>
+                                <div class="field-error" data-error-for="chanDoanChinh"><c:out value="${fieldErrors['chanDoanChinh']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Chẩn đoán phụ</label>
@@ -146,8 +152,8 @@
                                 <label>Phân loại tiểu đường</label>
                                 <select name="phanLoaiTieuDuong">
                                     <option value="">-- Chọn --</option>
-                                    <option value="Type 1" ${patient.loaiTieuDuong eq 'Type 1' ? 'selected' : ''}>Type 1</option>
-                                    <option value="Type 2" ${patient.loaiTieuDuong eq 'Type 2' ? 'selected' : ''}>Type 2</option>
+                                    <option value="Type 1" ${patient.loaiTieuDuong eq 'Type 1' ? 'selected' : ''}>Tiểu đường týp 1</option>
+                                    <option value="Type 2" ${patient.loaiTieuDuong eq 'Type 2' ? 'selected' : ''}>Tiểu đường týp 2</option>
                                     <option value="Tiền đái tháo đường" ${patient.loaiTieuDuong eq 'Tiền đái tháo đường' ? 'selected' : ''}>Tiền đái tháo đường</option>
                                     <option value="Khác" ${patient.loaiTieuDuong eq 'Khác' ? 'selected' : ''}>Khác</option>
                                 </select>
@@ -243,41 +249,85 @@
 
 <script>
 (function () {
-    const medList = document.getElementById('medicationList');
-    document.getElementById('btnAddMed').addEventListener('click', function () {
-        const tpl = medList.querySelector('[data-med-row]');
-        if (!tpl) return;
-        const clone = tpl.cloneNode(true);
-        clone.querySelectorAll('input').forEach(function (i) { i.value = ''; });
-        medList.appendChild(clone);
-        reindexMeds();
-    });
-    medList.addEventListener('click', function (e) {
-        const btn = e.target.closest('.btn-remove-med');
-        if (!btn) return;
-        const rows = medList.querySelectorAll('[data-med-row]');
-        if (rows.length <= 1) {
-            rows[0].querySelectorAll('input').forEach(function (i) { i.value = ''; });
-            return;
+    const form = document.getElementById('treatmentForm');
+    const diagnosis = form.elements.chanDoanChinh;
+    const saveButton = document.getElementById('btnSave');
+
+    function setError(field, message) {
+        field.classList.toggle('input-error', Boolean(message));
+        field.setAttribute('aria-invalid', message ? 'true' : 'false');
+        let error = field.parentElement.querySelector('.field-error');
+        if (!error) {
+            error = document.createElement('div');
+            error.className = 'field-error';
+            field.parentElement.appendChild(error);
         }
-        btn.closest('[data-med-row]').remove();
-        reindexMeds();
-    });
-    function reindexMeds() {
-        medList.querySelectorAll('[data-med-row]').forEach(function (row, idx) {
-            row.querySelector('.med-index').textContent = idx + 1;
-        });
+        error.textContent = message || '';
     }
 
-    document.getElementById('treatmentForm').addEventListener('submit', function (e) {
-        const diagnosis = document.querySelector('[name="chanDoanChinh"]');
-        if (diagnosis && !diagnosis.value.trim()) {
-            e.preventDefault();
-            alert('Vui lòng nhập chẩn đoán chính.');
-            diagnosis.focus();
+    function validateDiagnosis() {
+        const message = diagnosis.value.trim() ? '' : 'Vui lòng nhập Chẩn đoán chính.';
+        setError(diagnosis, message);
+        return message;
+    }
+
+    function validateMedicationRow(row, index) {
+        const errors = [];
+        const name = row.querySelector('[name="medTenThuoc"]');
+        const dose = row.querySelector('[name="medLieuLuong"]');
+        const frequency = row.querySelector('[name="medTanSuat"]');
+        const days = row.querySelector('[name="medThoiGianDungNgay"]');
+        const hasMedication = name && name.value.trim();
+
+        if (hasMedication && !dose.value.trim()) {
+            const message = 'Vui lòng nhập Liều lượng cho thuốc dòng ' + index + '.';
+            setError(dose, message);
+            errors.push(message);
+        } else setError(dose, '');
+
+        if (hasMedication && !frequency.value.trim()) {
+            const message = 'Vui lòng nhập Tần suất cho thuốc dòng ' + index + '.';
+            setError(frequency, message);
+            errors.push(message);
+        } else setError(frequency, '');
+
+        if (days.value.trim() && (days.validity.badInput || !Number.isInteger(Number(days.value))
+                || Number(days.value) < 0)) {
+            const message = 'Số ngày dùng của thuốc dòng ' + index + ' phải là số nguyên không âm.';
+            setError(days, message);
+            errors.push(message);
+        } else setError(days, '');
+        return errors;
+    }
+
+    function validateForm() {
+        const errors = [];
+        const diagnosisError = validateDiagnosis();
+        if (diagnosisError) errors.push(diagnosisError);
+        form.querySelectorAll('[data-med-row]').forEach(function (row, index) {
+            errors.push.apply(errors, validateMedicationRow(row, index + 1));
+        });
+        return errors;
+    }
+
+    diagnosis.addEventListener('input', validateDiagnosis);
+    form.addEventListener('input', function (event) {
+        const row = event.target.closest('[data-med-row]');
+        if (row) {
+            const rows = Array.from(form.querySelectorAll('[data-med-row]'));
+            validateMedicationRow(row, rows.indexOf(row) + 1);
+        }
+    });
+    form.addEventListener('submit', function (event) {
+        const errors = validateForm();
+        if (errors.length) {
+            event.preventDefault();
+            const first = form.querySelector('.input-error');
+            if (first) first.focus();
             return;
         }
-        document.getElementById('btnSave').setAttribute('disabled', 'disabled');
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
     });
 })();
 </script>

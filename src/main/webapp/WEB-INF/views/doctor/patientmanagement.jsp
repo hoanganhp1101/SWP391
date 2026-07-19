@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthAlert Dashboard</title>
+    <title>Quản lý bệnh nhân - HealthAlert</title>
     <style>
         *{
             margin:0;
@@ -532,19 +532,21 @@
 
                                 <td>${p.user.email}</td>
 
-                                <td>${p.loaiTieuDuong}</td>
+                                <td>${p.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (p.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : p.loaiTieuDuong)}</td>
 
                                 <td>${p.ngayCapNhat}</td>
 
                                 <td>
                                     <div class="action-buttons">
 
-                                        <a href="${pageContext.request.contextPath}/doctor/patient-detail?id=${p.id}"
-                                           class="edit-btn">
-
-                                            <i class="fa-solid fa-eye"></i>
-
-                                        </a>
+                                        <form method="post"
+                                              action="${pageContext.request.contextPath}/doctor/patient-list"
+                                              style="display:inline;">
+                                            <input type="hidden" name="id" value="${p.id}">
+                                            <button type="submit" class="edit-btn" title="Xem chi tiết">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                        </form>
 
                                     </div>
 

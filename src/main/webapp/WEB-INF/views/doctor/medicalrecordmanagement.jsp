@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthAlert Dashboard</title>
+    <title>Quản lý hồ sơ bệnh án - HealthAlert</title>
     <style>
         *{
             margin:0;
@@ -388,8 +388,6 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -447,11 +445,16 @@
 
                     <div class="actions">
 
-                        <a class="btn btn-primary"
-                           href="${pageContext.request.contextPath}/medical-encounters/add">
-                            <i class="fa-solid fa-plus"></i>
-                            Thêm hồ sơ khám bệnh
-                        </a>
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/doctor/patient-records"
+                              style="display:inline;">
+                            <input type="hidden" name="action" value="add">
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-plus"></i>
+                                Thêm hồ sơ khám bệnh
+                            </button>
+                        </form>
 
                     </div>
 
@@ -561,8 +564,8 @@
                                     (List<MedicalEncounter>) request.getAttribute("records");
                             DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-                            if(records != null){
-                                for(var record : records){
+                            if (records != null) {
+                                for (MedicalEncounter record : records) {
                         %>
 
                         <tr>
@@ -597,20 +600,14 @@
                             </td>
 
                             <td>
+                                <!-- debug encounter id: <%= record.getId() %> -->
+                                <span style="font-size:10px;color:#999;display:block;margin-bottom:4px;"><%= record.getId() %></span>
 
-                                <a class="table-icon-btn edit-btn"
-                                   href="${pageContext.request.contextPath}/doctor/record-detail?id=<%= record.getId() %>"
-                                   title="Xem chi tiết">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                                <form method="post"
-                                      action="${pageContext.request.contextPath}/doctor/record-delete"
-                                      onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ khám bệnh này?');"
-                                      style="display:inline;">
-                                    <input type="hidden" name="id" value="${detailView.recordId}">
-
-                                    <button type="submit" class="btn-delete" title="Xóa hồ sơ">
-                                        <i class="fa-solid fa-trash"></i>
+                                <form method="post" action="${pageContext.request.contextPath}/doctor/patient-records" style="display:inline;">
+                                    <input type="hidden" name="action" value="detail">
+                                    <input type="hidden" name="id" value="<%= record.getId() %>">
+                                    <button type="submit" class="table-icon-btn edit-btn" title="Xem chi tiết">
+                                        <i class="fa-solid fa-eye"></i>
                                     </button>
                                 </form>
                             </td>

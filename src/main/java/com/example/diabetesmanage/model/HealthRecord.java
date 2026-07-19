@@ -2,16 +2,11 @@ package com.example.diabetesmanage.model;
 
 import java.time.LocalDateTime;
 
-/**
- * Snapshot sức khỏe — entity map trực tiếp bảng {@code health_records}.
- * UI chi tiết sức khỏe chỉ bind object này; không đọc MedicalEncounter.
- */
+/** Entity map trực tiếp bảng {@code health_records}. */
 public class HealthRecord {
 
     private String id;
     private String encounterId;
-    private String lastEncounterId;
-    private String healthRecordId;
     private Patient patient;
     private User nhapBoi;
 
@@ -95,28 +90,12 @@ public class HealthRecord {
         this.encounterId = encounterId;
     }
 
-    public String getLastEncounterId() {
-        return lastEncounterId;
-    }
-
-    public void setLastEncounterId(String lastEncounterId) {
-        this.lastEncounterId = lastEncounterId;
-    }
-
     public Double getChieuCaoCm() {
         return chieuCaoCm;
     }
 
     public void setChieuCaoCm(Double chieuCaoCm) {
         this.chieuCaoCm = chieuCaoCm;
-    }
-
-    public String getHealthRecordId() {
-        return healthRecordId;
-    }
-
-    public void setHealthRecordId(String healthRecordId) {
-        this.healthRecordId = healthRecordId;
     }
 
     public Patient getPatient() {

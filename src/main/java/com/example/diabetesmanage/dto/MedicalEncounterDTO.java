@@ -1,12 +1,14 @@
-package com.example.diabetesmanage.service.medical;
-
-import com.example.diabetesmanage.model.EncounterType;
+package com.example.diabetesmanage.dto;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EncounterDetail {
+/**
+ * DTO tổng hợp chỉ dùng để render Medical Record Detail/PDF.
+ * Không map vào bảng và không được ghi xuống database.
+ */
+public class MedicalEncounterDTO {
 
     private String recordId;
     private String recordCode;
@@ -96,20 +98,15 @@ public class EncounterDetail {
         this.encounterTypeLabel = encounterTypeLabel;
     }
 
-    public EncounterType resolveEncounterType() {
-        return EncounterType.fromCode(encounterType);
-    }
-
-    public boolean isTaiKhamNoiTiet() {
-        return resolveEncounterType().isTaiKhamNoiTiet();
-    }
-
-    public boolean isMauTongQuat() {
-        return resolveEncounterType().isMauTongQuat();
-    }
-
-    public boolean isSinhHoaMau() {
-        return resolveEncounterType().isSinhHoaMau();
+    /** Trả về mã loại hồ sơ chuẩn hóa: tai_kham_noi_tiet | mau_tong_quat | sinh_hoa_mau. */
+    public String resolveEncounterType() {
+        if ("mau_tong_quat".equalsIgnoreCase(encounterType)) {
+            return "mau_tong_quat";
+        }
+        if ("sinh_hoa_mau".equalsIgnoreCase(encounterType)) {
+            return "sinh_hoa_mau";
+        }
+        return "tai_kham_noi_tiet";
     }
 
     public InternalMedicineSection getInternalMedicine() {
@@ -251,7 +248,7 @@ public class EncounterDetail {
             if (items == null || items.isEmpty()) {
                 return false;
             }
-            return items.stream().anyMatch(EncounterDetail::hasLabFieldValue);
+            return items.stream().anyMatch(MedicalEncounterDTO::hasLabFieldValue);
         }
     }
 
@@ -342,7 +339,7 @@ public class EncounterDetail {
         if (fields == null || fields.isEmpty()) {
             return false;
         }
-        return fields.stream().anyMatch(EncounterDetail::hasLabFieldValue);
+        return fields.stream().anyMatch(MedicalEncounterDTO::hasLabFieldValue);
     }
 
     private static boolean hasLabFieldValue(Map<String, Object> field) {

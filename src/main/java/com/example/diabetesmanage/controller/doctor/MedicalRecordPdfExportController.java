@@ -3,9 +3,10 @@ package com.example.diabetesmanage.controller.doctor;
 import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.User;
-import com.example.diabetesmanage.service.medical.EncounterDetail;
-import com.example.diabetesmanage.service.medical.MedicalRecordViewService;
-import com.example.diabetesmanage.service.medical.MedicalRecordViewService.PdfExportType;
+import com.example.diabetesmanage.dto.MedicalEncounterDTO;
+import com.example.diabetesmanage.service.MedicalRecordPdfService;
+import com.example.diabetesmanage.service.MedicalRecordPdfService.PdfExportType;
+import com.example.diabetesmanage.service.MedicalRecordViewService;
 import com.example.diabetesmanage.util.AuthContext;
 
 import jakarta.servlet.ServletException;
@@ -21,6 +22,7 @@ import java.io.OutputStream;
 public class MedicalRecordPdfExportController extends HttpServlet {
 
     private final MedicalRecordViewService viewService = new MedicalRecordViewService();
+    private final MedicalRecordPdfService pdfService = new MedicalRecordPdfService();
     private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
     private final PatientDAO patientDAO = new PatientDAO();
 
@@ -37,7 +39,7 @@ public class MedicalRecordPdfExportController extends HttpServlet {
         PdfExportType exportType = PdfExportType.fromParam(request.getParameter("type"));
 
         if (encounterId == null || encounterId.isBlank()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing encounter id");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu mã lần khám");
             return;
         }
 
@@ -46,14 +48,14 @@ public class MedicalRecordPdfExportController extends HttpServlet {
         }
 
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
-        EncounterDetail view = viewService.loadDetailViewByEncounterId(encounterId, scopeDoctorId);
+        MedicalEncounterDTO view = viewService.loadDetailViewByEncounterId(encounterId, scopeDoctorId);
         if (view == null || view.getRecordId() == null) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Record not found");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy hồ sơ");
             return;
         }
 
         try {
-            byte[] pdfBytes = viewService.generateMedicalRecordPdf(view, exportType);
+            byte[] pdfBytes = pdfService.generateMedicalRecordPdf(view, exportType);
             String fileName = "ho-so-kham-" + safeFileName(view.getRecordCode()) + "-" + exportType.getParam() + ".pdf";
 
             response.setContentType("application/pdf");

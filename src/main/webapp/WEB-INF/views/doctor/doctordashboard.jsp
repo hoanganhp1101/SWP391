@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthAlert Dashboard</title>
+    <title>Tổng quan bác sĩ - HealthAlert</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
             /* =========================
@@ -837,7 +837,7 @@
                                                     </div>
                                                     <div class="danger-type">
                                                         <span class="dot"></span>
-                                                        <span>${not empty alert.loaiTieuDuong ? alert.loaiTieuDuong : 'Tiểu đường'}</span>
+                                                        <span>${alert.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (alert.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : (not empty alert.loaiTieuDuong ? alert.loaiTieuDuong : 'Tiểu đường'))}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -885,10 +885,15 @@
                                                     </span>
                                                 </c:if>
                                             </div>
-                                            <a href="${pageContext.request.contextPath}/doctor/dangerous-patient-analysis?id=${alert.patientId}"
-                                               class="danger-view-link">
-                                                Xem hồ sơ <i class="fa-solid fa-chevron-right"></i>
-                                            </a>
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/doctor-dashboard"
+                                                  >
+                                                <input type="hidden" name="id" value="${alert.patientId}">
+
+                                                <button type="submit" class="danger-view-link">
+                                                    Xem hồ sơ <i class="fa-solid fa-chevron-right"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
                                 </c:forEach>

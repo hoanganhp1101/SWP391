@@ -1,6 +1,7 @@
 package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
+import com.example.diabetesmanage.dto.DashboardSummaryDTO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,9 +9,9 @@ import java.sql.ResultSet;
 
 public class DoctorDashboardDAO {
 
-    public DashboardStats getDashboardStats(String doctorId, String startDate, String endDate) {
+    public DashboardSummaryDTO getDashboardStats(String doctorId, String startDate, String endDate) {
 
-        DashboardStats stats = new DashboardStats();
+        DashboardSummaryDTO stats = new DashboardSummaryDTO();
         boolean hasDate = startDate != null && !startDate.isBlank()
                 && endDate != null && !endDate.isBlank();
 
@@ -62,7 +63,7 @@ public class DoctorDashboardDAO {
         return stats;
     }
 
-    private void loadStatsWithoutAlertsColumn(String doctorId, DashboardStats stats) {
+    private void loadStatsWithoutAlertsColumn(String doctorId, DashboardSummaryDTO stats) {
 
         String riskSql =
                 "SELECT " +
@@ -129,80 +130,5 @@ public class DoctorDashboardDAO {
 
         return 0;
     }
-
-    public static class DashboardStats {
-
-        private int totalPatients;
-        private int activeAlerts;
-        private int todayHealthRecords;
-        private int riskLow;
-        private int riskMedium;
-        private int riskHigh;
-        private int riskCritical;
-        private int priorityLevel1Count;
-
-        public int getTotalPatients() {
-            return totalPatients;
-        }
-
-        public void setTotalPatients(int totalPatients) {
-            this.totalPatients = totalPatients;
-        }
-
-        public int getActiveAlerts() {
-            return activeAlerts;
-        }
-
-        public void setActiveAlerts(int activeAlerts) {
-            this.activeAlerts = activeAlerts;
-        }
-
-        public int getTodayHealthRecords() {
-            return todayHealthRecords;
-        }
-
-        public void setTodayHealthRecords(int todayHealthRecords) {
-            this.todayHealthRecords = todayHealthRecords;
-        }
-
-        public int getRiskLow() {
-            return riskLow;
-        }
-
-        public void setRiskLow(int riskLow) {
-            this.riskLow = riskLow;
-        }
-
-        public int getRiskMedium() {
-            return riskMedium;
-        }
-
-        public void setRiskMedium(int riskMedium) {
-            this.riskMedium = riskMedium;
-        }
-
-        public int getRiskHigh() {
-            return riskHigh;
-        }
-
-        public void setRiskHigh(int riskHigh) {
-            this.riskHigh = riskHigh;
-        }
-
-        public int getRiskCritical() {
-            return riskCritical;
-        }
-
-        public void setRiskCritical(int riskCritical) {
-            this.riskCritical = riskCritical;
-        }
-
-        public int getPriorityLevel1Count() {
-            return priorityLevel1Count;
-        }
-
-        public void setPriorityLevel1Count(int priorityLevel1Count) {
-            this.priorityLevel1Count = priorityLevel1Count;
-        }
-    }
 }
+
