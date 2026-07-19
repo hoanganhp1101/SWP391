@@ -34,7 +34,6 @@ import java.util.Map;
 
 public class DangerousPatientService {
 
-    private static final int RECORDS_PER_PATIENT = 20;
     private static final int MAX_GEMINI_CANDIDATES = 15;
     private static final int DISPLAY_LIMIT = 20;
 

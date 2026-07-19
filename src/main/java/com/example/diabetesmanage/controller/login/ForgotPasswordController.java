@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.mail.MessagingException;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.Encode;
-import com.example.diabetesmanage.util.*;
+import com.example.diabetesmanage.util.EmailUtils;
 
 
 

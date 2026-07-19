@@ -1,9 +1,6 @@
 package com.example.diabetesmanage.model;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 public class MedicalEncounter {
 

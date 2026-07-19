@@ -5,7 +5,6 @@
 package com.example.diabetesmanage.util;
 
 import java.security.MessageDigest;
-import java.util.Base64;
 
 /**
  *
