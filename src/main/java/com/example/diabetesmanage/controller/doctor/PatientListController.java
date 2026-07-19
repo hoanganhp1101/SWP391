@@ -78,8 +78,8 @@ public class PatientListController extends HttpServlet {
         Patient patient = patientDAO.getPatientById(patientId.trim(), scopeDoctorId);
         MedicalEncounter encounter =
                 encounterDAO.getLatestEncounterByPatient(patientId.trim(), scopeDoctorId);
-        HealthRecord record = encounter != null
-                ? healthRecordDAO.getByEncounterId(encounter.getId()) : null;
+        HealthRecord record =
+                healthRecordDAO.getLatestByPatientId(patientId.trim());
         // Hồ sơ tổng quan: gộp giá trị mới nhất của TỪNG chỉ số trên mọi encounter
         // (encounter cũ có CBC, encounter mới có sinh hóa vẫn hiển thị đủ cả hai).
         LabResult lab = labResultDAO.getLatestSummaryByPatientId(patientId.trim());
@@ -117,7 +117,67 @@ public class PatientListController extends HttpServlet {
             Map<String, String> prescriptionAdvice =
                     prescriptionDAO.getAdviceForEncounterOrLatestPatient(
                             encounter != null ? encounter.getId() : null, patientId.trim());
-            enrichClinicalFields(record, patient, encounterHistory, prescriptionAdvice);
+            if (patient != null) {
+                record.setTienSuBenh(patient.getTienSuBenh());
+                record.setPhanLoaiTieuDuong(patient.getLoaiTieuDuong());
+                record.setChieuCaoCm(patient.getChieuCaoCm());
+            }
+
+            if (encounterHistory != null) {
+                for (MedicalEncounter enc : encounterHistory) {
+                    if (isBlank(record.getTrieuChung())) {
+                        String trieuChung = EncounterClinicalJson.parseString(
+                                enc.getKhamLamSang(), "trieu_chung");
+                        if (isBlank(trieuChung) && !isTypeLabel(enc.getLyDoKham())) {
+                            trieuChung = enc.getLyDoKham();
+                        }
+                        if (!isBlank(trieuChung)) {
+                            record.setTrieuChung(trieuChung.trim());
+                        }
+                    }
+                    if (isBlank(record.getKhamLamSang())) {
+                        String storedValue = enc.getKhamLamSang();
+                        String khamLamSang = null;
+                        if (!isBlank(storedValue)) {
+                            String jsonValue = EncounterClinicalJson.parseString(storedValue, "noi_dung");
+                            if (!isBlank(jsonValue)) {
+                                khamLamSang = jsonValue;
+                            } else {
+                                String trimmed = storedValue.trim();
+                                khamLamSang = trimmed.startsWith("{") ? null : trimmed;
+                            }
+                        }
+                        if (!isBlank(khamLamSang)) {
+                            record.setKhamLamSang(khamLamSang.trim());
+                        }
+                    }
+                    if (isBlank(record.getChanDoanChinh()) && !isBlank(enc.getChanDoanChinh())
+                            && !isTypeLabel(enc.getChanDoanChinh())) {
+                        record.setChanDoanChinh(enc.getChanDoanChinh().trim());
+                    }
+                    if (isBlank(record.getChanDoanPhu()) && !isBlank(enc.getChanDoanPhu())) {
+                        record.setChanDoanPhu(enc.getChanDoanPhu().trim());
+                    }
+                    if (isBlank(record.getHuongXuTri()) && !isBlank(enc.getHuongXuTri())) {
+                        record.setHuongXuTri(enc.getHuongXuTri().trim());
+                    }
+                }
+                // Không có chẩn đoán "thật" ở bất kỳ encounter nào: dùng nhãn loại hồ sơ mới nhất.
+                if (isBlank(record.getChanDoanChinh())) {
+                    for (MedicalEncounter enc : encounterHistory) {
+                        if (!isBlank(enc.getChanDoanChinh())) {
+                            record.setChanDoanChinh(enc.getChanDoanChinh().trim());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (prescriptionAdvice != null) {
+                record.setKhuyenNghiDieuTri(prescriptionAdvice.get("huong_dieu_tri"));
+                record.setCheDoAn(prescriptionAdvice.get("che_do_an"));
+                record.setLuyenTap(prescriptionAdvice.get("luyen_tap"));
+            }
         }
         DoctorLayoutHelper.prepare(request, user, "patients");
         request.setAttribute("patient", patient);
@@ -127,82 +187,6 @@ public class PatientListController extends HttpServlet {
         request.setAttribute("currentUser", user);
         request.getRequestDispatcher("/WEB-INF/views/doctor/patientdetail.jsp")
                 .forward(request, response);
-    }
-
-    /**
-     * Patient Detail: các trường lâm sàng không nằm trong health_records nên phải
-     * tổng hợp từ bảng nguồn thật — patients (tiền sử, phân loại tiểu đường, chiều cao),
-     * medical_encounters (triệu chứng, khám lâm sàng, chẩn đoán, hướng xử trí),
-     * prescriptions (khuyến nghị điều trị, chế độ ăn, luyện tập).
-     * encounterHistory đã sort mới nhất trước; lùi dần về bản ghi cũ hơn nếu bản mới NULL.
-     */
-    private void enrichClinicalFields(HealthRecord record, Patient patient,
-                                      List<MedicalEncounter> encounterHistory,
-                                      Map<String, String> prescriptionAdvice) {
-        if (patient != null) {
-            record.setTienSuBenh(patient.getTienSuBenh());
-            record.setPhanLoaiTieuDuong(patient.getLoaiTieuDuong());
-            record.setChieuCaoCm(patient.getChieuCaoCm());
-        }
-
-        if (encounterHistory != null) {
-            for (MedicalEncounter enc : encounterHistory) {
-                if (isBlank(record.getTrieuChung())) {
-                    String trieuChung = EncounterClinicalJson.parseString(
-                            enc.getKhamLamSang(), "trieu_chung");
-                    if (isBlank(trieuChung) && !isTypeLabel(enc.getLyDoKham())) {
-                        trieuChung = enc.getLyDoKham();
-                    }
-                    if (!isBlank(trieuChung)) {
-                        record.setTrieuChung(trieuChung.trim());
-                    }
-                }
-                if (isBlank(record.getKhamLamSang())) {
-                    String khamLamSang = resolveClinicalText(enc.getKhamLamSang());
-                    if (!isBlank(khamLamSang)) {
-                        record.setKhamLamSang(khamLamSang.trim());
-                    }
-                }
-                if (isBlank(record.getChanDoanChinh()) && !isBlank(enc.getChanDoanChinh())
-                        && !isTypeLabel(enc.getChanDoanChinh())) {
-                    record.setChanDoanChinh(enc.getChanDoanChinh().trim());
-                }
-                if (isBlank(record.getChanDoanPhu()) && !isBlank(enc.getChanDoanPhu())) {
-                    record.setChanDoanPhu(enc.getChanDoanPhu().trim());
-                }
-                if (isBlank(record.getHuongXuTri()) && !isBlank(enc.getHuongXuTri())) {
-                    record.setHuongXuTri(enc.getHuongXuTri().trim());
-                }
-            }
-            // Không có chẩn đoán "thật" ở bất kỳ encounter nào: dùng nhãn loại hồ sơ mới nhất.
-            if (isBlank(record.getChanDoanChinh())) {
-                for (MedicalEncounter enc : encounterHistory) {
-                    if (!isBlank(enc.getChanDoanChinh())) {
-                        record.setChanDoanChinh(enc.getChanDoanChinh().trim());
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (prescriptionAdvice != null) {
-            record.setKhuyenNghiDieuTri(prescriptionAdvice.get("huong_dieu_tri"));
-            record.setCheDoAn(prescriptionAdvice.get("che_do_an"));
-            record.setLuyenTap(prescriptionAdvice.get("luyen_tap"));
-        }
-    }
-
-    /** kham_lam_sang có thể là JSON ({"noi_dung":...}) hoặc text thuần từ bản ghi cũ. */
-    private String resolveClinicalText(String storedValue) {
-        if (isBlank(storedValue)) {
-            return null;
-        }
-        String jsonValue = EncounterClinicalJson.parseString(storedValue, "noi_dung");
-        if (!isBlank(jsonValue)) {
-            return jsonValue;
-        }
-        String trimmed = storedValue.trim();
-        return trimmed.startsWith("{") ? null : trimmed;
     }
 
     /** Nhãn placeholder theo loại hồ sơ, không phải chẩn đoán/triệu chứng thật. */

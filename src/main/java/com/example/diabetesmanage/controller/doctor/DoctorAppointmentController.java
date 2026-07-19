@@ -63,7 +63,14 @@ public class DoctorAppointmentController extends HttpServlet {
         }
 
         if (Appointment.STATUS_DA_KHAM.equals(newStatus)) {
-            boolean updated = markCompleted(appointmentId, scopeDoctorId);
+            boolean updated = false;
+            if (appointmentId != null && !appointmentId.isBlank()) {
+                Appointment appt = appointmentDAO.findById(appointmentId, scopeDoctorId);
+                if (appt != null && Appointment.STATUS_CHO_KHAM.equals(appt.getTrangThai())) {
+                    updated = appointmentDAO.updateStatus(
+                            appointmentId, Appointment.STATUS_DA_KHAM, scopeDoctorId);
+                }
+            }
             if (!updated) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST,
                         "Khong the danh dau da kham (chi ap dung cho lich cho kham)");
@@ -84,17 +91,5 @@ public class DoctorAppointmentController extends HttpServlet {
         }
 
         response.sendRedirect(redirect);
-    }
-    public boolean markCompleted(String appointmentId, String scopeDoctorId) {
-        if (appointmentId == null || appointmentId.isBlank()) {
-            return false;
-        }
-
-        Appointment appt = appointmentDAO.findById(appointmentId, scopeDoctorId);
-        if (appt == null || !Appointment.STATUS_CHO_KHAM.equals(appt.getTrangThai())) {
-            return false;
-        }
-
-        return appointmentDAO.updateStatus(appointmentId, Appointment.STATUS_DA_KHAM, scopeDoctorId);
     }
 }

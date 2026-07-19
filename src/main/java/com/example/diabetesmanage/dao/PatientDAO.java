@@ -11,18 +11,6 @@ import java.util.UUID;
 
 public class PatientDAO {
 
-    public static String resolveCode(ResultSet rs, String codeColumn) throws SQLException {
-        String code = rs.getString(codeColumn);
-        if (code != null && !code.isBlank()) {
-            return code;
-        }
-        String id = rs.getString("patient_id");
-        if (id == null || id.isBlank()) {
-            id = rs.getString("id");
-        }
-        return id != null && id.length() >= 8 ? id.substring(0, 8).toUpperCase() : "N/A";
-    }
-
     private static final String SUMMARY_SELECT =
             "SELECT vps.patient_id AS patient_id, " +
                     "vps.ho_ten AS ho_ten, " +
@@ -166,7 +154,7 @@ public class PatientDAO {
     private Patient mapPatientByIdRow(ResultSet rs) throws SQLException {
         Patient p = new Patient();
         p.setId(rs.getString("patient_id"));
-        p.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
+        p.setPatientCode(rs.getString("patient_code"));
 
         User user = new User();
         parseUuid(rs.getString("patient_user_id")).ifPresent(user::setId);
@@ -311,7 +299,7 @@ public class PatientDAO {
     private Patient mapSummaryPatient(ResultSet rs) throws SQLException {
         Patient p = new Patient();
         p.setId(rs.getString("patient_id"));
-        p.setPatientCode(resolveCode(rs, "patient_code"));
+        p.setPatientCode(rs.getString("patient_code"));
         p.setTuoi(rs.getInt("tuoi"));
         p.setGioiTinh(rs.getString("gioi_tinh"));
         p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));

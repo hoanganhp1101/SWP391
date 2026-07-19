@@ -476,16 +476,6 @@
                                 <input type="text" readonly value="${hrFatigue}">
                             </div>
                         </div>
-
-                        <div class="card-header card-header-sub">
-                            <h3>Ghi chú</h3>
-                        </div>
-                        <div class="form-container">
-                            <div class="form-group full-width">
-                                <label>Nội dung</label>
-                                <textarea readonly>${not empty hr.ghiChu ? hr.ghiChu : 'Chưa có dữ liệu'}</textarea>
-                            </div>
-                        </div>
                     </c:otherwise>
                 </c:choose>
             </div>

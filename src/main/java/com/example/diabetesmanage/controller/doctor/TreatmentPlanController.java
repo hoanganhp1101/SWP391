@@ -85,7 +85,23 @@ public class TreatmentPlanController extends HttpServlet {
         try {
             form = EncounterCreateDTO.fromRequest(request);
         } catch (NumberFormatException ex) {
-            String message = invalidMedicationDaysMessage(request);
+            String message = "Dữ liệu số không hợp lệ. Vui lòng kiểm tra lại trường vừa nhập.";
+            String[] values = request.getParameterValues("medThoiGianDungNgay");
+            if (values != null) {
+                for (int i = 0; i < values.length; i++) {
+                    String value = values[i];
+                    if (value == null || value.isBlank()) {
+                        continue;
+                    }
+                    try {
+                        Integer.parseInt(value.trim());
+                    } catch (NumberFormatException medicationDaysEx) {
+                        message = "Số ngày dùng của thuốc dòng " + (i + 1)
+                                + " phải là số nguyên không âm.";
+                        break;
+                    }
+                }
+            }
             request.setAttribute("fieldErrors", Map.of("medThoiGianDungNgay", message));
             renderFormWithError(request, response, doctor, encounter,
                     List.of(message));
@@ -120,7 +136,51 @@ public class TreatmentPlanController extends HttpServlet {
         String doctorUuid = doctor.getId() != null ? doctor.getId().toString() : encounter.getBacSiId();
 
         try {
-            save(encounterId, patientId, doctorUuid, form);
+            if (encounterId == null || encounterId.isBlank() || !encounterDAO.existsById(encounterId)) {
+                throw new SQLException("Lần khám không tồn tại: " + encounterId);
+            }
+
+            try (Connection con = DBContext.getConnection()) {
+                if (con == null) {
+                    throw new SQLException("Không thể kết nối cơ sở dữ liệu");
+                }
+
+                boolean autoCommit = con.getAutoCommit();
+                con.setAutoCommit(false);
+
+                try {
+                    encounterDAO.updateTreatmentPlan(
+                            con, encounterId,
+                            form.getChanDoanChinh(),
+                            form.getChanDoanPhu(),
+                            form.getHuongXuTri());
+
+                    if (form.getPhanLoaiTieuDuong() != null && !form.getPhanLoaiTieuDuong().isBlank()) {
+                        patientDAO.updateLoaiTieuDuong(con, patientId, form.getPhanLoaiTieuDuong());
+                    }
+
+                    String existingPrescriptionId =
+                            prescriptionDAO.getIdByEncounterId(con, encounterId);
+                    medicationDAO.deleteByPrescriptionId(con, existingPrescriptionId);
+                    prescriptionDAO.deleteByEncounterId(con, encounterId);
+
+                    if (form.hasPrescriptionData()) {
+                        String prescriptionId = prescriptionDAO.insert(
+                                con, form, patientId, doctorUuid, encounterId);
+
+                        if (form.hasMedications()) {
+                            medicationDAO.insertAll(con, prescriptionId, form.getMedications());
+                        }
+                    }
+
+                    con.commit();
+                } catch (SQLException e) {
+                    con.rollback();
+                    throw e;
+                } finally {
+                    con.setAutoCommit(autoCommit);
+                }
+            }
             request.getSession(true).removeAttribute("aiSummary:" + encounterId);
             response.sendRedirect(request.getContextPath()
                     + "/doctor/patient-records?success=1&patientId=" + patientId);
@@ -172,72 +232,4 @@ public class TreatmentPlanController extends HttpServlet {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private String invalidMedicationDaysMessage(HttpServletRequest request) {
-        String[] values = request.getParameterValues("medThoiGianDungNgay");
-        if (values != null) {
-            for (int i = 0; i < values.length; i++) {
-                String value = values[i];
-                if (value == null || value.isBlank()) {
-                    continue;
-                }
-                try {
-                    Integer.parseInt(value.trim());
-                } catch (NumberFormatException ex) {
-                    return "Số ngày dùng của thuốc dòng " + (i + 1)
-                            + " phải là số nguyên không âm.";
-                }
-            }
-        }
-        return "Dữ liệu số không hợp lệ. Vui lòng kiểm tra lại trường vừa nhập.";
-    }
-
-    public void save(String encounterId, String patientId, String doctorId,
-                     EncounterCreateDTO form) throws SQLException {
-
-        if (encounterId == null || encounterId.isBlank() || !encounterDAO.existsById(encounterId)) {
-            throw new SQLException("Lần khám không tồn tại: " + encounterId);
-        }
-
-        try (Connection con = DBContext.getConnection()) {
-            if (con == null) {
-                throw new SQLException("Không thể kết nối cơ sở dữ liệu");
-            }
-
-            boolean autoCommit = con.getAutoCommit();
-            con.setAutoCommit(false);
-
-            try {
-                encounterDAO.updateTreatmentPlan(
-                        con, encounterId,
-                        form.getChanDoanChinh(),
-                        form.getChanDoanPhu(),
-                        form.getHuongXuTri());
-
-                if (form.getPhanLoaiTieuDuong() != null && !form.getPhanLoaiTieuDuong().isBlank()) {
-                    patientDAO.updateLoaiTieuDuong(con, patientId, form.getPhanLoaiTieuDuong());
-                }
-
-                String existingPrescriptionId =
-                        prescriptionDAO.getIdByEncounterId(con, encounterId);
-                medicationDAO.deleteByPrescriptionId(con, existingPrescriptionId);
-                prescriptionDAO.deleteByEncounterId(con, encounterId);
-
-                if (form.hasPrescriptionData()) {
-                    String prescriptionId = prescriptionDAO.insert(
-                            con, form, patientId, doctorId, encounterId);
-
-                    if (form.hasMedications()) {
-                        medicationDAO.insertAll(con, prescriptionId, form.getMedications());
-                    }
-                }
-
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
-            } finally {
-                con.setAutoCommit(autoCommit);
-            }
-        }
-    }
 }

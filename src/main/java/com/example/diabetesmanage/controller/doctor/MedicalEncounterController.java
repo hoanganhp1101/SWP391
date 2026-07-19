@@ -36,9 +36,8 @@ import java.util.Map;
 public class MedicalEncounterController extends HttpServlet {
 
     private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
-    private final MedicalRecordViewService viewService = new MedicalRecordViewService();
+    private final MedicalRecordService medicalRecordService = new MedicalRecordService();
     private final PatientDAO patientDAO = new PatientDAO();
-    private final MedicalEncounterCreateService createService = new MedicalEncounterCreateService();
     private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
     private final MedicationDAO medicationDAO = new MedicationDAO();
     private final PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
@@ -150,7 +149,7 @@ public class MedicalEncounterController extends HttpServlet {
             return;
         }
 
-        MedicalEncounterDTO detailView = viewService.loadDetailViewByEncounterId(encounterId, scopeDoctorId);
+        MedicalEncounterDTO detailView = medicalRecordService.loadMedicalRecordDetail(encounterId, scopeDoctorId);
         if (detailView == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy lần khám");
             return;
@@ -184,7 +183,37 @@ public class MedicalEncounterController extends HttpServlet {
         }
 
         try {
-            deleteEncounterById(encounterId, AuthContext.scopeDoctorId(user));
+            String scopeDoctorId = AuthContext.scopeDoctorId(user);
+            MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
+            if (encounter == null) {
+                throw new SQLException("Không tìm thấy hồ sơ khám bệnh");
+            }
+
+            Connection con = DBContext.getConnection();
+            if (con == null) {
+                throw new SQLException("Không thể kết nối cơ sở dữ liệu");
+            }
+
+            boolean previousAutoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String prescriptionId = prescriptionDAO.getIdByEncounterId(con, encounterId);
+                medicationDAO.deleteByPrescriptionId(con, prescriptionId);
+                prescriptionDAO.deleteByEncounterId(con, encounterId);
+                labResultDAO.deleteByEncounterId(con, encounterId);
+                healthRecordDAO.delete(con, encounterId);
+                encounterDAO.deleteById(con, encounterId);
+                con.commit();
+
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+
+            } finally {
+                con.setAutoCommit(previousAutoCommit);
+                con.close();
+            }
             response.sendRedirect(request.getContextPath() + "/doctor/patient-records?deleted=1");
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -193,38 +222,6 @@ public class MedicalEncounterController extends HttpServlet {
         }
     }
 
-    private void deleteEncounterById(String encounterId, String scopeDoctorId) throws SQLException {
-        MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
-        if (encounter == null) {
-            throw new SQLException("Không tìm thấy hồ sơ khám bệnh");
-        }
-
-        Connection con = DBContext.getConnection();
-        if (con == null) {
-            throw new SQLException("Không thể kết nối cơ sở dữ liệu");
-        }
-
-        boolean previousAutoCommit = con.getAutoCommit();
-        con.setAutoCommit(false);
-
-        try {
-            String prescriptionId = prescriptionDAO.getIdByEncounterId(con, encounterId);
-            medicationDAO.deleteByPrescriptionId(con, prescriptionId);
-            prescriptionDAO.deleteByEncounterId(con, encounterId);
-            labResultDAO.deleteByEncounterId(con, encounterId);
-            healthRecordDAO.delete(con, encounterId);
-            encounterDAO.deleteById(con, encounterId);
-            con.commit();
-
-        } catch (SQLException ex) {
-            con.rollback();
-            throw ex;
-
-        } finally {
-            con.setAutoCommit(previousAutoCommit);
-            con.close();
-        }
-    }
     private void analyze(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json;charset=UTF-8");
@@ -241,7 +238,7 @@ public class MedicalEncounterController extends HttpServlet {
             return;
         }
 
-        List<String> errors = createService.validateStep1(form);
+        List<String> errors = medicalRecordService.validateStep1(form);
         if (!errors.isEmpty()) {
             writeJson(response, HttpServletResponse.SC_OK, error(errors));
             return;
@@ -339,7 +336,7 @@ public class MedicalEncounterController extends HttpServlet {
             return;
         }
 
-        List<String> errors = createService.validateStep1(form);
+        List<String> errors = medicalRecordService.validateStep1(form);
         if (!errors.isEmpty()) {
             request.setAttribute("fieldErrors", mapErrorsToFields(errors));
             forwardWithErrors(request, response, form, errors, doctor);
@@ -349,8 +346,8 @@ public class MedicalEncounterController extends HttpServlet {
         try {
             // chan_doan_chinh là NOT NULL nhưng chẩn đoán được nhập ở Bước 2 nên cần giá trị tạm.
 
-            MedicalEncounterCreateService.CreateResult result =
-                    createService.create(form, doctorUuid);
+            MedicalRecordService.CreateResult result =
+                    medicalRecordService.create(form, doctorUuid);
             if (result.getEncounterId() == null || result.getEncounterId().isBlank()) {
                 throw new SQLException("Không nhận được mã lần khám sau khi lưu");
             }

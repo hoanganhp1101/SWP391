@@ -113,7 +113,13 @@ public final class AuthContext {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thieu ma lan kham");
             return false;
         }
-        if (!encounterDAO.encounterExists(encounterId)) {
+        try {
+            if (!encounterDAO.existsById(encounterId)) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Khong tim thay lan kham");
+                return false;
+            }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Khong tim thay lan kham");
             return false;
         }

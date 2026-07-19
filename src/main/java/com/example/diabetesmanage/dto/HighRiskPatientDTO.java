@@ -100,6 +100,10 @@ public class HighRiskPatientDTO {
         this.critical = critical;
     }
 
+    public boolean isDangerous() {
+        return riskReasons != null && !riskReasons.isEmpty();
+    }
+
     public boolean isNeedsUrgentReview() {
         return needsUrgentReview;
     }

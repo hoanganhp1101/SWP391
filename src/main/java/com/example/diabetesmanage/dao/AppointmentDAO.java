@@ -76,63 +76,12 @@ public class AppointmentDAO {
             while (rs.next()) {
                 list.add(map(rs));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            list.addAll(findAllFallback(scopeDoctorId, normalizedStatus, keyword));
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to load appointments", e);
         }
         return list;
     }
 
-    /**
-     * Truy vấn dự phòng khi schema cũ (chỉ có noi_dung_kham / huy).
-     */
-    private List<Appointment> findAllFallback(String scopeDoctorId, String status, String keyword) {
-        List<Appointment> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.*, " +
-                        "COALESCE(p.patient_code, LEFT(p.id, 8)) AS patient_code, " +
-                        "u.ho_ten AS patient_name, bs.ho_ten AS doctor_name, " +
-                        "a.tieu_de AS noi_dung_kham " +
-                        "FROM appointments a " +
-                        "JOIN patients p ON a.patient_id = p.id " +
-                        "JOIN users u ON p.user_id = u.id " +
-                        "LEFT JOIN users bs ON a.bac_si_id = bs.id " +
-                        "WHERE 1=1 ");
-        if (scopeDoctorId != null) {
-            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
-        }
-        if (status != null) {
-            sql.append("AND a.trang_thai = ? ");
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append("AND (u.ho_ten LIKE ?) ");
-        }
-        sql.append("ORDER BY a.thoi_gian_hen DESC");
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql.toString())
-        ) {
-            if (con == null) {
-                return list;
-            }
-            int idx = bindDoctorScope(ps, 1, scopeDoctorId);
-            if (status != null) {
-                String dbStatus = Appointment.STATUS_HUY.equals(status) ? "huy" : status;
-                ps.setString(idx++, dbStatus);
-            }
-            if (keyword != null && !keyword.isBlank()) {
-                ps.setString(idx, "%" + keyword.trim() + "%");
-            }
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(map(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
 
     public boolean updateStatus(String appointmentId, String newStatus, String scopeDoctorId) {
         if (appointmentId == null || appointmentId.isBlank()) {

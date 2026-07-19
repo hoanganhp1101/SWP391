@@ -51,7 +51,6 @@ public class DoctorDashboardDAO {
 
         } catch (Exception e) {
             e.printStackTrace();
-            loadStatsWithoutAlertsColumn(doctorId, stats);
         }
 
         stats.setTodayHealthRecords(countEncounters(doctorId, startDate, endDate, hasDate));
@@ -61,40 +60,6 @@ public class DoctorDashboardDAO {
         }
 
         return stats;
-    }
-
-    private void loadStatsWithoutAlertsColumn(String doctorId, DashboardSummaryDTO stats) {
-
-        String riskSql =
-                "SELECT " +
-                        "COUNT(*) AS total_patients, " +
-                        "SUM(CASE WHEN vps.duong_huyet_gan_nhat IS NULL OR vps.duong_huyet_gan_nhat < 140 THEN 1 ELSE 0 END) AS risk_low, " +
-                        "SUM(CASE WHEN vps.duong_huyet_gan_nhat BETWEEN 140 AND 179 THEN 1 ELSE 0 END) AS risk_medium, " +
-                        "SUM(CASE WHEN vps.duong_huyet_gan_nhat BETWEEN 180 AND 249 THEN 1 ELSE 0 END) AS risk_high, " +
-                        "SUM(CASE WHEN vps.duong_huyet_gan_nhat >= 250 THEN 1 ELSE 0 END) AS risk_critical " +
-                        "FROM v_patient_summary vps " +
-                        "JOIN patients p ON vps.patient_id = p.id " +
-                        "WHERE p.bac_si_id = ?";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(riskSql)
-        ) {
-            ps.setString(1, doctorId);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                stats.setTotalPatients(rs.getInt("total_patients"));
-                stats.setRiskLow(rs.getInt("risk_low"));
-                stats.setRiskMedium(rs.getInt("risk_medium"));
-                stats.setRiskHigh(rs.getInt("risk_high"));
-                stats.setRiskCritical(rs.getInt("risk_critical"));
-                stats.setPriorityLevel1Count(rs.getInt("risk_critical"));
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private int countEncounters(String doctorId, String startDate, String endDate, boolean hasDate) {

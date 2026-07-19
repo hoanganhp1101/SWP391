@@ -5,7 +5,6 @@ import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.LabResultDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dto.HighRiskPatientDTO;
-import com.example.diabetesmanage.dto.PatientRiskAssessmentDTO;
 import com.example.diabetesmanage.dto.CriticalPatientAlertDTO;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.LabResult;
@@ -72,14 +71,14 @@ public class DangerousPatientService {
     public AnalysisResult analyzeDangerousPatients(String doctorId) {
 
         AnalysisResult result = new AnalysisResult();
-        List<PatientRiskAssessmentDTO> dangerousProfiles = collectDangerousProfiles(doctorId);
+        List<HighRiskPatientDTO> dangerousProfiles = collectDangerousProfiles(doctorId);
 
         dangerousProfiles.sort(Comparator
-                .comparingInt(PatientRiskAssessmentDTO::getRiskScore).reversed());
+                .comparingInt(HighRiskPatientDTO::getRiskScore).reversed());
 
         result.setTotalDangerousCount(dangerousProfiles.size());
 
-        List<PatientRiskAssessmentDTO> geminiCandidates = dangerousProfiles.subList(
+        List<HighRiskPatientDTO> geminiCandidates = dangerousProfiles.subList(
                 0,
                 Math.min(dangerousProfiles.size(), MAX_GEMINI_CANDIDATES)
         );
@@ -123,7 +122,7 @@ public class DangerousPatientService {
             return null;
         }
 
-        PatientRiskAssessmentDTO profile = buildRiskProfile(patient, records);
+        HighRiskPatientDTO profile = buildRiskProfile(patient, records);
         analyzeRiskRules(profile);
 
         if (!profile.isDangerous()) {
@@ -183,9 +182,9 @@ public class DangerousPatientService {
         return detail;
     }
 
-    private List<PatientRiskAssessmentDTO> collectDangerousProfiles(String doctorId) {
+    private List<HighRiskPatientDTO> collectDangerousProfiles(String doctorId) {
 
-        List<PatientRiskAssessmentDTO> dangerousProfiles = new ArrayList<>();
+        List<HighRiskPatientDTO> dangerousProfiles = new ArrayList<>();
         List<Patient> patients = patientDAO.getPatients(doctorId);
         Map<String, List<HealthRecord>> recordsByPatient = getRecordsGroupedByPatient(doctorId);
 
@@ -197,7 +196,7 @@ public class DangerousPatientService {
                 continue;
             }
 
-            PatientRiskAssessmentDTO profile = buildRiskProfile(patient, records);
+            HighRiskPatientDTO profile = buildRiskProfile(patient, records);
             analyzeRiskRules(profile);
 
             if (profile.isDangerous()) {
@@ -208,8 +207,8 @@ public class DangerousPatientService {
         return dangerousProfiles;
     }
 
-    private PatientRiskAssessmentDTO buildRiskProfile(Patient patient, List<HealthRecord> records) {
-        PatientRiskAssessmentDTO profile = new PatientRiskAssessmentDTO();
+    private HighRiskPatientDTO buildRiskProfile(Patient patient, List<HealthRecord> records) {
+        HighRiskPatientDTO profile = new HighRiskPatientDTO();
         profile.setPatientId(patient.getId());
         profile.setPatientCode(patient.getPatientCode());
         profile.setPatientName(
@@ -221,7 +220,7 @@ public class DangerousPatientService {
     }
 
     private CriticalPatientAlertDTO toUrgentAlert(
-            PatientRiskAssessmentDTO profile,
+            HighRiskPatientDTO profile,
             GeminiAnalysis geminiAnalysis) {
 
         CriticalPatientAlertDTO alert = new CriticalPatientAlertDTO();
@@ -259,14 +258,14 @@ public class DangerousPatientService {
         return alert;
     }
 
-    private String buildFallbackSummary(PatientRiskAssessmentDTO profile) {
+    private String buildFallbackSummary(HighRiskPatientDTO profile) {
         if (profile.getRiskReasons().isEmpty()) {
             return "Bệnh nhân có chỉ số cần theo dõi thêm.";
         }
         return String.join(". ", profile.getRiskReasons()) + ".";
     }
 
-    private String buildFallbackDetail(PatientRiskAssessmentDTO profile) {
+    private String buildFallbackDetail(HighRiskPatientDTO profile) {
         StringBuilder sb = new StringBuilder();
         sb.append("Hệ thống ghi nhận ").append(profile.getRiskReasons().size())
                 .append(" dấu hiệu bất thường từ ").append(profile.getRecentRecords().size())
@@ -277,7 +276,7 @@ public class DangerousPatientService {
         return sb.toString();
     }
 
-    private List<String> buildFallbackRecommendations(PatientRiskAssessmentDTO profile) {
+    private List<String> buildFallbackRecommendations(HighRiskPatientDTO profile) {
         List<String> recommendations = new ArrayList<>();
         for (String reason : profile.getRiskReasons()) {
             if (reason.contains("đường huyết") || reason.contains("Đường huyết")) {
@@ -307,7 +306,7 @@ public class DangerousPatientService {
         return null;
     }
 
-    private void analyzeRiskRules(PatientRiskAssessmentDTO profile) {
+    private void analyzeRiskRules(HighRiskPatientDTO profile) {
 
         List<String> reasons = new ArrayList<>();
         int score = 0;
@@ -542,7 +541,7 @@ public class DangerousPatientService {
         return first + last;
     }
 
-    private static String resolveRiskLevel(PatientRiskAssessmentDTO profile) {
+    private static String resolveRiskLevel(HighRiskPatientDTO profile) {
         if (profile.isCritical() || profile.getRiskScore() >= 85) {
             return "critical";
         }
@@ -671,7 +670,7 @@ public class DangerousPatientService {
 
     private static void populateAlertMetrics(
             CriticalPatientAlertDTO alert,
-            PatientRiskAssessmentDTO profile) {
+            HighRiskPatientDTO profile) {
 
         List<HealthRecord> records = profile.getRecentRecords();
         alert.setInitials(buildInitials(profile.getPatientName()));
@@ -748,7 +747,7 @@ public class DangerousPatientService {
         return "—";
     }
 
-    private GeminiAnalysis enrichWithGemini(List<PatientRiskAssessmentDTO> candidates) {
+    private GeminiAnalysis enrichWithGemini(List<HighRiskPatientDTO> candidates) {
 
         GeminiAnalysis result = new GeminiAnalysis();
         result.setConfigured(geminiConfig.isConfigured());
@@ -790,7 +789,7 @@ public class DangerousPatientService {
         return result;
     }
 
-    private PatientDetailGeminiAnalysis analyzePatientDetail(PatientRiskAssessmentDTO profile) {
+    private PatientDetailGeminiAnalysis analyzePatientDetail(HighRiskPatientDTO profile) {
 
         PatientDetailGeminiAnalysis result = new PatientDetailGeminiAnalysis();
         result.setConfigured(geminiConfig.isConfigured());
@@ -814,7 +813,7 @@ public class DangerousPatientService {
         return result;
     }
 
-    private String buildDetailPrompt(PatientRiskAssessmentDTO profile) {
+    private String buildDetailPrompt(HighRiskPatientDTO profile) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Bạn là bác sĩ nội tiết chuyên tiểu đường. ");
@@ -875,7 +874,7 @@ public class DangerousPatientService {
         }
     }
 
-    private String buildGeminiPrompt(List<PatientRiskAssessmentDTO> candidates) {
+    private String buildGeminiPrompt(List<HighRiskPatientDTO> candidates) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Bạn là bác sĩ nội tiết chuyên về tiểu đường. ");
@@ -898,7 +897,7 @@ public class DangerousPatientService {
         sb.append("}\n\n");
         sb.append("Dữ liệu bệnh nhân:\n");
 
-        for (PatientRiskAssessmentDTO profile : candidates) {
+        for (HighRiskPatientDTO profile : candidates) {
             sb.append("- Mã: ").append(profile.getPatientCode());
             sb.append(", Tên: ").append(profile.getPatientName());
             sb.append(", Loại tiểu đường: ").append(nullToDash(profile.getLoaiTieuDuong()));
@@ -927,7 +926,7 @@ public class DangerousPatientService {
 
     private void parseGeminiResponse(
             String jsonResponse,
-            List<PatientRiskAssessmentDTO> candidates,
+            List<HighRiskPatientDTO> candidates,
             GeminiAnalysis result) {
 
         JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();

@@ -3,6 +3,7 @@ package com.example.diabetesmanage.dao;
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.*;
 import com.example.diabetesmanage.dto.EncounterCreateDTO;
+import com.example.diabetesmanage.util.EncounterClinicalJson;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -10,8 +11,13 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HealthRecordDAO {
+
+    private static final Logger LOG = Logger.getLogger(HealthRecordDAO.class.getName());
+
     public List<HealthRecord> getLatestPerPatient(String scopeDoctorId) {
         String sql =
                 "SELECT hr.*, " +
@@ -56,10 +62,11 @@ public class HealthRecordDAO {
                 try {
                     list.add(mapDetailedHealthRecord(rs));
                 } catch (SQLException mapEx) {
+                    LOG.log(Level.WARNING, "Failed to map health record row", mapEx);
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "getLatestPerPatient error", e);
         }
         return list;
     }
@@ -68,7 +75,23 @@ public class HealthRecordDAO {
         if (encounterId == null || encounterId.isBlank()) {
             return null;
         }
-        String sql = "SELECT * FROM health_records WHERE encounter_id = ? LIMIT 1";
+        String sql =
+                "SELECT hr.*, " +
+                        "p.patient_code, p.loai_tieu_duong, p.tien_su_benh, p.chieu_cao_cm, " +
+                        "pu.ho_ten AS patient_name, " +
+                        "nu.ho_ten AS nhap_boi_name, " +
+                        "me.ly_do_kham, me.qua_trinh_benh_ly, me.kham_lam_sang, " +
+                        "me.chan_doan_chinh, me.chan_doan_phu, me.huong_xu_tri, " +
+                        "rx.huong_dieu_tri, rx.che_do_an, rx.luyen_tap, rx.ghi_chu AS rx_ghi_chu " +
+                        "FROM health_records hr " +
+                        "JOIN patients p ON hr.patient_id = p.id " +
+                        "JOIN users pu ON p.user_id = pu.id " +
+                        "LEFT JOIN users nu ON hr.nhap_boi = nu.id " +
+                        "LEFT JOIN medical_encounters me ON hr.encounter_id = me.id " +
+                        "LEFT JOIN prescriptions rx ON rx.encounter_id = me.id " +
+                        "WHERE hr.encounter_id = ? " +
+                        "ORDER BY rx.ngay_tao DESC " +
+                        "LIMIT 1";
         try (Connection con = DBContext.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, encounterId.trim());
@@ -76,11 +99,11 @@ public class HealthRecordDAO {
             if (rs.next()) {
                 HealthRecord record = mapHealthRecordFromBaseRow(
                         rs, optionalString(rs, "patient_id"));
-                enrichHealthRecordOptionalJoins(record);
+                enrichFromJoinedRow(record, rs);
                 return record;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "getByEncounterId error for encounterId=" + encounterId, e);
         }
         return null;
     }
@@ -98,6 +121,9 @@ public class HealthRecordDAO {
         hr.setNhipTho(optionalInt(rs, "nhip_tho"));
         hr.setCanNangKg(optionalDouble(rs, "can_nang_kg"));
         hr.setBmi(optionalDouble(rs, "bmi"));
+        hr.setHba1cPercent(optionalDouble(rs, "hba1c_percent"));
+        hr.setCholesterolMmol(optionalDouble(rs, "cholesterol_mmol"));
+        hr.setTriglycerideMmol(optionalDouble(rs, "triglyceride_mmol"));
         hr.setSoBuocChan(optionalInt(rs, "so_buoc_chan"));
         hr.setCarbsG(optionalDouble(rs, "carbs_g"));
         hr.setSoGioNgu(optionalDouble(rs, "so_gio_ngu"));
@@ -119,10 +145,6 @@ public class HealthRecordDAO {
         if (createdAt != null) {
             hr.setNgayTao(createdAt.toLocalDateTime());
         }
-        Timestamp updatedAt = optionalTimestamp(rs, "ngay_cap_nhat");
-        if (updatedAt != null) {
-            hr.setNgayCapNhat(updatedAt.toLocalDateTime());
-        }
 
         Patient patient = new Patient();
         patient.setId(firstNonBlank(optionalString(rs, "patient_id"), patientId));
@@ -133,8 +155,8 @@ public class HealthRecordDAO {
             User nhapBoi = new User();
             try {
                 nhapBoi.setId(java.util.UUID.fromString(nhapBoiId.trim()));
-            } catch (IllegalArgumentException ignored) {
-                // ignore invalid UUID
+            } catch (IllegalArgumentException ex) {
+                LOG.log(Level.FINE, "Invalid nhap_boi UUID: " + nhapBoiId, ex);
             }
             hr.setNhapBoi(nhapBoi);
         }
@@ -142,58 +164,98 @@ public class HealthRecordDAO {
         return hr;
     }
 
-    private void enrichHealthRecordOptionalJoins(HealthRecord record) {
-        if (record == null || record.getId() == null || record.getId().isBlank()) {
-            return;
+    /**
+     * Bản ghi health_records mới nhất của bệnh nhân (không phụ thuộc encounter_id,
+     * vì dữ liệu bệnh nhân tự nhập không gắn với lần khám nào).
+     */
+    public HealthRecord getLatestByPatientId(String patientId) {
+        if (patientId == null || patientId.isBlank()) {
+            return null;
         }
-
         String sql =
-                "SELECT p.patient_code, p.loai_tieu_duong, " +
-                        "pu.ho_ten AS patient_ho_ten, " +
-                        "nu.ho_ten AS nhap_boi_ho_ten " +
+                "SELECT hr.*, " +
+                        "p.patient_code, p.loai_tieu_duong, p.tien_su_benh, p.chieu_cao_cm, " +
+                        "pu.ho_ten AS patient_name, " +
+                        "nu.ho_ten AS nhap_boi_name " +
                         "FROM health_records hr " +
-                        "LEFT JOIN patients p ON hr.patient_id = p.id " +
+                        "JOIN patients p ON hr.patient_id = p.id " +
                         "LEFT JOIN users pu ON p.user_id = pu.id " +
                         "LEFT JOIN users nu ON hr.nhap_boi = nu.id " +
-                        "WHERE hr.id = ?";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, record.getId());
+                        "WHERE hr.patient_id = ? " +
+                        "ORDER BY hr.ngay_tao DESC " +
+                        "LIMIT 1";
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, patientId.trim());
             ResultSet rs = ps.executeQuery();
-            if (!rs.next()) {
-                return;
-            }
-
-            if (record.getPatient() == null) {
-                record.setPatient(new Patient());
-            }
-            Patient patient = record.getPatient();
-            String code = optionalString(rs, "patient_code");
-            if (code != null && !code.isBlank()) {
-                patient.setPatientCode(code);
-            }
-            String loaiTieuDuong = optionalString(rs, "loai_tieu_duong");
-            if (loaiTieuDuong != null && !loaiTieuDuong.isBlank()) {
-                patient.setLoaiTieuDuong(loaiTieuDuong);
-            }
-            String patientName = optionalString(rs, "patient_ho_ten");
-            if (patientName != null && !patientName.isBlank()) {
-                User patientUser = patient.getUser() != null ? patient.getUser() : new User();
-                patientUser.setHoTen(patientName);
-                patient.setUser(patientUser);
-            }
-
-            String nhapBoiName = optionalString(rs, "nhap_boi_ho_ten");
-            if (nhapBoiName != null && !nhapBoiName.isBlank()) {
-                User nhapBoi = record.getNhapBoi() != null ? record.getNhapBoi() : new User();
-                nhapBoi.setHoTen(nhapBoiName);
-                record.setNhapBoi(nhapBoi);
+            if (rs.next()) {
+                HealthRecord hr = mapHealthRecordFromBaseRow(rs, patientId);
+                enrichFromJoinedRow(hr, rs);
+                return hr;
             }
         } catch (SQLException e) {
+            LOG.log(Level.SEVERE, "getLatestByPatientId error for patientId=" + patientId, e);
         }
+        return null;
+    }
+
+    /**
+     * Gắn dữ liệu từ các bảng liên quan (patients, users, medical_encounters,
+     * prescriptions) đã được JOIN trong {@link #getByEncounterId} vào HealthRecord
+     * để patient-detail.jsp hiển thị đủ thông tin. Không đọc/tạo column mới.
+     */
+    private void enrichFromJoinedRow(HealthRecord record, ResultSet rs) {
+        Patient patient = record.getPatient() != null ? record.getPatient() : new Patient();
+        String patientCode = optionalString(rs, "patient_code");
+        if (patientCode != null && !patientCode.isBlank()) {
+            patient.setPatientCode(patientCode);
+        }
+        patient.setLoaiTieuDuong(optionalString(rs, "loai_tieu_duong"));
+        patient.setTienSuBenh(optionalString(rs, "tien_su_benh"));
+        patient.setChieuCaoCm(optionalDouble(rs, "chieu_cao_cm"));
+        User patientUser = patient.getUser() != null ? patient.getUser() : new User();
+        patientUser.setHoTen(optionalString(rs, "patient_name"));
+        patient.setUser(patientUser);
+        record.setPatient(patient);
+
+        // Các field HealthRecord mà patient-detail.jsp đọc trực tiếp (hr.*).
+        record.setTienSuBenh(optionalString(rs, "tien_su_benh"));
+        record.setChieuCaoCm(optionalDouble(rs, "chieu_cao_cm"));
+        record.setPhanLoaiTieuDuong(optionalString(rs, "loai_tieu_duong"));
+
+        String nhapBoiName = optionalString(rs, "nhap_boi_name");
+        if (nhapBoiName != null && !nhapBoiName.isBlank()) {
+            User nhapBoi = record.getNhapBoi() != null ? record.getNhapBoi() : new User();
+            nhapBoi.setHoTen(nhapBoiName);
+            record.setNhapBoi(nhapBoi);
+        }
+
+        // medical_encounters: kham_lam_sang là JSON -> parse để tránh hiển thị JSON thô.
+        String khamJson = optionalString(rs, "kham_lam_sang");
+        String noiDung = EncounterClinicalJson.parseString(khamJson, "noi_dung");
+        if (noiDung != null && !noiDung.isBlank()) {
+            record.setKhamLamSang(noiDung.trim());
+        } else if (khamJson != null && !khamJson.trim().isEmpty()
+                && !khamJson.trim().startsWith("{")) {
+            record.setKhamLamSang(khamJson.trim());
+        }
+        // HealthRecord không có field lyDoKham/quaTrinhBenhLy -> map ly_do_kham vào trieuChung
+        // (đúng ngữ nghĩa JSP + luồng enrich hiện tại của PatientListController).
+        String trieuChung = EncounterClinicalJson.parseString(khamJson, "trieu_chung");
+        if (trieuChung == null || trieuChung.isBlank()) {
+            trieuChung = optionalString(rs, "ly_do_kham");
+        }
+        if (trieuChung != null && !trieuChung.isBlank()) {
+            record.setTrieuChung(trieuChung.trim());
+        }
+        record.setChanDoanChinh(optionalString(rs, "chan_doan_chinh"));
+        record.setChanDoanPhu(optionalString(rs, "chan_doan_phu"));
+        record.setHuongXuTri(optionalString(rs, "huong_xu_tri"));
+
+        // prescriptions: hướng điều trị / chế độ ăn / luyện tập.
+        record.setKhuyenNghiDieuTri(optionalString(rs, "huong_dieu_tri"));
+        record.setCheDoAn(optionalString(rs, "che_do_an"));
+        record.setLuyenTap(optionalString(rs, "luyen_tap"));
     }
 
     public String insert(
@@ -256,26 +318,17 @@ public class HealthRecordDAO {
     }
 
     private HealthRecord mapDetailedHealthRecord(ResultSet rs) throws SQLException {
-        HealthRecord hr = mapHealthRecordFromBaseRow(rs, resolvePatientId(rs));
+        HealthRecord hr = mapHealthRecordFromBaseRow(rs, optionalString(rs, "patient_id"));
 
         Patient patient = hr.getPatient() != null ? hr.getPatient() : new Patient();
-        patient.setId(firstNonBlank(patient.getId(), resolvePatientId(rs)));
         String patientCode = optionalString(rs, "patient_code");
         if (patientCode != null && !patientCode.isBlank()) {
             patient.setPatientCode(patientCode);
-        } else {
-            String patientId = resolvePatientId(rs);
-            patient.setPatientCode(patientId != null && patientId.length() >= 8
-                    ? patientId.substring(0, 8).toUpperCase() : "N/A");
         }
         patient.setLoaiTieuDuong(optionalString(rs, "loai_tieu_duong"));
 
         User user = new User();
-        String hoTen = optionalString(rs, "ho_ten");
-        if (hoTen == null) {
-            hoTen = optionalString(rs, "patient_ho_ten");
-        }
-        user.setHoTen(hoTen);
+        user.setHoTen(optionalString(rs, "patient_ho_ten"));
         patient.setUser(user);
 
         hr.setPatient(patient);
@@ -288,17 +341,6 @@ public class HealthRecordDAO {
         }
 
         return hr;
-    }
-
-    private String resolvePatientId(ResultSet rs) throws SQLException {
-        String patientId = optionalString(rs, "p_patient_id");
-        if (patientId == null || patientId.isBlank()) {
-            patientId = optionalString(rs, "hr_patient_id");
-        }
-        if (patientId == null || patientId.isBlank()) {
-            patientId = optionalString(rs, "patient_id");
-        }
-        return patientId;
     }
 
     private String firstNonBlank(String first, String second) {

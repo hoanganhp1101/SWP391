@@ -152,24 +152,6 @@ public class MedicalEncounterDAO {
         return null;
     }
 
-    public boolean encounterExists(String encounterId) {
-        if (encounterId == null || encounterId.isBlank()) {
-            return false;
-        }
-        String sql = "SELECT 1 FROM medical_encounters WHERE id = ? LIMIT 1";
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, encounterId);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     public String getPatientIdByEncounterId(String encounterId) {
         if (encounterId == null || encounterId.isBlank()) {
             return null;
