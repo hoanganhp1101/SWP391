@@ -58,29 +58,33 @@ public class NotificationServlet extends HttpServlet {
                 notifList.add(notif);
             }
         }
-        
+
         // 2. Lấy danh sách thuốc chưa uống trong ngày
         MedicationLogDAO logDAO = new MedicationLogDAO();
         List<MedicationLog> checklist = logDAO.getChecklistByDate(patientId, Date.valueOf(LocalDate.now()));
         if (checklist != null) {
+            List<String> listThuocChuaUong = new java.util.ArrayList<>();
             for (MedicationLog log : checklist) {
                 if (!"da_uong".equals(log.getTrangThai())) {
-                    JsonObject notif = new JsonObject();
-                    notif.addProperty("id", "med_" + log.getMedicationId() + "_" + LocalDate.now().toString());
-                    notif.addProperty("type", "med-reminder");
-                    notif.addProperty("title", "Đến giờ uống thuốc!");
-                    notif.addProperty("message", "Bạn chưa uống " + log.getTenThuoc() + " (" + log.getLieuLuong() + " " + log.getDonVi() + ").");
-                    notif.addProperty("time", "Hôm nay");
-                    notif.addProperty("icon", "fas fa-pills");
-                    notif.addProperty("color", "var(--primary)");
-                    notif.addProperty("bgColor", "var(--primary-light)");
-                    notif.addProperty("link", "patient-prescriptions");
-                    notif.addProperty("sortTime", System.currentTimeMillis()); // Ưu tiên hiện trên cùng
-                    notifList.add(notif);
+                    listThuocChuaUong.add(log.getTenThuoc() + " (" + log.getLieuLuong() + " " + log.getDonVi() + ")");
                 }
             }
+            if (!listThuocChuaUong.isEmpty()) {
+                JsonObject notif = new JsonObject();
+                notif.addProperty("id", "med_all_" + LocalDate.now().toString());
+                notif.addProperty("type", "med-reminder");
+                notif.addProperty("title", "Đến giờ uống thuốc!");
+                notif.addProperty("message", "Bạn chưa uống các thuốc: " + String.join(", ", listThuocChuaUong) + ".");
+                notif.addProperty("time", "Hôm nay");
+                notif.addProperty("icon", "fas fa-pills");
+                notif.addProperty("color", "var(--primary)");
+                notif.addProperty("bgColor", "var(--primary-light)");
+                notif.addProperty("link", "patient-prescriptions");
+                notif.addProperty("sortTime", System.currentTimeMillis()); // Ưu tiên hiện trên cùng
+                notifList.add(notif);
+            }
         }
-        
+
         // 3. Lấy lịch khám sắp tới
         AppointmentDAO apptDAO = new AppointmentDAO();
         List<Appointment> appts = apptDAO.getUpcomingAppointments(patientId);
