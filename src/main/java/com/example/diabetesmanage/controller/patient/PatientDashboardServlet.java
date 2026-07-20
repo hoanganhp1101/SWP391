@@ -28,6 +28,7 @@ import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.model.MedicalDocument;
 import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.model.AIAnalysis;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 
 @WebServlet(name = "PatientDashboardServlet", urlPatterns = {"/patient-dashboard"})
 @MultipartConfig(
@@ -41,70 +42,70 @@ public class PatientDashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Lấy ID thật từ CSDL cho bản demo
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
+        if (patientId == null) {
+            return;
+        }
+
         PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
+        HealthRecordDAO recordDAO = new HealthRecordDAO();
+        HealthRecord latestGlucoseRecord = recordDAO.getLatestHealthRecord(patientId);
+        if (latestGlucoseRecord != null) {
+            request.setAttribute("latestGlucose", latestGlucoseRecord.getDuongHuyetMgdl());
+        }
 
-        if (patientId != null) {
-            HealthRecordDAO recordDAO = new HealthRecordDAO();
-            HealthRecord latestGlucoseRecord = recordDAO.getLatestHealthRecord(patientId);
-            if (latestGlucoseRecord != null) {
-                request.setAttribute("latestGlucose", latestGlucoseRecord.getDuongHuyetMgdl());
-            }
+        HealthRecord latestHeartRateRecord = recordDAO.getLatestHeartRateRecord(patientId);
+        if (latestHeartRateRecord != null) {
+            request.setAttribute("latestHeartRate", latestHeartRateRecord.getNhipTim());
+        }
 
-            HealthRecord latestHeartRateRecord = recordDAO.getLatestHeartRateRecord(patientId);
-            if (latestHeartRateRecord != null) {
-                request.setAttribute("latestHeartRate", latestHeartRateRecord.getNhipTim());
-            }
+        HealthRecord latestBloodPressureRecord = recordDAO.getLatestBloodPressureRecord(patientId);
+        if (latestBloodPressureRecord != null) {
+            request.setAttribute("latestSystolic", latestBloodPressureRecord.getHuyetApTamThu());
+            request.setAttribute("latestDiastolic", latestBloodPressureRecord.getHuyetApTamTruong());
+        }
 
-            HealthRecord latestBloodPressureRecord = recordDAO.getLatestBloodPressureRecord(patientId);
-            if (latestBloodPressureRecord != null) {
-                request.setAttribute("latestSystolic", latestBloodPressureRecord.getHuyetApTamThu());
-                request.setAttribute("latestDiastolic", latestBloodPressureRecord.getHuyetApTamTruong());
-            }
+        // Lấy toàn bộ dữ liệu cho biểu đồ
+        List<HealthRecord> allRecords = recordDAO.getAllRecordsForChart(patientId);
+        StringBuilder jsonBuilder = new StringBuilder("[");
+        for (int i = 0; i < allRecords.size(); i++) {
+            HealthRecord r = allRecords.get(i);
+            jsonBuilder.append("{")
+                .append("\"time\":\"").append(r.getThoiGianDo() != null ? r.getThoiGianDo().toString() : "").append("\",")
+                .append("\"glucose\":").append(r.getDuongHuyetMgdl() != null ? r.getDuongHuyetMgdl() : "null").append(",")
+                .append("\"hr\":").append(r.getNhipTim() != null ? r.getNhipTim() : "null").append(",")
+                .append("\"sys\":").append(r.getHuyetApTamThu() != null ? r.getHuyetApTamThu() : "null").append(",")
+                .append("\"dia\":").append(r.getHuyetApTamTruong() != null ? r.getHuyetApTamTruong() : "null")
+                .append("}");
+            if (i < allRecords.size() - 1) jsonBuilder.append(",");
+        }
+        jsonBuilder.append("]");
+        request.setAttribute("chartDataJson", jsonBuilder.toString());
 
-            // Lấy toàn bộ dữ liệu cho biểu đồ
-            List<HealthRecord> allRecords = recordDAO.getAllRecordsForChart(patientId);
-            StringBuilder jsonBuilder = new StringBuilder("[");
-            for (int i = 0; i < allRecords.size(); i++) {
-                HealthRecord r = allRecords.get(i);
-                jsonBuilder.append("{")
-                    .append("\"time\":\"").append(r.getThoiGianDo() != null ? r.getThoiGianDo().toString() : "").append("\",")
-                    .append("\"glucose\":").append(r.getDuongHuyetMgdl() != null ? r.getDuongHuyetMgdl() : "null").append(",")
-                    .append("\"hr\":").append(r.getNhipTim() != null ? r.getNhipTim() : "null").append(",")
-                    .append("\"sys\":").append(r.getHuyetApTamThu() != null ? r.getHuyetApTamThu() : "null").append(",")
-                    .append("\"dia\":").append(r.getHuyetApTamTruong() != null ? r.getHuyetApTamTruong() : "null")
-                    .append("}");
-                if (i < allRecords.size() - 1) jsonBuilder.append(",");
-            }
-            jsonBuilder.append("]");
-            request.setAttribute("chartDataJson", jsonBuilder.toString());
+        // Lấy thông tin bệnh nhân
+        Patient patientInfo = patientDAO.getPatientById(patientId);
+        request.setAttribute("patientInfo", patientInfo);
 
-            // Lấy thông tin bệnh nhân
-            Patient patientInfo = patientDAO.getPatientById(patientId);
-            request.setAttribute("patientInfo", patientInfo);
+        // Lấy lịch hẹn
+        AppointmentDAO appointmentDAO = new AppointmentDAO();
+        List<Appointment> appointments = appointmentDAO.getUpcomingAppointments(patientId);
+        request.setAttribute("appointments", appointments);
 
-            // Lấy lịch hẹn
-            AppointmentDAO appointmentDAO = new AppointmentDAO();
-            List<Appointment> appointments = appointmentDAO.getUpcomingAppointments(patientId);
-            request.setAttribute("appointments", appointments);
+        // Lấy tài liệu y tế / lịch sử khám
+        MedicalDocumentDAO medDocDAO = new MedicalDocumentDAO();
+        List<MedicalDocument> medicalDocuments = medDocDAO.getRecentDocuments(patientId);
+        request.setAttribute("medicalDocuments", medicalDocuments);
 
-            // Lấy tài liệu y tế / lịch sử khám
-            MedicalDocumentDAO medDocDAO = new MedicalDocumentDAO();
-            List<MedicalDocument> medicalDocuments = medDocDAO.getRecentDocuments(patientId);
-            request.setAttribute("medicalDocuments", medicalDocuments);
+        // Lấy cảnh báo
+        AlertDAO alertDAO = new AlertDAO();
+        List<Alert> alerts = alertDAO.getRecentAlerts(patientId);
+        request.setAttribute("alerts", alerts);
 
-            // Lấy cảnh báo
-            AlertDAO alertDAO = new AlertDAO();
-            List<Alert> alerts = alertDAO.getRecentAlerts(patientId);
-            request.setAttribute("alerts", alerts);
-
-            // Lấy kết quả phân tích AI mới nhất
-            AIAnalysisDAO aiDAO = new AIAnalysisDAO();
-            AIAnalysis latestAI = aiDAO.getLatestAnalysis(patientId);
-            if (latestAI != null) {
-                request.setAttribute("aiAnalysis", latestAI);
-            }
+        // Lấy kết quả phân tích AI mới nhất
+        AIAnalysisDAO aiDAO = new AIAnalysisDAO();
+        AIAnalysis latestAI = aiDAO.getLatestAnalysis(patientId);
+        if (latestAI != null) {
+            request.setAttribute("aiAnalysis", latestAI);
         }
 
         // Chuyển hướng tới giao diện JSP
@@ -122,12 +123,11 @@ public class PatientDashboardServlet extends HttpServlet {
         }
         String returnUrl = sanitizeReturnUrl(request.getParameter("returnUrl"));
 
-        PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
         if (patientId == null) {
-            redirectProfileError(response, returnUrl, "Không tìm thấy hồ sơ bệnh nhân.");
             return;
         }
+        PatientDAO patientDAO = new PatientDAO();
 
         String hoTen = trimToNull(request.getParameter("hoTen"));
         String email = trimToNull(request.getParameter("email"));

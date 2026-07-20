@@ -4,6 +4,7 @@ import com.example.diabetesmanage.dao.MedicalDocumentDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.MedicalDocument;
 import com.example.diabetesmanage.model.Patient;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,24 +22,25 @@ public class PatientMedicalHistoryServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
-
-        if (patientId != null) {
-            Patient patientInfo = patientDAO.getPatientById(patientId);
-            MedicalDocumentDAO documentDAO = new MedicalDocumentDAO();
-            int totalRecords = documentDAO.countDocumentsByPatient(patientId);
-            int totalPages = Math.max(1, (int) Math.ceil((double) totalRecords / PAGE_SIZE));
-            int currentPage = parsePage(request.getParameter("page"), totalPages);
-            int offset = (currentPage - 1) * PAGE_SIZE;
-            List<MedicalDocument> medicalDocuments = documentDAO.getDocumentsByPatient(patientId, offset, PAGE_SIZE);
-
-            request.setAttribute("patientInfo", patientInfo);
-            request.setAttribute("medicalDocuments", medicalDocuments);
-            request.setAttribute("currentPage", currentPage);
-            request.setAttribute("totalPages", totalPages);
-            request.setAttribute("totalRecords", totalRecords);
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
+        if (patientId == null) {
+            return;
         }
+
+        PatientDAO patientDAO = new PatientDAO();
+        Patient patientInfo = patientDAO.getPatientById(patientId);
+        MedicalDocumentDAO documentDAO = new MedicalDocumentDAO();
+        int totalRecords = documentDAO.countDocumentsByPatient(patientId);
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalRecords / PAGE_SIZE));
+        int currentPage = parsePage(request.getParameter("page"), totalPages);
+        int offset = (currentPage - 1) * PAGE_SIZE;
+        List<MedicalDocument> medicalDocuments = documentDAO.getDocumentsByPatient(patientId, offset, PAGE_SIZE);
+
+        request.setAttribute("patientInfo", patientInfo);
+        request.setAttribute("medicalDocuments", medicalDocuments);
+        request.setAttribute("currentPage", currentPage);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecords", totalRecords);
 
         request.getRequestDispatcher("/WEB-INF/views/patient/patient-medical-history.jsp").forward(request, response);
     }

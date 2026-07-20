@@ -8,6 +8,7 @@ import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.Prescription;
 
 import com.example.diabetesmanage.service.GeminiService;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
@@ -29,49 +30,51 @@ public class PatientPrescriptionServlet extends HttpServlet {
             throws ServletException, IOException {
             
         String action = request.getServletPath();
-        
+
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
+        if (patientId == null) {
+            return;
+        }
+
         PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
         
         if ("/patient-prescriptions/ai-reminder".equals(action)) {
             handleAiReminder(request, response, patientDAO, patientId);
             return;
         }
         
-        if (patientId != null) {
-            Patient patientInfo = patientDAO.getPatientById(patientId);
-            request.setAttribute("patientInfo", patientInfo);
-            
-            PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
-            Prescription latestPrescription = prescriptionDAO.getLatestPrescription(patientId);
-            request.setAttribute("latestPrescription", latestPrescription);
-            
-            MedicationLogDAO logDAO = new MedicationLogDAO();
-            
-            String rangeParam = request.getParameter("range");
-            String dateParam = request.getParameter("date");
-            
-            if (rangeParam != null && (rangeParam.equals("7") || rangeParam.equals("30"))) {
-                int days = Integer.parseInt(rangeParam);
-                int adherenceRate = logDAO.getAdherenceRate(patientId, days);
-                request.setAttribute("viewMode", "progress");
-                request.setAttribute("range", days);
-                request.setAttribute("adherenceRate", adherenceRate);
-            } else {
-                Date targetDate = Date.valueOf(LocalDate.now()); // Default today
-                if (dateParam != null && !dateParam.trim().isEmpty()) {
-                    try {
-                        targetDate = Date.valueOf(dateParam);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        Patient patientInfo = patientDAO.getPatientById(patientId);
+        request.setAttribute("patientInfo", patientInfo);
+        
+        PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
+        Prescription latestPrescription = prescriptionDAO.getLatestPrescription(patientId);
+        request.setAttribute("latestPrescription", latestPrescription);
+        
+        MedicationLogDAO logDAO = new MedicationLogDAO();
+        
+        String rangeParam = request.getParameter("range");
+        String dateParam = request.getParameter("date");
+        
+        if (rangeParam != null && (rangeParam.equals("7") || rangeParam.equals("30"))) {
+            int days = Integer.parseInt(rangeParam);
+            int adherenceRate = logDAO.getAdherenceRate(patientId, days);
+            request.setAttribute("viewMode", "progress");
+            request.setAttribute("range", days);
+            request.setAttribute("adherenceRate", adherenceRate);
+        } else {
+            Date targetDate = Date.valueOf(LocalDate.now()); // Default today
+            if (dateParam != null && !dateParam.trim().isEmpty()) {
+                try {
+                    targetDate = Date.valueOf(dateParam);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                
-                List<MedicationLog> checklist = logDAO.getChecklistByDate(patientId, targetDate);
-                request.setAttribute("viewMode", "checklist");
-                request.setAttribute("todayChecklist", checklist);
-                request.setAttribute("selectedDate", targetDate.toString());
             }
+            
+            List<MedicationLog> checklist = logDAO.getChecklistByDate(patientId, targetDate);
+            request.setAttribute("viewMode", "checklist");
+            request.setAttribute("todayChecklist", checklist);
+            request.setAttribute("selectedDate", targetDate.toString());
         }
         
         request.getRequestDispatcher("/WEB-INF/views/patient/patient-prescriptions.jsp").forward(request, response);
@@ -111,12 +114,14 @@ public class PatientPrescriptionServlet extends HttpServlet {
         
         String action = request.getServletPath();
         if ("/patient-prescriptions/toggle".equals(action)) {
-            PatientDAO patientDAO = new PatientDAO();
-            String patientId = patientDAO.getDemoPatientId();
+            String patientId = PatientPortalAuth.requirePatientId(request, response);
+            if (patientId == null) {
+                return;
+            }
             String medicationId = request.getParameter("medicationId");
             String dateStr = request.getParameter("date");
             
-            if (patientId != null && medicationId != null && !medicationId.trim().isEmpty()) {
+            if (medicationId != null && !medicationId.trim().isEmpty()) {
                 MedicationLogDAO logDAO = new MedicationLogDAO();
                 Date targetDate = Date.valueOf(LocalDate.now());
                 if (dateStr != null && !dateStr.trim().isEmpty()) {

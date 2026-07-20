@@ -7,6 +7,7 @@ import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.Prescription;
 import com.example.diabetesmanage.model.Medication;
+import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.GeminiService;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Servlet tạo báo cáo AI tổng hợp cho bác sĩ.
@@ -28,11 +30,22 @@ public class AIReportServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Lấy patient ID từ request hoặc dùng demo
+        // Prefer explicit patientId; admin/doctor may fall back to demo only as last resort
         String patientId = request.getParameter("patientId");
         PatientDAO patientDAO = new PatientDAO();
         if (patientId == null || patientId.trim().isEmpty()) {
-            patientId = patientDAO.getDemoPatientId();
+            HttpSession session = request.getSession(false);
+            User user = null;
+            if (session != null) {
+                Object value = session.getAttribute("user");
+                if (value instanceof User) {
+                    user = (User) value;
+                }
+            }
+            if (user != null && ("quan_tri_vien".equalsIgnoreCase(user.getVaiTro())
+                    || "bac_si".equalsIgnoreCase(user.getVaiTro()))) {
+                patientId = patientDAO.getDemoPatientId();
+            }
         }
 
         if (patientId == null) {

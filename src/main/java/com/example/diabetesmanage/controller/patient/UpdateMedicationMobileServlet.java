@@ -1,7 +1,7 @@
 package com.example.diabetesmanage.controller.patient;
 
 import com.example.diabetesmanage.dao.MedicationLogDAO;
-import com.example.diabetesmanage.dao.PatientDAO;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import jakarta.servlet.ServletException;
@@ -37,6 +37,7 @@ public class UpdateMedicationMobileServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         Gson gson = new Gson();
         Map<String, Object> responseData = new HashMap<>();
+        boolean responseCommittedByAuth = false;
 
         try {
             StringBuilder sb = new StringBuilder();
@@ -53,8 +54,11 @@ public class UpdateMedicationMobileServlet extends HttpServlet {
             String dateStr = jsonRequest.has("date") ? jsonRequest.get("date").getAsString() : null;
 
             if (patientId == null || patientId.trim().isEmpty()) {
-                PatientDAO patientDAO = new PatientDAO();
-                patientId = patientDAO.getDemoPatientId();
+                patientId = PatientPortalAuth.requirePatientId(request, response);
+                if (patientId == null) {
+                    responseCommittedByAuth = true;
+                    return;
+                }
             }
 
             if (patientId != null && medicationId != null && dateStr != null) {
@@ -78,7 +82,9 @@ public class UpdateMedicationMobileServlet extends HttpServlet {
             responseData.put("status", "error");
             responseData.put("message", e.getMessage());
         } finally {
-            out.print(gson.toJson(responseData));
+            if (!responseCommittedByAuth) {
+                out.print(gson.toJson(responseData));
+            }
             out.flush();
         }
     }

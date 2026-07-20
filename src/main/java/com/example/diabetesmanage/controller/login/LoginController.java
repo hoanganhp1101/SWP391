@@ -18,8 +18,6 @@ import com.example.diabetesmanage.util.Encode;
 public class LoginController extends HttpServlet {
 
     private static final String LOGIN_VIEW = "/WEB-INF/views/auth/login.jsp";
-    private static final String ADMIN_VIEW = "/WEB-INF/views/admin/dashboard.jsp";
-    private static final String USER_VIEW = "/WEB-INF/views/patient-dashboard.jsp";
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -41,13 +39,23 @@ public class LoginController extends HttpServlet {
             return;
         }
 
-        // Redirect sau khi login thành công (dùng bởi JS timeout)
+        // Chỉ cho phép forward khi đã đăng nhập đúng role
         if (service.equals("admin")) {
-            request.getRequestDispatcher(ADMIN_VIEW).forward(request, response);
+            User current = (User) session.getAttribute("user");
+            if (current == null || !"quan_tri_vien".equalsIgnoreCase(current.getVaiTro())) {
+                response.sendRedirect(request.getContextPath() + "/Logincontroller");
+                return;
+            }
+            response.sendRedirect(request.getContextPath() + "/admin-dashboard");
             return;
         }
         if (service.equals("user")) {
-            request.getRequestDispatcher(USER_VIEW).forward(request, response);
+            User current = (User) session.getAttribute("user");
+            if (current == null || !"benh_nhan".equalsIgnoreCase(current.getVaiTro())) {
+                response.sendRedirect(request.getContextPath() + "/Logincontroller");
+                return;
+            }
+            response.sendRedirect(request.getContextPath() + "/patient-dashboard");
             return;
         }
 
@@ -97,27 +105,36 @@ public class LoginController extends HttpServlet {
                 return;
             }
 
-            // Đăng nhập thành công → set session
+            if (!user.isKichHoat()) {
+                request.setAttribute("AccountError", "Tài khoản đã bị khóa.");
+                request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+                return;
+            }
+
+            // Đăng nhập thành công → set session (đồng bộ các key legacy)
             session.setAttribute("user", user);
+            session.setAttribute("loginUser", user);
+            if ("quan_tri_vien".equalsIgnoreCase(user.getVaiTro())) {
+                session.setAttribute("adminUser", user);
+            }
 
             // Redirect theo role tới CÁC CONTROLLER TƯƠNG ỨNG
             String role = user.getVaiTro();
             if ("quan_tri_vien".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 1);
-                // Điều hướng về Servlet xử lý Dashboard của Admin
                 response.sendRedirect(request.getContextPath() + "/admin-dashboard");
 
             } else if ("benh_nhan".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 2);
-                // Bệnh nhân đăng nhập thành công -> Forward trực tiếp sang trang dashboard bệnh nhân
                response.sendRedirect(request.getContextPath() + "/patient-dashboard");
 
             } else if ("bac_si".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 3);
-                // Nếu bạn có trang riêng cho bác sĩ, hãy khai báo VIEW hoặc điều hướng tới Servlet của bác sĩ ở đây
-                // Tạm thời nếu chưa có, cho dùng chung giao diện hoặc chuyển hướng tùy ý:
                 response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
 
+            } else {
+                request.setAttribute("AccountError", "Vai trò không được hỗ trợ đăng nhập.");
+                request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
             }
 
         }

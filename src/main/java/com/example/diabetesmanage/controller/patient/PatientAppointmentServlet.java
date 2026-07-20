@@ -5,6 +5,7 @@ import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -25,19 +26,20 @@ public class PatientAppointmentServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
+        if (patientId == null) {
+            return;
+        }
+
         PatientDAO patientDAO = new PatientDAO();
         AppointmentDAO appointmentDAO = new AppointmentDAO();
-        String patientId = patientDAO.getDemoPatientId();
+        Patient patientInfo = patientDAO.getPatientById(patientId);
+        List<Appointment> appointments = appointmentDAO.getAppointmentsByPatient(patientId);
+        List<User> doctors = appointmentDAO.getAvailableDoctors();
 
-        if (patientId != null) {
-            Patient patientInfo = patientDAO.getPatientById(patientId);
-            List<Appointment> appointments = appointmentDAO.getAppointmentsByPatient(patientId);
-            List<User> doctors = appointmentDAO.getAvailableDoctors();
-
-            request.setAttribute("patientInfo", patientInfo);
-            request.setAttribute("appointments", appointments);
-            request.setAttribute("doctors", doctors);
-        }
+        request.setAttribute("patientInfo", patientInfo);
+        request.setAttribute("appointments", appointments);
+        request.setAttribute("doctors", doctors);
 
         request.getRequestDispatcher("/WEB-INF/views/patient/patient-appointments.jsp").forward(request, response);
     }
@@ -47,10 +49,8 @@ public class PatientAppointmentServlet extends HttpServlet {
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
 
-        PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
         if (patientId == null) {
-            redirectWithError(response, "Không tìm thấy hồ sơ bệnh nhân.");
             return;
         }
 

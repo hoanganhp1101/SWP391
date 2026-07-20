@@ -339,6 +339,24 @@ public class PatientDAO {
         return null;
     }
 
+    public String getPatientIdByUserId(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String sql = "SELECT id FROM patients WHERE user_id = ? LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, userId.trim());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     // ── Doctor portal methods ──────────────────────────────────────────────────
 
     public List<Patient> getPatients(String scopeDoctorId) {

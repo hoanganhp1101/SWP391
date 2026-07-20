@@ -55,11 +55,11 @@ public class DoctorAnalyticsDAO {
 
     public double averageGlucose(int days) {
         List<Object> p = new ArrayList<>();
-        p.add(-days);
+        p.add(days);
         String sql = "SELECT AVG(hr.duong_huyet_mgdl) FROM health_records hr "
                 + "JOIN patients p ON hr.patient_id = p.id "
                 + "WHERE hr.duong_huyet_mgdl IS NOT NULL "
-                + "AND hr.thoi_gian_do >= DATEADD(DAY, ?, GETDATE())" + doctorClause("p", p);
+                + "AND hr.thoi_gian_do >= DATE_SUB(NOW(), INTERVAL ? DAY)" + doctorClause("p", p);
         return queryDouble(sql, p.toArray());
     }
 
@@ -67,12 +67,12 @@ public class DoctorAnalyticsDAO {
         List<Object> p = new ArrayList<>();
         p.add(GLUCOSE_LOW);
         p.add(GLUCOSE_HIGH);
-        p.add(-days);
+        p.add(days);
         String sql = "SELECT CAST(SUM(CASE WHEN hr.duong_huyet_mgdl BETWEEN ? AND ? THEN 1 ELSE 0 END) AS FLOAT) "
                 + "* 100.0 / NULLIF(COUNT(*), 0) "
                 + "FROM health_records hr JOIN patients p ON hr.patient_id = p.id "
                 + "WHERE hr.duong_huyet_mgdl IS NOT NULL "
-                + "AND hr.thoi_gian_do >= DATEADD(DAY, ?, GETDATE())" + doctorClause("p", p);
+                + "AND hr.thoi_gian_do >= DATE_SUB(NOW(), INTERVAL ? DAY)" + doctorClause("p", p);
         return queryDouble(sql, p.toArray());
     }
 
@@ -94,10 +94,10 @@ public class DoctorAnalyticsDAO {
     public int patientsWithHypo(int days) {
         List<Object> p = new ArrayList<>();
         p.add(GLUCOSE_LOW);
-        p.add(-days);
+        p.add(days);
         String sql = "SELECT COUNT(DISTINCT hr.patient_id) FROM health_records hr "
                 + "JOIN patients p ON hr.patient_id = p.id "
-                + "WHERE hr.duong_huyet_mgdl < ? AND hr.thoi_gian_do >= DATEADD(DAY, ?, GETDATE())"
+                + "WHERE hr.duong_huyet_mgdl < ? AND hr.thoi_gian_do >= DATE_SUB(NOW(), INTERVAL ? DAY)"
                 + doctorClause("p", p);
         return queryInt(sql, p.toArray());
     }
@@ -119,8 +119,8 @@ public class DoctorAnalyticsDAO {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM patients p WHERE 1 = 1");
         sql.append(doctorClause("p", p));
         sql.append(" AND NOT EXISTS (SELECT 1 FROM health_records hr "
-                + "WHERE hr.patient_id = p.id AND hr.thoi_gian_do >= DATEADD(DAY, ?, GETDATE()))");
-        p.add(-days);
+                + "WHERE hr.patient_id = p.id AND hr.thoi_gian_do >= DATE_SUB(NOW(), INTERVAL ? DAY))");
+        p.add(days);
         return queryInt(sql.toString(), p.toArray());
     }
 
@@ -128,7 +128,7 @@ public class DoctorAnalyticsDAO {
         List<Object> p = new ArrayList<>();
         String sql = "SELECT COUNT(DISTINCT pr.patient_id) FROM prescriptions pr "
                 + "JOIN patients p ON pr.patient_id = p.id "
-                + "WHERE pr.ngay_tai_kham IS NOT NULL AND pr.ngay_tai_kham < GETDATE()"
+                + "WHERE pr.ngay_tai_kham IS NOT NULL AND pr.ngay_tai_kham < NOW()"
                 + doctorClause("p", p);
         return queryInt(sql, p.toArray());
     }
@@ -137,18 +137,18 @@ public class DoctorAnalyticsDAO {
 
     public List<Object[]> glucoseByDay(int days) {
         List<Object> p = new ArrayList<>();
-        p.add(-days);
-        String sql = "SELECT CONVERT(varchar(10), hr.thoi_gian_do, 23) AS d, AVG(hr.duong_huyet_mgdl) AS g "
+        p.add(days);
+        String sql = "SELECT DATE_FORMAT(hr.thoi_gian_do, '%Y-%m-%d') AS d, AVG(hr.duong_huyet_mgdl) AS g "
                 + "FROM health_records hr JOIN patients p ON hr.patient_id = p.id "
                 + "WHERE hr.duong_huyet_mgdl IS NOT NULL "
-                + "AND hr.thoi_gian_do >= DATEADD(DAY, ?, GETDATE())" + doctorClause("p", p) + " "
-                + "GROUP BY CONVERT(varchar(10), hr.thoi_gian_do, 23) ORDER BY d";
+                + "AND hr.thoi_gian_do >= DATE_SUB(NOW(), INTERVAL ? DAY)" + doctorClause("p", p) + " "
+                + "GROUP BY DATE_FORMAT(hr.thoi_gian_do, '%Y-%m-%d') ORDER BY d";
         return queryList(sql, p.toArray());
     }
 
     public List<Object[]> alertsByType() {
         List<Object> p = new ArrayList<>();
-        String sql = "SELECT COALESCE(a.loai_canh_bao, N'Khác') AS k, COUNT(*) AS sl "
+        String sql = "SELECT COALESCE(a.loai_canh_bao, 'Khác') AS k, COUNT(*) AS sl "
                 + "FROM alerts a JOIN patients p ON a.patient_id = p.id "
                 + "WHERE 1 = 1" + doctorClause("p", p)
                 + " GROUP BY a.loai_canh_bao ORDER BY sl DESC";
@@ -157,7 +157,7 @@ public class DoctorAnalyticsDAO {
 
     public List<Object[]> alertsBySeverity() {
         List<Object> p = new ArrayList<>();
-        String sql = "SELECT COALESCE(a.muc_do, N'Khác') AS k, COUNT(*) AS sl "
+        String sql = "SELECT COALESCE(a.muc_do, 'Khác') AS k, COUNT(*) AS sl "
                 + "FROM alerts a JOIN patients p ON a.patient_id = p.id "
                 + "WHERE 1 = 1" + doctorClause("p", p)
                 + " GROUP BY a.muc_do ORDER BY sl DESC";
@@ -173,9 +173,9 @@ public class DoctorAnalyticsDAO {
                 + "  WHERE hr.hba1c_percent IS NOT NULL" + doctorClause("p", p)
                 + ") "
                 + "SELECT nhom, COUNT(*) FROM ("
-                + "  SELECT CASE WHEN hba1c_percent < 7 THEN N'Tốt (<7%)' "
-                + "              WHEN hba1c_percent < 8 THEN N'Khá (7-8%)' "
-                + "              ELSE N'Kém (>=8%)' END AS nhom "
+                + "  SELECT CASE WHEN hba1c_percent < 7 THEN 'Tốt (<7%)' "
+                + "              WHEN hba1c_percent < 8 THEN 'Khá (7-8%)' "
+                + "              ELSE 'Kém (>=8%)' END AS nhom "
                 + "  FROM latest WHERE rn = 1"
                 + ") t GROUP BY nhom";
         return queryList(sql, p.toArray());

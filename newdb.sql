@@ -49,6 +49,7 @@ CREATE TABLE users (
 
 CREATE TABLE patients (
                           id                          CHAR(36)        NOT NULL DEFAULT (UUID()),
+                          patient_code                VARCHAR(32)     DEFAULT NULL,
                           user_id                     CHAR(36)        NOT NULL,
                           bac_si_id                   CHAR(36)        DEFAULT NULL,
                           ngay_sinh                   DATE            NOT NULL,
@@ -67,6 +68,7 @@ CREATE TABLE patients (
                           ngay_tao                    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                           ngay_cap_nhat               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                           PRIMARY KEY (id),
+                          UNIQUE KEY uq_patients_code (patient_code),
                           CONSTRAINT fk_patients_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
                           CONSTRAINT fk_patients_bac_si FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=UTF8MB4_UNICODE_CI;
@@ -74,6 +76,7 @@ CREATE TABLE patients (
 
 CREATE TABLE medical_encounters (
     id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    encounter_code      VARCHAR(32)     DEFAULT NULL,
     patient_id          CHAR(36)        NOT NULL,
     bac_si_id           CHAR(36)        NOT NULL,
     ngay_kham           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -92,6 +95,7 @@ CREATE TABLE medical_encounters (
 
 CREATE TABLE lab_results (
     id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    lab_result_code     VARCHAR(32)     DEFAULT NULL,
     patient_id          CHAR(36)        NOT NULL,
     encounter_id        CHAR(36)        DEFAULT NULL,
     ngay_xet_nghiem     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -132,7 +136,11 @@ CREATE TABLE lab_results (
 CREATE TABLE health_records (
     id                      CHAR(36)        NOT NULL DEFAULT (UUID()),
     patient_id              CHAR(36)        NOT NULL,
+    encounter_id            CHAR(36)        DEFAULT NULL,
+    last_encounter_id       CHAR(36)        DEFAULT NULL,
+    health_record_code      VARCHAR(32)     DEFAULT NULL,
     nhap_boi                CHAR(36)        DEFAULT NULL,
+    chieu_cao_cm            DECIMAL(5,1)    DEFAULT NULL,
     duong_huyet_mgdl        DECIMAL(6,2)    DEFAULT NULL,
     thoi_diem_do_duong      ENUM('luc_doi','sau_an_1h','sau_an_2h','truoc_ngu') DEFAULT NULL,
     huyet_ap_tam_thu        SMALLINT        DEFAULT NULL,
@@ -145,20 +153,39 @@ CREATE TABLE health_records (
     hba1c_percent           DECIMAL(4,2)    DEFAULT NULL,
     cholesterol_mmol        DECIMAL(5,2)    DEFAULT NULL,
     triglyceride_mmol       DECIMAL(5,2)    DEFAULT NULL,
+    hdl_mmol                DECIMAL(5,2)    DEFAULT NULL,
+    ldl_mmol                DECIMAL(5,2)    DEFAULT NULL,
+    wbc                     DECIMAL(5,2)    DEFAULT NULL,
+    rbc                     DECIMAL(5,2)    DEFAULT NULL,
+    hgb                     DECIMAL(5,2)    DEFAULT NULL,
+    hct                     DECIMAL(5,2)    DEFAULT NULL,
+    plt                     DECIMAL(6,2)    DEFAULT NULL,
+    ast                     DECIMAL(6,2)    DEFAULT NULL,
+    alt                     DECIMAL(6,2)    DEFAULT NULL,
+    ure                     DECIMAL(5,2)    DEFAULT NULL,
+    creatinine              DECIMAL(6,2)    DEFAULT NULL,
     so_buoc_chan            INT             DEFAULT NULL,
     carbs_g                 DECIMAL(5,2)    DEFAULT NULL COMMENT 'Lượng Carbohydrate nạp vào (gram)',
     so_gio_ngu              DECIMAL(3,1)    DEFAULT NULL,
     lieu_luong_insulin_ui   INT             DEFAULT NULL COMMENT 'Liều lượng insulin thực tế tiêm (UI)',
     loai_insulin_tiem       VARCHAR(100)    DEFAULT NULL COMMENT 'Loại insulin tiêm thực tế',
+    trieu_chung             TEXT            DEFAULT NULL,
+    tien_su_benh            TEXT            DEFAULT NULL,
+    kham_lam_sang           JSON            DEFAULT NULL,
+    chan_doan_chinh         VARCHAR(255)    DEFAULT NULL,
+    chan_doan_phu           TEXT            DEFAULT NULL,
+    phan_loai_tieu_duong    VARCHAR(50)     DEFAULT NULL,
     ghi_chu                 TEXT            DEFAULT NULL,
     chest_pain              TINYINT(1)      DEFAULT 0,
     dizziness               TINYINT(1)      DEFAULT 0,
     fatigue                 TINYINT(1)      DEFAULT 0,
     thoi_gian_do            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ngay_tao                DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_hr_patient    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_hr_nhap_boi   FOREIGN KEY (nhap_boi)   REFERENCES users(id)    ON DELETE SET NULL
+    CONSTRAINT fk_hr_nhap_boi   FOREIGN KEY (nhap_boi)   REFERENCES users(id)    ON DELETE SET NULL,
+    CONSTRAINT fk_hr_encounter  FOREIGN KEY (encounter_id) REFERENCES medical_encounters(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -407,9 +434,9 @@ INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, anh
 -- ============================================================
 -- 3. HỒ SƠ BỆNH NHÂN (Từ Bệnh án PDF)
 -- ============================================================
-INSERT INTO patients (id, user_id, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, dia_chi, nghe_nghiep, tien_su_benh, ngay_chan_doan_tieu_duong, loai_tieu_duong) 
+INSERT INTO patients (id, patient_code, user_id, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, dia_chi, nghe_nghiep, tien_su_benh, ngay_chan_doan_tieu_duong, loai_tieu_duong) 
 VALUES (
-    @patient_profile_id, @patient_user_id, @doctor_id, '1960-01-01', 'nu', 158.0, 
+    @patient_profile_id, 'BN0001', @patient_user_id, @doctor_id, '1960-01-01', 'nu', 158.0, 
     'Thị xã Núi Thành, Quảng Nam', 'Nội trợ', 
     'Đái tháo đường type 2 (3 năm), Tăng huyết áp (1 năm)', '2018-06-01', 'Type 2'
 );
@@ -417,9 +444,9 @@ VALUES (
 -- ============================================================
 -- 4. LỊCH SỬ KHÁM BỆNH & CẬN LÂM SÀNG
 -- ============================================================
-INSERT INTO medical_encounters (id, patient_id, bac_si_id, ngay_kham, ly_do_kham, qua_trinh_benh_ly, chan_doan_chinh, chan_doan_phu, huong_xu_tri)
+INSERT INTO medical_encounters (id, encounter_code, patient_id, bac_si_id, ngay_kham, ly_do_kham, qua_trinh_benh_ly, chan_doan_chinh, chan_doan_phu, huong_xu_tri)
 VALUES (
-    @encounter_id, @patient_profile_id, @doctor_id, '2021-06-21 08:00:00', 
+    @encounter_id, 'ENC0001', @patient_profile_id, @doctor_id, '2021-06-21 08:00:00', 
     'Mệt mỏi, tiểu nhiều', 
     'Cách nhập viện 2 tháng sụt 5kg, khát nhiều, tiểu nhiều.', 
     'Đái tháo đường type 2', 

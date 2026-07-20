@@ -45,23 +45,19 @@ public class AdminLoginServlet extends HttpServlet {
             if (user != null) {
                 HttpSession session = request.getSession();
                 session.setAttribute("adminUser", user);
+                session.setAttribute("user", user);
+                session.setAttribute("loginUser", user);
 
                 if ("ON".equals(rememberMe)) {
                     Cookie cookieEmail = new Cookie("adminEmail", email);
-                    Cookie cookiePass = new Cookie("adminPass", password);
-
                     cookieEmail.setMaxAge(60 * 60 * 24 * 30);
-                    cookiePass.setMaxAge(60 * 60 * 24 * 30);
-
+                    cookieEmail.setHttpOnly(true);
                     response.addCookie(cookieEmail);
-                    response.addCookie(cookiePass);
                 } else {
                     Cookie cookieEmail = new Cookie("adminEmail", "");
                     Cookie cookiePass = new Cookie("adminPass", "");
-
                     cookieEmail.setMaxAge(0);
                     cookiePass.setMaxAge(0);
-
                     response.addCookie(cookieEmail);
                     response.addCookie(cookiePass);
                 }

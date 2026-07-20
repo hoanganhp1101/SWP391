@@ -1,6 +1,6 @@
-﻿package model;
+package model;
 
-import java.sql.Timestamp; // ─É├â Sß╗¼A Lß╗ûI Tß║áI ─É├éY (Phß║úi d├╣ng java.sql.Timestamp)
+import java.sql.Timestamp;
 import java.util.UUID;
 
 public class Alert {
@@ -18,7 +18,6 @@ public class Alert {
     private Timestamp thoiGianTao;
     private Timestamp thoiGianXuLy;
 
-    // --- C├üC TR╞»ß╗£NG Mß╗₧ Rß╗ÿNG (D├╣ng ─æß╗â hiß╗ân thß╗ï ß╗ƒ JSP th├┤ng qua lß╗çnh JOIN) ---
     private String hoTenBenhNhan;
     private String soDienThoaiBenhNhan;
     private Double duongHuyet;
@@ -26,8 +25,9 @@ public class Alert {
     public Alert() {
     }
 
-    // Constructor nguy├¬n bß║ún (Giß╗» nguy├¬n)
-    public Alert(UUID id, UUID patientId, UUID aiAnalysisId, String loaiCanhBao, String mucDo, String tieuDe, String noiDung, boolean daDocBn, boolean daDocBs, UUID xuLyBoi, String ghiChuXuLy, Timestamp thoiGianTao, Timestamp thoiGianXuLy) {
+    public Alert(UUID id, UUID patientId, UUID aiAnalysisId, String loaiCanhBao, String mucDo,
+                 String tieuDe, String noiDung, boolean daDocBn, boolean daDocBs, UUID xuLyBoi,
+                 String ghiChuXuLy, Timestamp thoiGianTao, Timestamp thoiGianXuLy) {
         this.id = id;
         this.patientId = patientId;
         this.aiAnalysisId = aiAnalysisId;
@@ -43,7 +43,6 @@ public class Alert {
         this.thoiGianXuLy = thoiGianXuLy;
     }
 
-    // --- C├üC GETTER/SETTER Gß╗ÉC ---
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getPatientId() { return patientId; }
@@ -70,11 +69,11 @@ public class Alert {
     public void setThoiGianTao(Timestamp thoiGianTao) { this.thoiGianTao = thoiGianTao; }
     public Timestamp getThoiGianXuLy() { return thoiGianXuLy; }
     public void setThoiGianXuLy(Timestamp thoiGianXuLy) { this.thoiGianXuLy = thoiGianXuLy; }
+
     public String getMucDoCss() {
         if (mucDo == null) {
             return "severity-medium";
         }
-
         String normalized = mucDo.toLowerCase();
         if (normalized.contains("nguy") || normalized.contains("danger")) {
             return "severity-danger";
@@ -84,15 +83,17 @@ public class Alert {
         }
         return "severity-medium";
     }
+
     public String getTrangThaiXuLy() {
         if (!daDocBs) {
-            return "Ch╞░a xem";
+            return "Chua xem";
         }
         if (thoiGianXuLy != null) {
-            return "─É├ú giß║úi quyß║┐t";
+            return "Da giai quyet";
         }
-        return "─Éang xß╗¡ l├╜";
+        return "Dang xu ly";
     }
+
     public String getTrangThaiCss() {
         if (!daDocBs) {
             return "status-unread";
@@ -103,7 +104,6 @@ public class Alert {
         return "status-processing";
     }
 
-    // --- C├üC GETTER/SETTER Mß╗₧ Rß╗ÿNG (TH├èM Mß╗ÜI) ---
     public String getHoTenBenhNhan() { return hoTenBenhNhan; }
     public void setHoTenBenhNhan(String hoTenBenhNhan) { this.hoTenBenhNhan = hoTenBenhNhan; }
     public String getSoDienThoaiBenhNhan() { return soDienThoaiBenhNhan; }
@@ -115,7 +115,6 @@ public class Alert {
         if (soDienThoaiBenhNhan == null || soDienThoaiBenhNhan.isBlank()) {
             return null;
         }
-
         String digits = soDienThoaiBenhNhan.replaceAll("[^0-9]", "");
         if (digits.isEmpty()) {
             return null;

@@ -142,18 +142,17 @@ public class DoctorAlertDAO {
             return false;
         }
 
-        // Luôn ghi lại thời điểm xử lý khi bác sĩ thao tác nhanh.
-        // Nếu đánh dấu "đã giải quyết" thì chốt thời gian giải quyết, ngược lại
-        // vẫn lưu thời điểm xử lý gần nhất để theo dõi tiến độ.
+        // Đánh dấu đã đọc và ghi chú xử lý. Chỉ set thoi_gian_xu_ly khi markResolved;
+        // nếu chưa giải quyết thì để NULL (trạng thái "đang xử lý": da_doc_bs=1).
         String sql = """
                 UPDATE alerts
                 SET ghi_chu_xu_ly = CASE
                         WHEN ghi_chu_xu_ly IS NULL OR ghi_chu_xu_ly = '' THEN ?
-                        ELSE ghi_chu_xu_ly + CHAR(10) + ?
+                        ELSE CONCAT(ghi_chu_xu_ly, CHAR(10), ?)
                     END,
                     da_doc_bs = 1,
                     xu_ly_boi = ?,
-                    thoi_gian_xu_ly = GETDATE()
+                    thoi_gian_xu_ly = IF(?, NOW(), NULL)
                 WHERE id = ?
                 """;
 
@@ -164,7 +163,8 @@ public class DoctorAlertDAO {
             ps.setString(1, note);
             ps.setString(2, note);
             ps.setString(3, doctorId.toString());
-            ps.setString(4, alertId.toString());
+            ps.setBoolean(4, markResolved);
+            ps.setString(5, alertId.toString());
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -257,8 +257,8 @@ public class DoctorAlertDAO {
         String searchValue = "%" + keyword.trim() + "%";
         sql.append("AND (");
         sql.append("u.ho_ten LIKE ? ");
-        sql.append("OR CONVERT(varchar(36), p.id) LIKE ? ");
-        sql.append("OR CONVERT(varchar(36), a.patient_id) LIKE ? ");
+        sql.append("OR CAST(p.id AS CHAR) LIKE ? ");
+        sql.append("OR CAST(a.patient_id AS CHAR) LIKE ? ");
         sql.append(") ");
         params.add(searchValue);
         params.add(searchValue);

@@ -3,10 +3,10 @@ package com.example.diabetesmanage.controller.patient;
 import com.example.diabetesmanage.dao.AlertDAO;
 import com.example.diabetesmanage.dao.AppointmentDAO;
 import com.example.diabetesmanage.dao.MedicationLogDAO;
-import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.model.MedicationLog;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -31,16 +31,12 @@ public class NotificationServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         
-        PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
-        
-        JsonArray notifications = new JsonArray();
-        
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
         if (patientId == null) {
-            response.getWriter().write(notifications.toString());
             return;
         }
 
+        JsonArray notifications = new JsonArray();
         List<JsonObject> notifList = new java.util.ArrayList<>();
 
         // 1. Lấy thông báo cảnh báo AI (Alerts)
