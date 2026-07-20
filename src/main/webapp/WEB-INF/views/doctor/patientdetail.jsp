@@ -180,7 +180,7 @@
                     </div>
                     <div class="form-group">
                         <label>Loại tiểu đường</label>
-                        <input type="text" value="${patient.loaiTieuDuong}" readonly>
+                        <input type="text" value="${patient.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (patient.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : patient.loaiTieuDuong)}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Tiền sử bệnh</label>
@@ -217,7 +217,7 @@
 
                 <c:if test="${param.hrReadOnly eq '1'}">
                     <div class="hr-error-banner">
-                        Hồ sơ sức khỏe chỉ đọc. Dữ liệu được tổng hợp tự động vào snapshot.
+                        Hồ sơ sức khỏe chỉ đọc. Dữ liệu được tổng hợp từ health_records và lab_results.
                     </div>
                 </c:if>
 
@@ -474,16 +474,6 @@
                             <div class="form-group">
                                 <label>Mệt mỏi</label>
                                 <input type="text" readonly value="${hrFatigue}">
-                            </div>
-                        </div>
-
-                        <div class="card-header card-header-sub">
-                            <h3>Ghi chú</h3>
-                        </div>
-                        <div class="form-container">
-                            <div class="form-group full-width">
-                                <label>Nội dung</label>
-                                <textarea readonly>${not empty hr.ghiChu ? hr.ghiChu : 'Chưa có dữ liệu'}</textarea>
                             </div>
                         </div>
                     </c:otherwise>

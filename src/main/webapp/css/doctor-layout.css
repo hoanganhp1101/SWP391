@@ -1,14 +1,39 @@
-/* Shared shell only — for pages without inline layout styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Inter, sans-serif;
+}
+
+/* Chỉ 1 thanh cuộn dọc ở .main-content — html/body/layout không cuộn, không cuộn ngang */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    background: #f5f7fb;
+}
+
 .layout {
     display: flex;
     height: calc(100vh - 80px);
+    overflow: hidden;
 }
 
 .main-content {
     flex: 1;
-    overflow: auto;
+    min-height: 0;
+    background: #f5f7fb;
+    padding: 28px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
+/* Topbar */
 .topbar {
     height: 80px;
     background: #fff;
@@ -90,6 +115,7 @@
     object-fit: cover;
 }
 
+/* Sidebar */
 .sidebar {
     width: 240px;
     background: white;
@@ -135,7 +161,6 @@
     border-radius: 12px;
     color: #374151;
     text-decoration: none;
-    cursor: pointer;
 }
 
 .menu-item.active {
@@ -167,5 +192,38 @@
     padding: 14px 12px;
     text-decoration: none;
     color: #374151;
-    cursor: pointer;
+}
+
+/* Page header — cùng style dashboard-header */
+.page-header h1,
+.dashboard-header h1 {
+    font-size: 42px;
+    margin-bottom: 8px;
+}
+
+.page-header p,
+.dashboard-header p {
+    color: #6b7280;
+    font-size: 18px;
+}
+
+.breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.breadcrumb a {
+    color: #1557d5;
+    text-decoration: none;
+}
+
+.breadcrumb span {
+    margin: 0 8px;
+}
+html,
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100%;
 }

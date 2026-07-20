@@ -1,0 +1,183 @@
+/* =========================================================
+   HealthAlert — Shared Filter Component
+   Chuẩn giao diện lấy theo ô "Chọn khoảng ngày".
+   Dùng chung cho MỌI trang có filter/dropdown.
+   ========================================================= */
+
+/* Hàng chứa các filter */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 24px 26px;
+}
+
+/* Mỗi filter (dropdown hoặc date range) — chiều rộng đồng đều */
+.filter-dropdown {
+    position: relative;
+    width: 250px;
+    flex-shrink: 0;
+}
+
+/* Nút filter — chuẩn theo "Chọn khoảng ngày" */
+.filter-button {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 22px;
+
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.filter-button:hover {
+    border-color: #6c63ff;
+}
+
+/* Nhãn giá trị đang chọn — cắt gọn nếu quá dài */
+.filter-button .filter-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-button > i {
+    flex-shrink: 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Panel chung (menu dropdown + popup ngày) — animation nhẹ */
+.filter-menu,
+.filter-popup {
+    position: absolute;
+    top: 52px;
+    left: 0;
+
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+
+    z-index: 9999;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity .15s ease, transform .15s ease, visibility .15s ease;
+}
+
+.filter-menu {
+    min-width: 100%;
+    width: max-content;
+    max-width: 320px;
+    overflow: hidden;
+}
+
+.filter-popup {
+    width: 320px;
+    padding: 20px;
+}
+
+.filter-menu.show,
+.filter-popup.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Item trong menu */
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 18px;
+
+    color: #374151;
+    text-decoration: none;
+    font-size: 14px;
+
+    transition: background .15s ease;
+}
+
+.filter-item:hover {
+    background: #f8fafc;
+}
+
+/* Item đang chọn */
+.filter-item.active {
+    color: #f97316;
+    font-weight: 700;
+    background: #fff7ed;
+}
+
+/* Icon check — chỉ hiện ở item đang chọn, vẫn chừa chỗ để canh đều */
+.filter-item .filter-check {
+    width: 14px;
+    flex-shrink: 0;
+    visibility: hidden;
+    color: #f97316;
+}
+
+.filter-item.active .filter-check {
+    visibility: visible;
+}
+
+/* Popup chọn khoảng ngày */
+.filter-popup .filter-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-popup .filter-fields label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.filter-popup .filter-fields input {
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.filter-popup .filter-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.filter-popup .filter-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.filter-popup .filter-actions .btn-apply {
+    background: #6c63ff;
+    color: #fff;
+}
+
+.filter-popup .filter-actions .btn-clear {
+    background: #f3f4f6;
+    color: #374151;
+}

@@ -2,8 +2,7 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.model.LabResult;
-import com.example.diabetesmanage.model.EncounterType;
-import com.example.diabetesmanage.service.medical.EncounterCreateRequest;
+import com.example.diabetesmanage.dto.EncounterCreateDTO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,76 +12,137 @@ import java.sql.Timestamp;
 
 public class LabResultDAO {
 
-    public LabResult getLatestByPatientId(String patientId) {
-        String sql =
-                "SELECT * FROM lab_results " +
-                        "WHERE patient_id = ? " +
-                        "ORDER BY ngay_xet_nghiem DESC " +
-                        "LIMIT 1";
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, patientId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return map(rs);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public LabResult getByEncounterId(String encounterId) {
         if (encounterId == null || encounterId.isBlank()) {
             return null;
         }
+        try (Connection con = DBContext.getConnection()) {
+            return getByEncounterId(con, encounterId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-        String sql =
-                "SELECT * FROM lab_results " +
-                        "WHERE encounter_id = ? " +
-                        "ORDER BY ngay_xet_nghiem DESC " +
-                        "LIMIT 1";
+    /** Bản dùng trong transaction: đọc bằng connection đang mở để thấy cả dữ liệu chưa commit. */
+    public LabResult getByEncounterId(Connection con, String encounterId) throws SQLException {
+        if (encounterId == null || encounterId.isBlank()) {
+            return null;
+        }
 
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+        // Mỗi encounter chỉ có một row (UNIQUE INDEX uq_lab_results_encounter)
+        String sql = "SELECT * FROM lab_results WHERE encounter_id = ? LIMIT 1";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, encounterId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return map(rs);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return null;
     }
 
-    public void insert(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
-            throws SQLException {
-        EncounterType type = form.resolveEncounterType();
-        if (type.isMauTongQuat()) {
-            insertBloodCount(con, form, patientId, encounterId);
-        } else if (type.isSinhHoaMau()) {
-            insertBiochemistry(con, form, patientId, encounterId);
-        } else if (form.hasLabData()) {
-            insertAll(con, form, patientId, encounterId);
+    /**
+     * Tổng hợp chỉ số xét nghiệm MỚI NHẤT theo TỪNG TRƯỜNG trên toàn bộ lab_results
+     * của bệnh nhân — dùng cho patient profile / dashboard (KHÔNG dùng cho encounter detail).
+     *
+     * Mỗi encounter có thể chỉ chứa một nhóm chỉ số (encounter cũ có CBC, encounter mới
+     * có sinh hóa), nên lấy theo encounter mới nhất sẽ thiếu giá trị. Method này lấy
+     * giá trị non-null gần nhất của từng cột theo ngay_xet_nghiem DESC
+     * (fallback ngay_tao DESC), độc lập giữa các cột.
+     */
+    public LabResult getLatestSummaryByPatientId(String patientId) {
+        if (patientId == null || patientId.isBlank()) {
+            return null;
+        }
+
+        String[] fields = {
+                "glucose_mau", "hba1c", "cholesterol_tp", "triglyceride", "hdl_c", "ldl_c",
+                "ast", "alt", "ure", "creatinine",
+                "wbc", "rbc", "hgb", "hct", "plt"
+        };
+
+        StringBuilder sql = new StringBuilder("SELECT ");
+        for (int i = 0; i < fields.length; i++) {
+            if (i > 0) {
+                sql.append(", ");
+            }
+            sql.append("(SELECT ").append(fields[i])
+                    .append(" FROM lab_results WHERE patient_id = ? AND ").append(fields[i])
+                    .append(" IS NOT NULL ")
+                    .append("ORDER BY COALESCE(ngay_xet_nghiem, ngay_tao) DESC, id DESC LIMIT 1) AS ")
+                    .append(fields[i]);
+        }
+        sql.append(", (SELECT COALESCE(ngay_xet_nghiem, ngay_tao) FROM lab_results ")
+                .append("WHERE patient_id = ? ")
+                .append("ORDER BY COALESCE(ngay_xet_nghiem, ngay_tao) DESC, id DESC LIMIT 1) AS latest_time");
+
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            String trimmed = patientId.trim();
+            for (int i = 1; i <= fields.length + 1; i++) {
+                ps.setString(i, trimmed);
+            }
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) {
+                return null;
+            }
+
+            Timestamp latest = rs.getTimestamp("latest_time");
+            if (latest == null) {
+                // Bệnh nhân chưa có bất kỳ lab_results nào
+                return null;
+            }
+
+            LabResult lab = new LabResult();
+            lab.setPatientId(trimmed);
+            lab.setNgayXetNghiem(latest.toLocalDateTime());
+            lab.setGlucoseMau(optDouble(rs, "glucose_mau"));
+            lab.setHba1c(optDouble(rs, "hba1c"));
+            lab.setCholesterolTp(optDouble(rs, "cholesterol_tp"));
+            lab.setTriglyceride(optDouble(rs, "triglyceride"));
+            lab.setHdlC(optDouble(rs, "hdl_c"));
+            lab.setLdlC(optDouble(rs, "ldl_c"));
+            lab.setAst(optDouble(rs, "ast"));
+            lab.setAlt(optDouble(rs, "alt"));
+            lab.setUre(optDouble(rs, "ure"));
+            lab.setCreatinine(optDouble(rs, "creatinine"));
+            lab.setWbc(optDouble(rs, "wbc"));
+            lab.setRbc(optDouble(rs, "rbc"));
+            lab.setHgb(optDouble(rs, "hgb"));
+            lab.setHct(optDouble(rs, "hct"));
+            lab.setPlt(optDouble(rs, "plt"));
+            return lab;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
-    public void insertBloodCount(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
+    /**
+     * Upsert chỉ số máu tổng quát (CBC). Mỗi encounter chỉ có đúng MỘT row lab_results:
+     * nếu row của encounter đã tồn tại (ví dụ đã lưu sinh hóa trước đó) thì UPDATE bổ sung
+     * các cột CBC vào row đó thay vì INSERT row thứ hai.
+     */
+    public void insertBloodCount(Connection con, EncounterCreateDTO form, String patientId, String encounterId)
             throws SQLException {
         if (!form.hasBloodCountData()) {
             return;
         }
+
+        LabResult old = getByEncounterId(con, encounterId);
+        if (old != null) {
+            updateBloodCountRow(con, encounterId, form);
+            return;
+        }
+
         String id = java.util.UUID.randomUUID().toString();
         String sql =
                 "INSERT INTO lab_results " +
-                        "(id, patient_id, encounter_id, ngay_xet_nghiem, ngay_tao, wbc, rbc, hgb, hct, plt) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        "(id, patient_id, encounter_id, ngay_xet_nghiem, ngay_tao, " +
+                        "wbc, rbc, hgb, hct, plt, ghi_chu) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, id);
             ps.setString(2, patientId);
@@ -95,82 +155,112 @@ public class LabResultDAO {
             JdbcUtil.setNullableDouble(ps, 8, form.getLabHgb());
             JdbcUtil.setNullableDouble(ps, 9, form.getLabHct());
             JdbcUtil.setNullableDouble(ps, 10, form.getLabPlt());
+            JdbcUtil.setString(ps, 11, form.getLabGhiChu());
             ps.executeUpdate();
         }
     }
 
-    public void insertBiochemistry(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
+    public void insertBiochemistry(Connection con,
+                                   EncounterCreateDTO form,
+                                   String patientId,
+                                   String encounterId)
             throws SQLException {
+
         if (!form.hasBiochemistryData()) {
             return;
         }
-        String id = java.util.UUID.randomUUID().toString();
+
+        // Lab result gắn với đúng encounter hiện tại — không tra theo patientId
+        // vì một bệnh nhân có nhiều lần khám, mỗi encounter có lab riêng.
+        // Nếu row của encounter đã tồn tại (kể cả row CBC) thì UPDATE bổ sung
+        // các cột sinh hóa vào row đó — mỗi encounter chỉ có MỘT row lab_results.
+        LabResult old = getByEncounterId(con, encounterId);
+
+        if (old == null) {
+            String id = java.util.UUID.randomUUID().toString();
+
+            String sql =
+                    "INSERT INTO lab_results " +
+                            "(id, patient_id, encounter_id, ngay_xet_nghiem, ngay_tao, " +
+                            "glucose_mau, hba1c, cholesterol_tp, triglyceride, hdl_c, ldl_c, " +
+                            "ast, alt, ure, creatinine, ghi_chu) " +
+                            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, id);
+                ps.setString(2, patientId);
+                ps.setString(3, encounterId);
+
+                Timestamp time = Timestamp.valueOf(form.resolveNgayKham());
+                ps.setTimestamp(4, time);
+                ps.setTimestamp(5, time);
+
+                JdbcUtil.setDouble(ps, 6, form.getLabGlucoseMau());
+                JdbcUtil.setDouble(ps, 7, form.getLabHba1c());
+                JdbcUtil.setDouble(ps, 8, form.getLabCholesterol());
+                JdbcUtil.setDouble(ps, 9, form.getLabTriglyceride());
+                JdbcUtil.setDouble(ps, 10, form.getLabHdl());
+                JdbcUtil.setDouble(ps, 11, form.getLabLdl());
+                JdbcUtil.setDouble(ps, 12, form.getLabAst());
+                JdbcUtil.setDouble(ps, 13, form.getLabAlt());
+                JdbcUtil.setDouble(ps, 14, form.getLabUre());
+                JdbcUtil.setDouble(ps, 15, form.getLabCreatinine());
+                JdbcUtil.setString(ps, 16, form.getLabGhiChu());
+
+                ps.executeUpdate();
+            }
+        } else {
+            updateBiochemistryRow(con, encounterId, form);
+        }
+    }
+
+    /** Cập nhật các cột CBC trên row lab_results duy nhất của encounter. */
+    private void updateBloodCountRow(Connection con, String encounterId, EncounterCreateDTO form)
+            throws SQLException {
         String sql =
-                "INSERT INTO lab_results " +
-                        "(id, patient_id, encounter_id, ngay_xet_nghiem, ngay_tao, glucose_mau, hba1c, cholesterol_tp, triglyceride, " +
-                        "hdl_c, ldl_c, ast, alt, ure, creatinine, ghi_chu) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "UPDATE lab_results SET " +
+                        "wbc = COALESCE(?, wbc), rbc = COALESCE(?, rbc), " +
+                        "hgb = COALESCE(?, hgb), hct = COALESCE(?, hct), " +
+                        "plt = COALESCE(?, plt), ghi_chu = COALESCE(?, ghi_chu) " +
+                        "WHERE encounter_id = ?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, id);
-            ps.setString(2, patientId);
-            ps.setString(3, encounterId);
-            Timestamp visitTime = Timestamp.valueOf(form.resolveNgayKham());
-            ps.setTimestamp(4, visitTime);
-            ps.setTimestamp(5, visitTime);
-            JdbcUtil.setDouble(ps, 6, form.getLabGlucoseMau());
-            JdbcUtil.setDouble(ps, 7, form.getLabHba1c());
-            JdbcUtil.setDouble(ps, 8, form.getLabCholesterol());
-            JdbcUtil.setDouble(ps, 9, form.getLabTriglyceride());
-            JdbcUtil.setDouble(ps, 10, form.getLabHdl());
-            JdbcUtil.setDouble(ps, 11, form.getLabLdl());
-            JdbcUtil.setDouble(ps, 12, form.getLabAst());
-            JdbcUtil.setDouble(ps, 13, form.getLabAlt());
-            JdbcUtil.setDouble(ps, 14, form.getLabUre());
-            JdbcUtil.setDouble(ps, 15, form.getLabCreatinine());
-            JdbcUtil.setString(ps, 16, form.getLabGhiChu());
+            JdbcUtil.setNullableDouble(ps, 1, form.getLabWbc());
+            JdbcUtil.setNullableDouble(ps, 2, form.getLabRbc());
+            JdbcUtil.setNullableDouble(ps, 3, form.getLabHgb());
+            JdbcUtil.setNullableDouble(ps, 4, form.getLabHct());
+            JdbcUtil.setNullableDouble(ps, 5, form.getLabPlt());
+            JdbcUtil.setString(ps, 6, form.getLabGhiChu());
+            ps.setString(7, encounterId);
             ps.executeUpdate();
         }
     }
 
-    private void insertAll(Connection con, EncounterCreateRequest form, String patientId, String encounterId)
+    /** Cập nhật các cột sinh hóa trên row lab_results duy nhất của encounter. */
+    private void updateBiochemistryRow(Connection con, String encounterId, EncounterCreateDTO form)
             throws SQLException {
-        if (!form.hasLabData()) {
-            return;
-        }
-
-        String id = java.util.UUID.randomUUID().toString();
-        String nuocTieuJson = buildNuocTieuJson(form.getLabNuocTieu());
-
         String sql =
-                "INSERT INTO lab_results " +
-                        "(id, patient_id, encounter_id, glucose_mau, hba1c, cholesterol_tp, triglyceride, " +
-                        "hdl_c, ldl_c, ast, alt, ure, creatinine, hbsag, anti_hcv, nuoc_tieu, ghi_chu, " +
-                        "wbc, rbc, hgb, hct, plt) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
+                "UPDATE lab_results SET " +
+                        "glucose_mau = COALESCE(?, glucose_mau), " +
+                        "hba1c = COALESCE(?, hba1c), " +
+                        "cholesterol_tp = COALESCE(?, cholesterol_tp), " +
+                        "triglyceride = COALESCE(?, triglyceride), " +
+                        "hdl_c = COALESCE(?, hdl_c), ldl_c = COALESCE(?, ldl_c), " +
+                        "ast = COALESCE(?, ast), alt = COALESCE(?, alt), " +
+                        "ure = COALESCE(?, ure), creatinine = COALESCE(?, creatinine), " +
+                        "ghi_chu = COALESCE(?, ghi_chu) WHERE encounter_id = ?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, id);
-            ps.setString(2, patientId);
-            ps.setString(3, encounterId);
-            JdbcUtil.setDouble(ps, 4, form.getLabGlucoseMau());
-            JdbcUtil.setDouble(ps, 5, form.getLabHba1c());
-            JdbcUtil.setDouble(ps, 6, form.getLabCholesterol());
-            JdbcUtil.setDouble(ps, 7, form.getLabTriglyceride());
-            JdbcUtil.setDouble(ps, 8, form.getLabHdl());
-            JdbcUtil.setDouble(ps, 9, form.getLabLdl());
-            JdbcUtil.setDouble(ps, 10, form.getLabAst());
-            JdbcUtil.setDouble(ps, 11, form.getLabAlt());
-            JdbcUtil.setDouble(ps, 12, form.getLabUre());
-            JdbcUtil.setDouble(ps, 13, form.getLabCreatinine());
-            JdbcUtil.setString(ps, 14, emptyToNull(form.getLabHbsag()));
-            JdbcUtil.setString(ps, 15, emptyToNull(form.getLabAntiHcv()));
-            JdbcUtil.setString(ps, 16, nuocTieuJson);
-            JdbcUtil.setString(ps, 17, form.getLabGhiChu());
-            JdbcUtil.setNullableDouble(ps, 18, form.getLabWbc());
-            JdbcUtil.setNullableDouble(ps, 19, form.getLabRbc());
-            JdbcUtil.setNullableDouble(ps, 20, form.getLabHgb());
-            JdbcUtil.setNullableDouble(ps, 21, form.getLabHct());
-            JdbcUtil.setNullableDouble(ps, 22, form.getLabPlt());
+            JdbcUtil.setDouble(ps, 1, form.getLabGlucoseMau());
+            JdbcUtil.setDouble(ps, 2, form.getLabHba1c());
+            JdbcUtil.setDouble(ps, 3, form.getLabCholesterol());
+            JdbcUtil.setDouble(ps, 4, form.getLabTriglyceride());
+            JdbcUtil.setDouble(ps, 5, form.getLabHdl());
+            JdbcUtil.setDouble(ps, 6, form.getLabLdl());
+            JdbcUtil.setDouble(ps, 7, form.getLabAst());
+            JdbcUtil.setDouble(ps, 8, form.getLabAlt());
+            JdbcUtil.setDouble(ps, 9, form.getLabUre());
+            JdbcUtil.setDouble(ps, 10, form.getLabCreatinine());
+            JdbcUtil.setString(ps, 11, form.getLabGhiChu());
+            ps.setString(12, encounterId);
             ps.executeUpdate();
         }
     }
@@ -183,22 +273,19 @@ public class LabResultDAO {
         }
     }
 
-    private String buildNuocTieuJson(String text) {
-        if (text == null || text.isBlank()) {
-            return null;
-        }
-        String escaped = text.replace("\\", "\\\\").replace("\"", "\\\"");
-        return "{\"ket_qua\":\"" + escaped + "\"}";
-    }
-
-    private String emptyToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
-    }
-
     private LabResult map(ResultSet rs) throws SQLException {
         LabResult lab = new LabResult();
         lab.setId(rs.getString("id"));
-        lab.setDisplayCode(PatientDAO.resolveCode(rs, "lab_result_code"));
+        String displayCode = rs.getString("lab_result_code");
+        if (displayCode == null || displayCode.isBlank()) {
+            String fallbackId = rs.getString("patient_id");
+            if (fallbackId == null || fallbackId.isBlank()) {
+                fallbackId = rs.getString("id");
+            }
+            displayCode = fallbackId != null && fallbackId.length() >= 8
+                    ? fallbackId.substring(0, 8).toUpperCase() : "N/A";
+        }
+        lab.setDisplayCode(displayCode);
         lab.setPatientId(rs.getString("patient_id"));
         lab.setEncounterId(rs.getString("encounter_id"));
 

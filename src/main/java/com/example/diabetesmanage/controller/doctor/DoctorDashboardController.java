@@ -1,9 +1,10 @@
 package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.DoctorDashboardDAO;
-import com.example.diabetesmanage.dao.DoctorDashboardDAO.DashboardStats;
 import com.example.diabetesmanage.dao.PatientDAO;
-import com.example.diabetesmanage.model.UrgentPatientAlert;
+import com.example.diabetesmanage.dto.HighRiskPatientDTO;
+import com.example.diabetesmanage.dto.DashboardSummaryDTO;
+import com.example.diabetesmanage.dto.CriticalPatientAlertDTO;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.service.DangerousPatientService;
 import com.example.diabetesmanage.service.DangerousPatientService.AnalysisResult;
@@ -20,7 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 @WebServlet(name = "DoctorDashboardServlet", urlPatterns = {"/doctor-dashboard"})
-public class DoctorDashboardServlet extends HttpServlet {
+public class DoctorDashboardController extends HttpServlet {
 
     private final DoctorDashboardDAO dashboardDAO = new DoctorDashboardDAO();
     private final DangerousPatientService dangerousPatientService = new DangerousPatientService();
@@ -28,24 +29,26 @@ public class DoctorDashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         User doctor = AuthContext.requireDoctor(request, response);
         if (doctor == null) {
             return;
         }
 
         String doctorId = doctor.getId().toString();
-        DashboardStats stats = dashboardDAO.getDashboardStats(doctorId);
+        DashboardSummaryDTO stats = dashboardDAO.getDashboardStats(
+                doctorId,
+                request.getParameter("startDate"),
+                request.getParameter("endDate"));
+        if (stats == null) {
+            stats = new DashboardSummaryDTO();
+        }
+
         AnalysisResult analysisResult =
                 dangerousPatientService.analyzeDangerousPatients(doctorId);
 
-        if (stats == null) {
-            stats = new DashboardStats();
-        }
-
-        List<UrgentPatientAlert> dangerousPatients = analysisResult.getDangerousPatients();
+        List<CriticalPatientAlertDTO> dangerousPatients = analysisResult.getDangerousPatients();
         long criticalCount = dangerousPatients.stream()
-                .filter(UrgentPatientAlert::isCritical)
+                .filter(CriticalPatientAlertDTO::isCritical)
                 .count();
 
         stats.setPriorityLevel1Count((int) criticalCount);
@@ -59,6 +62,42 @@ public class DoctorDashboardServlet extends HttpServlet {
         request.setAttribute("analysisResult", analysisResult);
 
         request.getRequestDispatcher("/WEB-INF/views/doctor/doctordashboard.jsp")
+                .forward(request, response);
+    }
+    private final PatientDAO patientDAO = new PatientDAO();
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        User doctor = AuthContext.requireDoctor(request, response);
+        if (doctor == null) {
+            return;
+        }
+
+        String patientId = request.getParameter("id");
+        if (patientId == null || patientId.isBlank()) {
+            response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
+            return;
+        }
+
+        if (!AuthContext.ensurePatientAccess(doctor, patientDAO, patientId, response)) {
+            return;
+        }
+
+        HighRiskPatientDTO detail = dangerousPatientService.getDangerousPatientDetail(
+                doctor.getId().toString(),
+                patientId
+        );
+
+        if (detail == null) {
+            response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
+            return;
+        }
+
+        DoctorLayoutHelper.prepare(request, doctor, "alerts");
+        request.setAttribute("detail", detail);
+        request.getRequestDispatcher("/WEB-INF/views/doctor/dangerouspatientanalysis.jsp")
                 .forward(request, response);
     }
 }

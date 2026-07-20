@@ -1,10 +1,10 @@
-package com.example.diabetesmanage.model;
+package com.example.diabetesmanage.dto;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class UrgentPatientAlert {
+public class CriticalPatientAlertDTO {
 
     private String patientId;
     private String patientCode;

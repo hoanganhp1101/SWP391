@@ -24,6 +24,24 @@ public class UserDAO {
         return instance;
     }
 
+
+    public String getNameById(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String sql = "SELECT ho_ten FROM users WHERE id = ?";
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, userId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() ? rs.getString("ho_ten") : null;
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName())
+                    .log(Level.SEVERE, "getNameById error", e);
+            return null;
+        }
+    }
+
     public List<User> getUsersByRole(String role) {
         List<User> userList = new ArrayList<>();
         String sql = "SELECT * FROM users WHERE vai_tro = ?";

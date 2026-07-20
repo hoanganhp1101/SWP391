@@ -1,13 +1,14 @@
 package com.example.diabetesmanage.service;
 
 import com.example.diabetesmanage.config.GeminiConfig;
-import com.example.diabetesmanage.service.medical.HealthRecordService;
+import com.example.diabetesmanage.dao.HealthRecordDAO;
+import com.example.diabetesmanage.dao.LabResultDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
-import com.example.diabetesmanage.model.DangerousPatientDetail;
+import com.example.diabetesmanage.dto.HighRiskPatientDTO;
+import com.example.diabetesmanage.dto.CriticalPatientAlertDTO;
 import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.model.LabResult;
 import com.example.diabetesmanage.model.Patient;
-import com.example.diabetesmanage.model.PatientHealthSnapshot;
-import com.example.diabetesmanage.model.UrgentPatientAlert;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -32,7 +33,6 @@ import java.util.Map;
 
 public class DangerousPatientService {
 
-    private static final int RECORDS_PER_PATIENT = 20;
     private static final int MAX_GEMINI_CANDIDATES = 15;
     private static final int DISPLAY_LIMIT = 20;
 
@@ -45,6 +45,8 @@ public class DangerousPatientService {
     private static final int BP_SYSTOLIC_HIGH = 140;
     private static final int BP_DIASTOLIC_HIGH = 90;
     private static final int MONITORING_GAP_DAYS = 7;
+    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
+    private final LabResultDAO labResultDAO = new LabResultDAO();
 
     private static final String GENERATE_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
@@ -61,7 +63,6 @@ public class DangerousPatientService {
     );
 
     private final PatientDAO patientDAO = new PatientDAO();
-    private final HealthRecordService healthRecordService = new HealthRecordService();
     private final GeminiConfig geminiConfig = GeminiConfig.load();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -70,16 +71,16 @@ public class DangerousPatientService {
     public AnalysisResult analyzeDangerousPatients(String doctorId) {
 
         AnalysisResult result = new AnalysisResult();
-        List<PatientHealthSnapshot> dangerousSnapshots = collectDangerousSnapshots(doctorId);
+        List<HighRiskPatientDTO> dangerousProfiles = collectDangerousProfiles(doctorId);
 
-        dangerousSnapshots.sort(Comparator
-                .comparingInt(PatientHealthSnapshot::getRiskScore).reversed());
+        dangerousProfiles.sort(Comparator
+                .comparingInt(HighRiskPatientDTO::getRiskScore).reversed());
 
-        result.setTotalDangerousCount(dangerousSnapshots.size());
+        result.setTotalDangerousCount(dangerousProfiles.size());
 
-        List<PatientHealthSnapshot> geminiCandidates = dangerousSnapshots.subList(
+        List<HighRiskPatientDTO> geminiCandidates = dangerousProfiles.subList(
                 0,
-                Math.min(dangerousSnapshots.size(), MAX_GEMINI_CANDIDATES)
+                Math.min(dangerousProfiles.size(), MAX_GEMINI_CANDIDATES)
         );
 
         GeminiAnalysis geminiAnalysis = enrichWithGemini(geminiCandidates);
@@ -94,11 +95,11 @@ public class DangerousPatientService {
             result.setAiInsights(geminiAnalysis.getInsights());
         }
 
-        List<UrgentPatientAlert> alerts = new ArrayList<>();
-        int displayCount = Math.min(dangerousSnapshots.size(), DISPLAY_LIMIT);
+        List<CriticalPatientAlertDTO> alerts = new ArrayList<>();
+        int displayCount = Math.min(dangerousProfiles.size(), DISPLAY_LIMIT);
 
         for (int i = 0; i < displayCount; i++) {
-            alerts.add(toUrgentAlert(dangerousSnapshots.get(i), geminiAnalysis));
+            alerts.add(toUrgentAlert(dangerousProfiles.get(i), geminiAnalysis));
         }
 
         alerts.sort((a, b) -> Integer.compare(b.getRiskScore(), a.getRiskScore()));
@@ -106,10 +107,10 @@ public class DangerousPatientService {
         return result;
     }
 
-    public DangerousPatientDetail getDangerousPatientDetail(String doctorId, String patientId) {
+    public HighRiskPatientDTO getDangerousPatientDetail(String doctorId, String patientId) {
 
         Map<String, List<HealthRecord>> recordsByPatient =
-                healthRecordService.getSnapshotsGroupedByPatient(doctorId);
+                getRecordsGroupedByPatient(doctorId);
 
         List<HealthRecord> records = recordsByPatient.getOrDefault(patientId, new ArrayList<>());
         if (records.isEmpty()) {
@@ -121,25 +122,25 @@ public class DangerousPatientService {
             return null;
         }
 
-        PatientHealthSnapshot snapshot = buildSnapshot(patient, records);
-        analyzeRiskRules(snapshot);
+        HighRiskPatientDTO profile = buildRiskProfile(patient, records);
+        analyzeRiskRules(profile);
 
-        if (!snapshot.isDangerous()) {
+        if (!profile.isDangerous()) {
             return null;
         }
 
-        DangerousPatientDetail detail = new DangerousPatientDetail();
-        detail.setPatientId(snapshot.getPatientId());
-        detail.setPatientCode(snapshot.getPatientCode());
-        detail.setPatientName(snapshot.getPatientName());
-        detail.setInitials(buildInitials(snapshot.getPatientName()));
-        detail.setLoaiTieuDuong(snapshot.getLoaiTieuDuong());
-        detail.setRiskLevel(resolveRiskLevel(snapshot));
-        detail.setRiskScore(snapshot.getRiskScore());
-        detail.setCritical(snapshot.isCritical());
-        detail.setNeedsUrgentReview(snapshot.isCritical());
-        detail.setRiskReasons(snapshot.getRiskReasons());
-        detail.setMetricTags(buildMetricTags(records, snapshot.getRiskReasons()));
+        HighRiskPatientDTO detail = new HighRiskPatientDTO();
+        detail.setPatientId(profile.getPatientId());
+        detail.setPatientCode(profile.getPatientCode());
+        detail.setPatientName(profile.getPatientName());
+        detail.setInitials(buildInitials(profile.getPatientName()));
+        detail.setLoaiTieuDuong(profile.getLoaiTieuDuong());
+        detail.setRiskLevel(resolveRiskLevel(profile));
+        detail.setRiskScore(profile.getRiskScore());
+        detail.setCritical(profile.isCritical());
+        detail.setNeedsUrgentReview(profile.isCritical());
+        detail.setRiskReasons(profile.getRiskReasons());
+        detail.setMetricTags(buildMetricTags(records, profile.getRiskReasons()));
         detail.setRecentRecords(records);
 
         List<HealthRecord> sorted = new ArrayList<>(records);
@@ -157,7 +158,7 @@ public class DangerousPatientService {
         detail.setInsulinGanNhat(latest.getLieuLuongInsulinUi());
         detail.setTimeAgo(formatTimeAgo(latest.getThoiGianDo()));
 
-        PatientDetailGeminiAnalysis geminiDetail = analyzePatientDetail(snapshot);
+        PatientDetailGeminiAnalysis geminiDetail = analyzePatientDetail(profile);
 
         detail.setGeminiUsed(geminiDetail.isUsed());
         detail.setGeminiError(geminiDetail.getError());
@@ -170,23 +171,22 @@ public class DangerousPatientService {
                 detail.setRiskLevel(geminiDetail.getRiskLevel());
             }
             if (geminiDetail.getPriorityScore() > 0) {
-                detail.setRiskScore(Math.max(snapshot.getRiskScore(), geminiDetail.getPriorityScore()));
+                detail.setRiskScore(Math.max(profile.getRiskScore(), geminiDetail.getPriorityScore()));
             }
         } else {
-            detail.setAiSummary(buildFallbackSummary(snapshot));
-            detail.setAiDetailAnalysis(buildFallbackDetail(snapshot));
-            detail.setAiRecommendations(buildFallbackRecommendations(snapshot));
+            detail.setAiSummary(buildFallbackSummary(profile));
+            detail.setAiDetailAnalysis(buildFallbackDetail(profile));
+            detail.setAiRecommendations(buildFallbackRecommendations(profile));
         }
 
         return detail;
     }
 
-    private List<PatientHealthSnapshot> collectDangerousSnapshots(String doctorId) {
+    private List<HighRiskPatientDTO> collectDangerousProfiles(String doctorId) {
 
-        List<PatientHealthSnapshot> dangerousSnapshots = new ArrayList<>();
+        List<HighRiskPatientDTO> dangerousProfiles = new ArrayList<>();
         List<Patient> patients = patientDAO.getPatients(doctorId);
-        Map<String, List<HealthRecord>> recordsByPatient =
-                healthRecordService.getSnapshotsGroupedByPatient(doctorId);
+        Map<String, List<HealthRecord>> recordsByPatient = getRecordsGroupedByPatient(doctorId);
 
         for (Patient patient : patients) {
             List<HealthRecord> records =
@@ -196,46 +196,46 @@ public class DangerousPatientService {
                 continue;
             }
 
-            PatientHealthSnapshot snapshot = buildSnapshot(patient, records);
-            analyzeRiskRules(snapshot);
+            HighRiskPatientDTO profile = buildRiskProfile(patient, records);
+            analyzeRiskRules(profile);
 
-            if (snapshot.isDangerous()) {
-                dangerousSnapshots.add(snapshot);
+            if (profile.isDangerous()) {
+                dangerousProfiles.add(profile);
             }
         }
 
-        return dangerousSnapshots;
+        return dangerousProfiles;
     }
 
-    private PatientHealthSnapshot buildSnapshot(Patient patient, List<HealthRecord> records) {
-        PatientHealthSnapshot snapshot = new PatientHealthSnapshot();
-        snapshot.setPatientId(patient.getId());
-        snapshot.setPatientCode(patient.getPatientCode());
-        snapshot.setPatientName(
+    private HighRiskPatientDTO buildRiskProfile(Patient patient, List<HealthRecord> records) {
+        HighRiskPatientDTO profile = new HighRiskPatientDTO();
+        profile.setPatientId(patient.getId());
+        profile.setPatientCode(patient.getPatientCode());
+        profile.setPatientName(
                 patient.getUser() != null ? patient.getUser().getHoTen() : "Không rõ"
         );
-        snapshot.setLoaiTieuDuong(patient.getLoaiTieuDuong());
-        snapshot.setRecentRecords(records);
-        return snapshot;
+        profile.setLoaiTieuDuong(patient.getLoaiTieuDuong());
+        profile.setRecentRecords(records);
+        return profile;
     }
 
-    private UrgentPatientAlert toUrgentAlert(
-            PatientHealthSnapshot snapshot,
+    private CriticalPatientAlertDTO toUrgentAlert(
+            HighRiskPatientDTO profile,
             GeminiAnalysis geminiAnalysis) {
 
-        UrgentPatientAlert alert = new UrgentPatientAlert();
-        alert.setPatientId(snapshot.getPatientId());
-        alert.setPatientCode(snapshot.getPatientCode());
-        alert.setPatientName(snapshot.getPatientName());
-        alert.setLoaiTieuDuong(snapshot.getLoaiTieuDuong());
-        alert.setRiskReasons(snapshot.getRiskReasons());
-        alert.setRiskScore(snapshot.getRiskScore());
-        alert.setCritical(snapshot.isCritical());
+        CriticalPatientAlertDTO alert = new CriticalPatientAlertDTO();
+        alert.setPatientId(profile.getPatientId());
+        alert.setPatientCode(profile.getPatientCode());
+        alert.setPatientName(profile.getPatientName());
+        alert.setLoaiTieuDuong(profile.getLoaiTieuDuong());
+        alert.setRiskReasons(profile.getRiskReasons());
+        alert.setRiskScore(profile.getRiskScore());
+        alert.setCritical(profile.isCritical());
 
-        populateAlertMetrics(alert, snapshot);
+        populateAlertMetrics(alert, profile);
 
         PatientGeminiInsight geminiInsight =
-                geminiAnalysis.getPatientInsights().get(snapshot.getPatientCode());
+                geminiAnalysis.getPatientInsights().get(profile.getPatientCode());
 
         if (geminiInsight != null) {
             alert.setAiSummary(geminiInsight.getSummary());
@@ -248,37 +248,37 @@ public class DangerousPatientService {
             }
             if (geminiInsight.getPriorityScore() > 0) {
                 alert.setRiskScore(
-                        Math.max(snapshot.getRiskScore(), geminiInsight.getPriorityScore())
+                        Math.max(profile.getRiskScore(), geminiInsight.getPriorityScore())
                 );
             }
         } else {
-            alert.setAiSummary(buildFallbackSummary(snapshot));
+            alert.setAiSummary(buildFallbackSummary(profile));
         }
 
         return alert;
     }
 
-    private String buildFallbackSummary(PatientHealthSnapshot snapshot) {
-        if (snapshot.getRiskReasons().isEmpty()) {
+    private String buildFallbackSummary(HighRiskPatientDTO profile) {
+        if (profile.getRiskReasons().isEmpty()) {
             return "Bệnh nhân có chỉ số cần theo dõi thêm.";
         }
-        return String.join(". ", snapshot.getRiskReasons()) + ".";
+        return String.join(". ", profile.getRiskReasons()) + ".";
     }
 
-    private String buildFallbackDetail(PatientHealthSnapshot snapshot) {
+    private String buildFallbackDetail(HighRiskPatientDTO profile) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Hệ thống ghi nhận ").append(snapshot.getRiskReasons().size())
-                .append(" dấu hiệu bất thường từ ").append(snapshot.getRecentRecords().size())
+        sb.append("Hệ thống ghi nhận ").append(profile.getRiskReasons().size())
+                .append(" dấu hiệu bất thường từ ").append(profile.getRecentRecords().size())
                 .append(" hồ sơ gần đây. ");
-        if (!snapshot.getRiskReasons().isEmpty()) {
-            sb.append("Các vấn đề chính: ").append(String.join(", ", snapshot.getRiskReasons())).append(".");
+        if (!profile.getRiskReasons().isEmpty()) {
+            sb.append("Các vấn đề chính: ").append(String.join(", ", profile.getRiskReasons())).append(".");
         }
         return sb.toString();
     }
 
-    private List<String> buildFallbackRecommendations(PatientHealthSnapshot snapshot) {
+    private List<String> buildFallbackRecommendations(HighRiskPatientDTO profile) {
         List<String> recommendations = new ArrayList<>();
-        for (String reason : snapshot.getRiskReasons()) {
+        for (String reason : profile.getRiskReasons()) {
             if (reason.contains("đường huyết") || reason.contains("Đường huyết")) {
                 recommendations.add("Theo dõi đường huyết nhiều lần trong ngày và điều chỉnh chế độ ăn.");
             } else if (reason.contains("HbA1c")) {
@@ -306,17 +306,17 @@ public class DangerousPatientService {
         return null;
     }
 
-    private void analyzeRiskRules(PatientHealthSnapshot snapshot) {
+    private void analyzeRiskRules(HighRiskPatientDTO profile) {
 
         List<String> reasons = new ArrayList<>();
         int score = 0;
         boolean critical = false;
 
-        List<HealthRecord> records = snapshot.getRecentRecords();
+        List<HealthRecord> records = profile.getRecentRecords();
         if (records == null || records.isEmpty()) {
-            snapshot.setRiskReasons(new ArrayList<>());
-            snapshot.setRiskScore(0);
-            snapshot.setCritical(false);
+            profile.setRiskReasons(new ArrayList<>());
+            profile.setRiskScore(0);
+            profile.setCritical(false);
             return;
         }
 
@@ -401,9 +401,9 @@ public class DangerousPatientService {
             score += 45;
         }
 
-        snapshot.setRiskReasons(deduplicateReasons(reasons));
-        snapshot.setRiskScore(score);
-        snapshot.setCritical(critical || score >= 85);
+        profile.setRiskReasons(deduplicateReasons(reasons));
+        profile.setRiskScore(score);
+        profile.setCritical(critical || score >= 85);
     }
 
     private boolean hasRisingGlucoseTrend(List<HealthRecord> sorted) {
@@ -541,11 +541,11 @@ public class DangerousPatientService {
         return first + last;
     }
 
-    private static String resolveRiskLevel(PatientHealthSnapshot snapshot) {
-        if (snapshot.isCritical() || snapshot.getRiskScore() >= 85) {
+    private static String resolveRiskLevel(HighRiskPatientDTO profile) {
+        if (profile.isCritical() || profile.getRiskScore() >= 85) {
             return "critical";
         }
-        if (snapshot.getRiskScore() >= 55) {
+        if (profile.getRiskScore() >= 55) {
             return "high";
         }
         return "medium";
@@ -669,14 +669,14 @@ public class DangerousPatientService {
     }
 
     private static void populateAlertMetrics(
-            UrgentPatientAlert alert,
-            PatientHealthSnapshot snapshot) {
+            CriticalPatientAlertDTO alert,
+            HighRiskPatientDTO profile) {
 
-        List<HealthRecord> records = snapshot.getRecentRecords();
-        alert.setInitials(buildInitials(snapshot.getPatientName()));
-        alert.setRiskLevel(resolveRiskLevel(snapshot));
-        alert.setNeedsUrgentReview(snapshot.isCritical());
-        alert.setMetricTags(buildMetricTags(records, snapshot.getRiskReasons()));
+        List<HealthRecord> records = profile.getRecentRecords();
+        alert.setInitials(buildInitials(profile.getPatientName()));
+        alert.setRiskLevel(resolveRiskLevel(profile));
+        alert.setNeedsUrgentReview(profile.isCritical());
+        alert.setMetricTags(buildMetricTags(records, profile.getRiskReasons()));
 
         if (records.isEmpty()) {
             return;
@@ -737,7 +737,7 @@ public class DangerousPatientService {
         return null;
     }
 
-    private static String buildVitalDisplay(UrgentPatientAlert alert) {
+    private static String buildVitalDisplay(CriticalPatientAlertDTO alert) {
         if (alert.getDuongHuyetGanNhat() != null) {
             return String.format("%.0f mg/dL", alert.getDuongHuyetGanNhat());
         }
@@ -747,7 +747,7 @@ public class DangerousPatientService {
         return "—";
     }
 
-    private GeminiAnalysis enrichWithGemini(List<PatientHealthSnapshot> candidates) {
+    private GeminiAnalysis enrichWithGemini(List<HighRiskPatientDTO> candidates) {
 
         GeminiAnalysis result = new GeminiAnalysis();
         result.setConfigured(geminiConfig.isConfigured());
@@ -789,7 +789,7 @@ public class DangerousPatientService {
         return result;
     }
 
-    private PatientDetailGeminiAnalysis analyzePatientDetail(PatientHealthSnapshot snapshot) {
+    private PatientDetailGeminiAnalysis analyzePatientDetail(HighRiskPatientDTO profile) {
 
         PatientDetailGeminiAnalysis result = new PatientDetailGeminiAnalysis();
         result.setConfigured(geminiConfig.isConfigured());
@@ -800,7 +800,7 @@ public class DangerousPatientService {
         }
 
         try {
-            String prompt = buildDetailPrompt(snapshot);
+            String prompt = buildDetailPrompt(profile);
             String jsonResponse = generateGeminiJsonResponse(prompt);
             parseDetailResponse(jsonResponse, result);
             result.setUsed(true);
@@ -813,7 +813,7 @@ public class DangerousPatientService {
         return result;
     }
 
-    private String buildDetailPrompt(PatientHealthSnapshot snapshot) {
+    private String buildDetailPrompt(HighRiskPatientDTO profile) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Bạn là bác sĩ nội tiết chuyên tiểu đường. ");
@@ -826,16 +826,16 @@ public class DangerousPatientService {
         sb.append("  \"recommendations\": [\"khuyến nghị 1\", \"khuyến nghị 2\", \"khuyến nghị 3\"],\n");
         sb.append("  \"priorityScore\": 1-100\n");
         sb.append("}\n\n");
-        sb.append("Bệnh nhân: ").append(snapshot.getPatientName());
-        sb.append(" (").append(snapshot.getPatientCode()).append(")\n");
-        sb.append("Loại tiểu đường: ").append(nullToDash(snapshot.getLoaiTieuDuong())).append("\n");
-        sb.append("Điểm rủi ro: ").append(snapshot.getRiskScore()).append("\n");
-        sb.append("Lý do nguy hiểm: ").append(String.join("; ", snapshot.getRiskReasons())).append("\n\n");
+        sb.append("Bệnh nhân: ").append(profile.getPatientName());
+        sb.append(" (").append(profile.getPatientCode()).append(")\n");
+        sb.append("Loại tiểu đường: ").append(nullToDash(profile.getLoaiTieuDuong())).append("\n");
+        sb.append("Điểm rủi ro: ").append(profile.getRiskScore()).append("\n");
+        sb.append("Lý do nguy hiểm: ").append(String.join("; ", profile.getRiskReasons())).append("\n\n");
         sb.append("Lịch sử đo gần đây:\n");
 
-        int limit = Math.min(10, snapshot.getRecentRecords().size());
+        int limit = Math.min(10, profile.getRecentRecords().size());
         for (int i = 0; i < limit; i++) {
-            var record = snapshot.getRecentRecords().get(i);
+            var record = profile.getRecentRecords().get(i);
             sb.append("- ")
                     .append(record.getThoiGianDo() != null ? record.getThoiGianDo().toLocalDate() : "?")
                     .append(": DH=").append(format(record.getDuongHuyetMgdl()))
@@ -874,7 +874,7 @@ public class DangerousPatientService {
         }
     }
 
-    private String buildGeminiPrompt(List<PatientHealthSnapshot> candidates) {
+    private String buildGeminiPrompt(List<HighRiskPatientDTO> candidates) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Bạn là bác sĩ nội tiết chuyên về tiểu đường. ");
@@ -897,18 +897,18 @@ public class DangerousPatientService {
         sb.append("}\n\n");
         sb.append("Dữ liệu bệnh nhân:\n");
 
-        for (PatientHealthSnapshot snapshot : candidates) {
-            sb.append("- Mã: ").append(snapshot.getPatientCode());
-            sb.append(", Tên: ").append(snapshot.getPatientName());
-            sb.append(", Loại tiểu đường: ").append(nullToDash(snapshot.getLoaiTieuDuong()));
-            sb.append(", Điểm rủi ro: ").append(snapshot.getRiskScore());
-            sb.append(", Lý do: ").append(String.join("; ", snapshot.getRiskReasons()));
-            sb.append(", Số hồ sơ gần đây: ").append(snapshot.getRecentRecords().size());
+        for (HighRiskPatientDTO profile : candidates) {
+            sb.append("- Mã: ").append(profile.getPatientCode());
+            sb.append(", Tên: ").append(profile.getPatientName());
+            sb.append(", Loại tiểu đường: ").append(nullToDash(profile.getLoaiTieuDuong()));
+            sb.append(", Điểm rủi ro: ").append(profile.getRiskScore());
+            sb.append(", Lý do: ").append(String.join("; ", profile.getRiskReasons()));
+            sb.append(", Số hồ sơ gần đây: ").append(profile.getRecentRecords().size());
             sb.append("\n");
 
-            int limit = Math.min(5, snapshot.getRecentRecords().size());
+            int limit = Math.min(5, profile.getRecentRecords().size());
             for (int i = 0; i < limit; i++) {
-                var record = snapshot.getRecentRecords().get(i);
+                var record = profile.getRecentRecords().get(i);
                 sb.append("  + ")
                         .append(record.getThoiGianDo() != null ? record.getThoiGianDo().toLocalDate() : "?")
                         .append(": DH=").append(format(record.getDuongHuyetMgdl()))
@@ -926,7 +926,7 @@ public class DangerousPatientService {
 
     private void parseGeminiResponse(
             String jsonResponse,
-            List<PatientHealthSnapshot> candidates,
+            List<HighRiskPatientDTO> candidates,
             GeminiAnalysis result) {
 
         JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
@@ -1163,9 +1163,44 @@ public class DangerousPatientService {
         return text.length() > 300 ? text.substring(0, 300) + "..." : text;
     }
 
+    public Map<String, List<HealthRecord>> getRecordsGroupedByPatient(String scopeDoctorId) {
+        Map<String, List<HealthRecord>> grouped = new LinkedHashMap<>();
+        for (HealthRecord record : healthRecordDAO.getLatestPerPatient(scopeDoctorId)) {
+            String patientKey = record.getPatient() != null ? record.getPatient().getId() : null;
+            if (patientKey == null || patientKey.isBlank()) {
+                patientKey = record.getId();
+            }
+            if (patientKey == null || patientKey.isBlank()) {
+                continue;
+            }
+            // Phân tích rủi ro cần bức tranh đầy đủ: gộp giá trị mới nhất của từng
+            // chỉ số trên mọi encounter thay vì chỉ đọc lab của encounter gần nhất.
+            String labPatientId = record.getPatient() != null ? record.getPatient().getId() : null;
+            LabResult lab = labResultDAO.getLatestSummaryByPatientId(labPatientId);
+            if (lab != null) {
+                record.setHba1cPercent(lab.getHba1c());
+                record.setCholesterolMmol(lab.getCholesterolTp());
+                record.setTriglycerideMmol(lab.getTriglyceride());
+                record.setHdlMmol(lab.getHdlC());
+                record.setLdlMmol(lab.getLdlC());
+                record.setWbc(lab.getWbc());
+                record.setRbc(lab.getRbc());
+                record.setHgb(lab.getHgb());
+                record.setHct(lab.getHct());
+                record.setPlt(lab.getPlt());
+                record.setAst(lab.getAst());
+                record.setAlt(lab.getAlt());
+                record.setUre(lab.getUre());
+                record.setCreatinine(lab.getCreatinine());
+            }
+            grouped.put(patientKey, List.of(record));
+        }
+        return grouped;
+    }
+
     public static class AnalysisResult {
 
-        private List<UrgentPatientAlert> dangerousPatients = new ArrayList<>();
+        private List<CriticalPatientAlertDTO> dangerousPatients = new ArrayList<>();
         private List<String> aiInsights = new ArrayList<>();
         private String aiSummary;
         private boolean geminiUsed;
@@ -1174,11 +1209,11 @@ public class DangerousPatientService {
         private String geminiError;
         private String geminiConfigInfo;
 
-        public List<UrgentPatientAlert> getDangerousPatients() {
+        public List<CriticalPatientAlertDTO> getDangerousPatients() {
             return dangerousPatients;
         }
 
-        public void setDangerousPatients(List<UrgentPatientAlert> dangerousPatients) {
+        public void setDangerousPatients(List<CriticalPatientAlertDTO> dangerousPatients) {
             this.dangerousPatients = dangerousPatients;
         }
 

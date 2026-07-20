@@ -6,9 +6,6 @@ import java.sql.Types;
 
 final class JdbcUtil {
 
-    private JdbcUtil() {
-    }
-
     static void setString(PreparedStatement ps, int index, String value) throws SQLException {
         if (value == null || value.isBlank()) {
             ps.setNull(index, Types.VARCHAR);
@@ -37,15 +34,4 @@ final class JdbcUtil {
         }
     }
 
-    static void setBoolean(PreparedStatement ps, int index, Boolean value) throws SQLException {
-        if (value == null) {
-            ps.setNull(index, Types.BOOLEAN);
-        } else {
-            ps.setBoolean(index, value);
-        }
-    }
-
-    static void setNullDouble(PreparedStatement ps, int index) throws SQLException {
-        ps.setNull(index, Types.DOUBLE);
-    }
 }

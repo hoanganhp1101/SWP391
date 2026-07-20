@@ -1,6 +1,5 @@
 package com.example.diabetesmanage.util;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.User;
 
@@ -103,25 +102,6 @@ public final class AuthContext {
         return true;
     }
 
-    public static boolean ensureRecordAccess(
-            User user,
-            PatientDAO patientDAO,
-            HealthRecordDAO healthRecordDAO,
-            String recordId,
-            HttpServletResponse response
-    ) throws IOException {
-        if (recordId == null || recordId.isBlank()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thieu ma ho so");
-            return false;
-        }
-        if (!healthRecordDAO.recordExists(recordId)) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Khong tim thay ho so");
-            return false;
-        }
-        String patientId = healthRecordDAO.getPatientIdByRecordId(recordId);
-        return ensurePatientAccess(user, patientDAO, patientId, response);
-    }
-
     public static boolean ensureEncounterAccess(
             User user,
             PatientDAO patientDAO,
@@ -133,7 +113,13 @@ public final class AuthContext {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thieu ma lan kham");
             return false;
         }
-        if (!encounterDAO.encounterExists(encounterId)) {
+        try {
+            if (!encounterDAO.existsById(encounterId)) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Khong tim thay lan kham");
+                return false;
+            }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Khong tim thay lan kham");
             return false;
         }

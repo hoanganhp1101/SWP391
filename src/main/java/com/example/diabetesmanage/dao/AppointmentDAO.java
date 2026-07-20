@@ -1,17 +1,21 @@
 package com.example.diabetesmanage.dao;
 
-import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.context.DBContext;
+import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.model.User;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class AppointmentDAO {
+
+    // ---- Patient portal methods ----
+
     public List<Appointment> getUpcomingAppointments(String patientId) {
         String sql = "SELECT a.*, u.ho_ten AS bac_si_name " +
                 "FROM appointments a LEFT JOIN users u ON a.bac_si_id = u.id " +
@@ -126,7 +130,7 @@ public class AppointmentDAO {
         return a;
     }
 
-    // ── Doctor portal methods ────────────────────────────────────────────────
+    // ---- Doctor portal methods (from doctor-dashboard) ----
 
     private static final String SELECT_BASE =
             "SELECT a.*, " +
@@ -140,16 +144,26 @@ public class AppointmentDAO {
                     "LEFT JOIN users bs ON a.bac_si_id = bs.id " +
                     "WHERE 1=1 ";
 
-    public List<Appointment> findAll(String scopeDoctorId, String status, String keyword) {
+    public List<Appointment> findAll(
+            String scopeDoctorId, String status, String keyword, String fromDate, String toDate
+    ) {
         List<Appointment> list = new ArrayList<>();
         String normalizedStatus = Appointment.normalizeStatusFilter(status);
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean hasDate = fromDate != null && !fromDate.isBlank()
+                && toDate != null && !toDate.isBlank();
 
         StringBuilder sql = new StringBuilder(SELECT_BASE);
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
         if (normalizedStatus != null) {
             sql.append("AND a.trang_thai = ? ");
         }
-        if (keyword != null && !keyword.isBlank()) {
+        if (hasDate) {
+            sql.append("AND DATE(a.thoi_gian_hen) BETWEEN ? AND ? ");
+        }
+        if (hasKeyword) {
             sql.append("AND (a.tieu_de LIKE ? " +
                     "OR u.ho_ten LIKE ? " +
                     "OR COALESCE(p.patient_code, LEFT(p.id, 8)) LIKE ?) ");
@@ -167,65 +181,22 @@ public class AppointmentDAO {
             if (normalizedStatus != null) {
                 ps.setString(idx++, normalizedStatus);
             }
-            if (keyword != null && !keyword.isBlank()) {
+            if (hasDate) {
+                ps.setString(idx++, fromDate);
+                ps.setString(idx++, toDate);
+            }
+            if (hasKeyword) {
                 String like = "%" + keyword.trim() + "%";
                 ps.setString(idx++, like);
                 ps.setString(idx++, like);
-                ps.setString(idx, like);
+                ps.setString(idx++, like);
             }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                list.add(mapDoctorAppointment(rs));
+                list.add(map(rs));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            list.addAll(findAllFallback(scopeDoctorId, normalizedStatus, keyword));
-        }
-        return list;
-    }
-
-    private List<Appointment> findAllFallback(String scopeDoctorId, String status, String keyword) {
-        List<Appointment> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.*, " +
-                        "COALESCE(p.patient_code, LEFT(p.id, 8)) AS patient_code, " +
-                        "u.ho_ten AS patient_name, bs.ho_ten AS doctor_name, " +
-                        "a.tieu_de AS noi_dung_kham " +
-                        "FROM appointments a " +
-                        "JOIN patients p ON a.patient_id = p.id " +
-                        "JOIN users u ON p.user_id = u.id " +
-                        "LEFT JOIN users bs ON a.bac_si_id = bs.id " +
-                        "WHERE 1=1 ");
-        appendDoctorScope(sql, scopeDoctorId);
-        if (status != null) {
-            sql.append("AND a.trang_thai = ? ");
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append("AND (u.ho_ten LIKE ?) ");
-        }
-        sql.append("ORDER BY a.thoi_gian_hen DESC");
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql.toString())
-        ) {
-            if (con == null) {
-                return list;
-            }
-            int idx = bindDoctorScope(ps, 1, scopeDoctorId);
-            if (status != null) {
-                String dbStatus = Appointment.STATUS_HUY.equals(status) ? "huy" : status;
-                ps.setString(idx++, dbStatus);
-            }
-            if (keyword != null && !keyword.isBlank()) {
-                ps.setString(idx, "%" + keyword.trim() + "%");
-            }
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapDoctorAppointment(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to load appointments", e);
         }
         return list;
     }
@@ -267,7 +238,9 @@ public class AppointmentDAO {
         }
 
         StringBuilder sql = new StringBuilder(SELECT_BASE + "AND a.id = ? ");
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
 
         try (
                 Connection con = DBContext.getConnection();
@@ -281,38 +254,12 @@ public class AppointmentDAO {
             bindDoctorScope(ps, idx, scopeDoctorId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return mapDoctorAppointment(rs);
+                return map(rs);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public boolean updateStatusInTransaction(
-            Connection con,
-            String appointmentId,
-            String newStatus,
-            String scopeDoctorId
-    ) throws java.sql.SQLException {
-        if (appointmentId == null || appointmentId.isBlank()) {
-            return false;
-        }
-        if (!Appointment.STATUS_DA_KHAM.equals(newStatus) && !Appointment.STATUS_HUY.equals(newStatus)) {
-            return false;
-        }
-
-        try (PreparedStatement ps = con.prepareStatement(buildUpdateSql(scopeDoctorId))) {
-            bindUpdate(ps, appointmentId, newStatus, scopeDoctorId);
-            if (ps.executeUpdate() > 0) {
-                return true;
-            }
-            if (Appointment.STATUS_HUY.equals(newStatus)) {
-                bindUpdate(ps, appointmentId, "huy", scopeDoctorId);
-                return ps.executeUpdate() > 0;
-            }
-        }
-        return false;
     }
 
     private String buildUpdateSql(String scopeDoctorId) {
@@ -321,7 +268,9 @@ public class AppointmentDAO {
                         "JOIN patients p ON a.patient_id = p.id " +
                         "SET a.trang_thai = ? " +
                         "WHERE a.id = ? AND a.trang_thai = ? ");
-        appendDoctorScope(sql, scopeDoctorId);
+        if (scopeDoctorId != null) {
+            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
+        }
         return sql.toString();
     }
 
@@ -330,7 +279,7 @@ public class AppointmentDAO {
             String appointmentId,
             String newStatus,
             String scopeDoctorId
-    ) throws java.sql.SQLException {
+    ) throws SQLException {
         ps.setString(1, newStatus);
         ps.setString(2, appointmentId);
         ps.setString(3, Appointment.STATUS_CHO_KHAM);
@@ -340,13 +289,7 @@ public class AppointmentDAO {
         }
     }
 
-    private void appendDoctorScope(StringBuilder sql, String scopeDoctorId) {
-        if (scopeDoctorId != null) {
-            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
-        }
-    }
-
-    private int bindDoctorScope(PreparedStatement ps, int startIdx, String scopeDoctorId) throws java.sql.SQLException {
+    private int bindDoctorScope(PreparedStatement ps, int startIdx, String scopeDoctorId) throws SQLException {
         if (scopeDoctorId == null) {
             return startIdx;
         }
@@ -355,11 +298,17 @@ public class AppointmentDAO {
         return startIdx;
     }
 
-    private Appointment mapDoctorAppointment(ResultSet rs) throws java.sql.SQLException {
+    private Appointment map(ResultSet rs) throws SQLException {
         Appointment a = new Appointment();
         a.setId(rs.getString("id"));
         a.setPatientId(rs.getString("patient_id"));
-        a.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
+        String patientCode = rs.getString("patient_code");
+        if (patientCode == null || patientCode.isBlank()) {
+            String patientId = rs.getString("patient_id");
+            patientCode = patientId != null && patientId.length() >= 8
+                    ? patientId.substring(0, 8).toUpperCase() : "N/A";
+        }
+        a.setPatientCode(patientCode);
         a.setPatientName(rs.getString("patient_name"));
         a.setBacSiId(rs.getString("bac_si_id"));
         a.setDoctorName(rs.getString("doctor_name"));
@@ -369,13 +318,14 @@ public class AppointmentDAO {
         if (noiDung == null || noiDung.isBlank()) {
             try {
                 noiDung = rs.getString("tieu_de");
-            } catch (java.sql.SQLException ignored) {
-                // cột tieu_de có thể không tồn tại trên schema cũ
+            } catch (SQLException ignored) {
+                // cot tieu_de co the khong ton tai tren schema cu
             }
         }
         a.setNoiDungKham(noiDung);
         a.setTieuDe(noiDung);
 
+        // Keep Timestamp (Appointment model + patient portal)
         a.setThoiGianHen(rs.getTimestamp("thoi_gian_hen"));
         a.setDiaDiem(rs.getString("dia_diem"));
         a.setTrangThai(rs.getString("trang_thai"));

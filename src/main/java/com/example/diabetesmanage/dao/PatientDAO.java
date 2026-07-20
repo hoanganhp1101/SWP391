@@ -15,18 +15,6 @@ import java.util.UUID;
 
 public class PatientDAO {
 
-    public static String resolveCode(ResultSet rs, String codeColumn) throws SQLException {
-        String code = rs.getString(codeColumn);
-        if (code != null && !code.isBlank()) {
-            return code;
-        }
-        String id = rs.getString("patient_id");
-        if (id == null || id.isBlank()) {
-            id = rs.getString("id");
-        }
-        return id != null && id.length() >= 8 ? id.substring(0, 8).toUpperCase() : "N/A";
-    }
-
     private static final String SUMMARY_SELECT =
             "SELECT vps.patient_id AS patient_id, " +
                     "vps.ho_ten AS ho_ten, " +
@@ -360,10 +348,11 @@ public class PatientDAO {
     // ── Doctor portal methods ──────────────────────────────────────────────────
 
     public List<Patient> getPatients(String scopeDoctorId) {
-        return searchPatients(null, null, scopeDoctorId);
+        return searchPatients(null, null, null, null, null, scopeDoctorId);
     }
 
-    public List<Patient> searchPatients(String keyword, String risk, String scopeDoctorId) {
+    public List<Patient> searchPatients(String keyword, String glucose, String hba1c,
+                                        String bmi, String action, String scopeDoctorId) {
         StringBuilder sql = new StringBuilder(SUMMARY_SELECT);
         sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE doc.id = ? ");
 
@@ -371,7 +360,10 @@ public class PatientDAO {
             sql.append("AND (vps.ho_ten LIKE ? OR vps.email LIKE ? OR p.patient_code LIKE ?) ");
         }
 
-        appendRiskFilter(sql, risk);
+        appendGlucoseFilter(sql, glucose);
+        appendHba1cFilter(sql, hba1c);
+        appendBmiFilter(sql, bmi);
+        appendActionFilter(sql, action);
         return queryPatients(sql.toString(), scopeDoctorId, keyword);
     }
 
@@ -464,7 +456,7 @@ public class PatientDAO {
     private Patient mapPatientByIdRow(ResultSet rs) throws SQLException {
         Patient p = new Patient();
         p.setId(rs.getString("patient_id"));
-        p.setPatientCode(PatientDAO.resolveCode(rs, "patient_code"));
+        p.setPatientCode(rs.getString("patient_code"));
 
         User user = new User();
         user.setId(rs.getString("patient_user_id"));
@@ -522,17 +514,49 @@ public class PatientDAO {
         return rs.wasNull() ? null : value;
     }
 
-    private void appendRiskFilter(StringBuilder sql, String risk) {
-        if ("low".equalsIgnoreCase(risk)) {
-            sql.append("AND (vps.muc_nguy_co = 'an_toan' OR vps.duong_huyet_gan_nhat < 140) ");
-        } else if ("medium".equalsIgnoreCase(risk)) {
-            sql.append("AND (vps.muc_nguy_co = 'trung_binh' " +
-                    "OR vps.duong_huyet_gan_nhat BETWEEN 140 AND 179) ");
-        } else if ("high".equalsIgnoreCase(risk)) {
-            sql.append("AND (vps.muc_nguy_co = 'cao' " +
-                    "OR vps.duong_huyet_gan_nhat BETWEEN 180 AND 249) ");
-        } else if ("critical".equalsIgnoreCase(risk)) {
-            sql.append("AND (vps.muc_nguy_co = 'nguy_hiem' OR vps.duong_huyet_gan_nhat >= 250) ");
+    private void appendGlucoseFilter(StringBuilder sql, String glucose) {
+        if ("normal".equalsIgnoreCase(glucose)) {
+            sql.append("AND vps.duong_huyet_gan_nhat < 140 ");
+        } else if ("high".equalsIgnoreCase(glucose)) {
+            sql.append("AND vps.duong_huyet_gan_nhat BETWEEN 140 AND 249 ");
+        } else if ("critical".equalsIgnoreCase(glucose)) {
+            sql.append("AND vps.duong_huyet_gan_nhat >= 250 ");
+        } else if ("missing".equalsIgnoreCase(glucose)) {
+            sql.append("AND vps.duong_huyet_gan_nhat IS NULL ");
+        }
+    }
+
+    private void appendHba1cFilter(StringBuilder sql, String hba1c) {
+        if ("normal".equalsIgnoreCase(hba1c)) {
+            sql.append("AND vps.hba1c_gan_nhat < 5.7 ");
+        } else if ("prediabetes".equalsIgnoreCase(hba1c)) {
+            sql.append("AND vps.hba1c_gan_nhat BETWEEN 5.7 AND 6.4 ");
+        } else if ("high".equalsIgnoreCase(hba1c)) {
+            sql.append("AND vps.hba1c_gan_nhat >= 6.5 ");
+        } else if ("missing".equalsIgnoreCase(hba1c)) {
+            sql.append("AND vps.hba1c_gan_nhat IS NULL ");
+        }
+    }
+
+    private void appendBmiFilter(StringBuilder sql, String bmi) {
+        if ("normal".equalsIgnoreCase(bmi)) {
+            sql.append("AND vps.bmi_gan_nhat < 25 ");
+        } else if ("overweight".equalsIgnoreCase(bmi)) {
+            sql.append("AND vps.bmi_gan_nhat BETWEEN 25 AND 29.9 ");
+        } else if ("obese".equalsIgnoreCase(bmi)) {
+            sql.append("AND vps.bmi_gan_nhat >= 30 ");
+        } else if ("missing".equalsIgnoreCase(bmi)) {
+            sql.append("AND vps.bmi_gan_nhat IS NULL ");
+        }
+    }
+
+    private void appendActionFilter(StringBuilder sql, String action) {
+        if ("no-update".equalsIgnoreCase(action)) {
+            sql.append("AND (vps.lan_do_cuoi IS NULL " +
+                    "OR vps.lan_do_cuoi < DATE_SUB(NOW(), INTERVAL 7 DAY)) ");
+        } else if ("no-followup".equalsIgnoreCase(action)) {
+            sql.append("AND (vps.lan_do_cuoi IS NULL " +
+                    "OR vps.lan_do_cuoi < DATE_SUB(NOW(), INTERVAL 30 DAY)) ");
         }
     }
 
@@ -569,7 +593,7 @@ public class PatientDAO {
     private Patient mapSummaryPatient(ResultSet rs) throws SQLException {
         Patient p = new Patient();
         p.setId(rs.getString("patient_id"));
-        p.setPatientCode(resolveCode(rs, "patient_code"));
+        p.setPatientCode(rs.getString("patient_code"));
         p.setTuoi(rs.getInt("tuoi"));
         p.setGioiTinh(rs.getString("gioi_tinh"));
         p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));

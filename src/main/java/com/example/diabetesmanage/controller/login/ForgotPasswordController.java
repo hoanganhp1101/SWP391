@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.mail.MessagingException;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.Encode;
-import com.example.diabetesmanage.util.*;
+import com.example.diabetesmanage.util.EmailUtils;
 
 
 
@@ -56,7 +56,12 @@ public class ForgotPasswordController extends HttpServlet {
         }
 
         // Tạo mật khẩu mới ngẫu nhiên 10 ký tự
-        String newPassword = generateRandomPassword(10);
+        SecureRandom random = new SecureRandom();
+        StringBuilder passwordBuilder = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            passwordBuilder.append(CHARS.charAt(random.nextInt(CHARS.length())));
+        }
+        String newPassword = passwordBuilder.toString();
 
         // Hash mật khẩu mới
         Encode encoder = new Encode();
@@ -72,35 +77,7 @@ public class ForgotPasswordController extends HttpServlet {
 
         // Gửi email chứa mật khẩu mới
         String subject = "[Diab] Mật khẩu mới của bạn";
-        String body = buildEmailBody(user.getHoTen(), newPassword);
-
-        try {
-            EmailUtils.sendHtmlEmail(user.getEmail(), subject, body);
-        } catch (MessagingException e) {
-            getServletContext().log("Gửi email thất bại", e);
-            // Vẫn thông báo user mật khẩu đã đổi, nhưng email lỗi
-            request.setAttribute("error", "Mật khẩu đã được đặt lại, nhưng không thể gửi email. Liên hệ Admin.");
-            request.getRequestDispatcher(FORGOT_VIEW).forward(request, response);
-            return;
-        }
-
-        request.setAttribute("success", "Mật khẩu mới đã được gửi về email <strong>" + escapeHtml(email)
-                + "</strong>. Vui lòng kiểm tra hộp thư (bao gồm thư mục Spam).");
-        request.getRequestDispatcher(FORGOT_VIEW).forward(request, response);
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    private String generateRandomPassword(int length) {
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
-        }
-        return sb.toString();
-    }
-
-    private String buildEmailBody(String fullName, String newPassword) {
-        return String.format(
+        String body = String.format(
                 "<html>" +
                         "<body style=\"font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;\">" +
                         "  <div style=\"max-width: 500px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);\">" +
@@ -118,9 +95,23 @@ public class ForgotPasswordController extends HttpServlet {
                         "  </div>" +
                         "</body>" +
                         "</html>",
-                escapeHtml(fullName),
+                escapeHtml(user.getHoTen()),
                 newPassword
         );
+
+        try {
+            EmailUtils.sendHtmlEmail(user.getEmail(), subject, body);
+        } catch (MessagingException e) {
+            getServletContext().log("Gửi email thất bại", e);
+            // Vẫn thông báo user mật khẩu đã đổi, nhưng email lỗi
+            request.setAttribute("error", "Mật khẩu đã được đặt lại, nhưng không thể gửi email. Liên hệ Admin.");
+            request.getRequestDispatcher(FORGOT_VIEW).forward(request, response);
+            return;
+        }
+
+        request.setAttribute("success", "Mật khẩu mới đã được gửi về email <strong>" + escapeHtml(email)
+                + "</strong>. Vui lòng kiểm tra hộp thư (bao gồm thư mục Spam).");
+        request.getRequestDispatcher(FORGOT_VIEW).forward(request, response);
     }
 
     private String escapeHtml(String s) {
