@@ -3,7 +3,7 @@ package com.example.diabetesmanage.dao;
 import com.example.diabetesmanage.model.Medication;
 import com.example.diabetesmanage.model.MedicationLog;
 import com.example.diabetesmanage.model.Prescription;
-import com.example.diabetesmanage.util.DBContext;
+import com.example.diabetesmanage.context.DBContext;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

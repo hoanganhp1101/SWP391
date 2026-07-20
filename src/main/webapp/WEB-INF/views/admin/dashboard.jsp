@@ -25,11 +25,8 @@
     </div>
     <div class="d-flex align-items-center gap-3 text-muted">
         <i class="far fa-bell" style="cursor: pointer;"></i>
-        <i class="fas fa-cog" style="cursor: pointer;"></i>
-
         <img src="https://ui-avatars.com/api/?name=${not empty sessionScope.adminUser ? sessionScope.adminUser.hoTen : 'Admin'}&background=0D8ABC&color=fff"
              alt="User" class="rounded-circle" width="28" height="28">
-
         <a href="${pageContext.request.contextPath}/admin/logout" class="text-danger ms-2" title="Đăng xuất hệ thống" style="text-decoration: none;">
             <i class="fas fa-sign-out-alt fs-5"></i>
         </a>

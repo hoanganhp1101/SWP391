@@ -9,6 +9,7 @@ import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.service.GeminiService;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -27,8 +28,10 @@ public class LogDataServlet extends HttpServlet {
 
         String patientId = request.getParameter("patientId");
         if (patientId == null || patientId.trim().isEmpty()) {
-            PatientDAO patientDAO = new PatientDAO();
-            patientId = patientDAO.getDemoPatientId();
+            patientId = PatientPortalAuth.requirePatientId(request, response);
+            if (patientId == null) {
+                return;
+            }
         }
 
         String glucoseStr = request.getParameter("duong_huyet");

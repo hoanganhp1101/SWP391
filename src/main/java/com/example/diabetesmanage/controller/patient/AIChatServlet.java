@@ -5,6 +5,7 @@ import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.service.GeminiService;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,6 +31,11 @@ public class AIChatServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("application/json; charset=UTF-8");
 
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
+        if (patientId == null) {
+            return;
+        }
+
         String userMessage = request.getParameter("message");
         JsonObject jsonResponse = new JsonObject();
 
@@ -42,7 +48,7 @@ public class AIChatServlet extends HttpServlet {
 
         try {
             // Build context từ dữ liệu bệnh nhân hiện tại
-            String patientContext = buildPatientContext();
+            String patientContext = buildPatientContext(patientId);
 
             // Gọi AI
             GeminiService geminiService = new GeminiService();
@@ -63,11 +69,10 @@ public class AIChatServlet extends HttpServlet {
     /**
      * Build context bệnh nhân để AI có thêm thông tin khi trả lời.
      */
-    private String buildPatientContext() {
+    private String buildPatientContext(String patientId) {
         StringBuilder ctx = new StringBuilder();
         try {
             PatientDAO patientDAO = new PatientDAO();
-            String patientId = patientDAO.getDemoPatientId();
             if (patientId != null) {
                 Patient patient = patientDAO.getPatientById(patientId);
                 if (patient != null) {

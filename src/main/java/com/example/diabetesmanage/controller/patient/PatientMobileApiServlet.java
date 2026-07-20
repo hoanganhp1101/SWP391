@@ -6,6 +6,7 @@ import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.Appointment;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletException;
@@ -49,9 +50,12 @@ public class PatientMobileApiServlet extends HttpServlet {
             PatientDAO patientDAO = new PatientDAO();
             String patientId = request.getParameter("patientId");
             
-            // Nếu không truyền ID thì lấy demo
+            // Prefer client-supplied ID; otherwise resolve from session
             if (patientId == null || patientId.trim().isEmpty()) {
-                patientId = patientDAO.getDemoPatientId();
+                patientId = PatientPortalAuth.requirePatientId(request, response);
+                if (patientId == null) {
+                    return;
+                }
             }
 
             if (patientId != null) {

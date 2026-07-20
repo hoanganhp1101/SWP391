@@ -7,10 +7,40 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserDAO {
+
+    private static UserDAO instance;
+
+    public static synchronized UserDAO getInstance() {
+        if (instance == null) {
+            instance = new UserDAO();
+        }
+        return instance;
+    }
+
+
+    public String getNameById(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String sql = "SELECT ho_ten FROM users WHERE id = ?";
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, userId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() ? rs.getString("ho_ten") : null;
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName())
+                    .log(Level.SEVERE, "getNameById error", e);
+            return null;
+        }
+    }
 
     public List<User> getUsersByRole(String role) {
         List<User> userList = new ArrayList<>();
@@ -23,21 +53,100 @@ public class UserDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    User user = new User();
-                    user.setId(rs.getString("id"));
-                    user.setHoTen(rs.getString("ho_ten"));
-                    user.setEmail(rs.getString("email"));
-                    // Đừng quên ánh xạ các trường khác nếu Model User của bạn có
-                    // Ví dụ: user.setSoDienThoai(rs.getString("so_dien_thoai"));
-                    user.setVaiTro(rs.getString("vai_tro"));
-
-                    userList.add(user);
+                    userList.add(mapResultSetToUser(rs));
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return userList;
+    }
+
+    public User getUserByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return null;
+        }
+        String sql = "SELECT * FROM users WHERE email = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToUser(rs);
+                }
+            }
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "getUserByEmail error", e);
+        }
+        return null;
+    }
+
+    public User checkLogin(String email, String hashedPassword) {
+        if (email == null || hashedPassword == null) {
+            return null;
+        }
+
+        User user = getUserByEmail(email);
+        if (user == null) {
+            return null;
+        }
+
+        if (hashedPassword.trim().equalsIgnoreCase(user.getMatKhauHash().trim())) {
+            return user;
+        }
+        return null;
+    }
+
+    public boolean updatePassword(String userId, String hashedPassword) {
+        if (userId == null || userId.isBlank()) {
+            return false;
+        }
+        String sql = "UPDATE users SET mat_khau_hash = ? WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, hashedPassword);
+            ps.setString(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "updatePassword error", e);
+        }
+        return false;
+    }
+
+    public boolean isEmailExists(String email) {
+        String sql = "SELECT email FROM users WHERE email = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, email);
+            try (ResultSet rs = st.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean registerUser(User user) {
+        String sql = "INSERT INTO users (ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, kich_hoat, ngay_tao) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+
+            st.setString(1, user.getHoTen());
+            st.setString(2, user.getEmail());
+            st.setString(3, user.getSoDienThoai());
+            st.setString(4, user.getVaiTro());
+            st.setString(5, user.getMatKhauHash());
+            st.setBoolean(6, user.isKichHoat());
+            st.setTimestamp(7, user.getNgayTao() != null ? user.getNgayTao() : new Timestamp(System.currentTimeMillis()));
+
+            return st.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public User authenticateAdmin(String email, String rawPassword) {
@@ -47,10 +156,7 @@ public class UserDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, email);
-
-            // TỰ ĐỘNG BĂM MẬT KHẨU THÔ THÀNH SHA-256 TRƯỚC KHI SO SÁNH
-            String hashedPassword = hashSHA256(rawPassword);
-            ps.setString(2, hashedPassword);
+            ps.setString(2, hashSHA256(rawPassword));
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -73,7 +179,7 @@ public class UserDAO {
                 if (hex.length() == 1) hexString.append('0');
                 hexString.append(hex);
             }
-            return hexString.toString(); // Trả về chuỗi hash viết thường giống hệt trong DB
+            return hexString.toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -91,8 +197,7 @@ public class UserDAO {
             ps.setString(4, u.getVaiTro());
             ps.setString(5, u.getId());
 
-            int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             System.err.println("Lỗi khi cập nhật user: " + e.getMessage());
@@ -195,8 +300,7 @@ public class UserDAO {
             ps.setString(5, u.getVaiTro());
             ps.setString(6, u.getMatKhauHash());
 
-            int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             System.err.println("Lỗi khi thêm user mới: " + e.getMessage());
@@ -213,8 +317,7 @@ public class UserDAO {
             ps.setInt(1, status);
             ps.setString(2, userId);
 
-            int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             System.err.println("Lỗi khi cập nhật trạng thái user: " + e.getMessage());

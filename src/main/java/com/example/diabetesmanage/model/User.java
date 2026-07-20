@@ -50,6 +50,8 @@ public class User {
     public void setAnhDaiDien(String anhDaiDien) { this.anhDaiDien = anhDaiDien; }
     public int getKichHoat() { return kichHoat; }
     public void setKichHoat(int kichHoat) { this.kichHoat = kichHoat; }
+    public boolean isKichHoat() { return kichHoat == 1; }
+    public void setKichHoat(boolean kichHoat) { this.kichHoat = kichHoat ? 1 : 0; }
     public Timestamp getNgayTao() { return ngayTao; }
     public void setNgayTao(Timestamp ngayTao) { this.ngayTao = ngayTao; }
     public Timestamp getNgayCapNhat() { return ngayCapNhat; }
