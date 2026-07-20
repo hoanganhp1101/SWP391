@@ -126,6 +126,38 @@ public class PatientDAO {
         return false;
     }
 
+    public boolean updatePatientMedicalProfile(Patient p) {
+        String sql = "UPDATE patients SET gioi_tinh=?, chieu_cao_cm=?, dia_chi=?, bao_hiem_y_te=?, tien_su_benh=?, tien_su_gia_dinh=?, di_ung=?, nhom_mau=?, ngay_chan_doan_tieu_duong=? WHERE id=?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, p.getGioiTinh());
+            if (p.getChieuCaoCm() != null) {
+                ps.setDouble(2, p.getChieuCaoCm());
+            } else {
+                ps.setNull(2, java.sql.Types.DOUBLE);
+            }
+            ps.setString(3, p.getDiaChi());
+            ps.setString(4, p.getBaoHiemYTe());
+            ps.setString(5, p.getTienSuBenh());
+            ps.setString(6, p.getTienSuGiaDinh());
+            ps.setString(7, p.getDiUng());
+            ps.setString(8, p.getNhomMau());
+            if (p.getNgayChanDoanTieuDuong() != null) {
+                ps.setDate(9, p.getNgayChanDoanTieuDuong());
+            } else {
+                ps.setNull(9, java.sql.Types.DATE);
+            }
+            ps.setString(10, p.getId());
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public Patient getPatientByIdAdmin(String id) {
         // ĐÃ SỬA: JOIN với bảng users để lấy các cột ho_ten, email, so_dien_thoai
         String sql = "SELECT p.*, u.ho_ten, u.email, u.so_dien_thoai " +
