@@ -445,6 +445,29 @@ public class HealthRecordDAO {
         }
     }
 
+    public void insertExtractedHealthRecord(String patientId, Double weight, Double bmi, Integer systole, Integer diastole, Integer heartRate, Double glucose, Double hba1c, Double cholesterol, Double triglyceride) {
+        String sql = "INSERT INTO health_records (id, patient_id, can_nang_kg, bmi, huyet_ap_tam_thu, huyet_ap_tam_truong, nhip_tim, duong_huyet_mgdl, hba1c_percent, cholesterol_mmol, triglyceride_mmol, thoi_gian_do) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+        try (Connection conn = DBContext.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, UUID.randomUUID().toString());
+            ps.setString(2, patientId);
+            
+            if (weight != null) ps.setDouble(3, weight); else ps.setNull(3, java.sql.Types.DECIMAL);
+            if (bmi != null) ps.setDouble(4, bmi); else ps.setNull(4, java.sql.Types.DECIMAL);
+            if (systole != null) ps.setInt(5, systole); else ps.setNull(5, java.sql.Types.INTEGER);
+            if (diastole != null) ps.setInt(6, diastole); else ps.setNull(6, java.sql.Types.INTEGER);
+            if (heartRate != null) ps.setInt(7, heartRate); else ps.setNull(7, java.sql.Types.INTEGER);
+            if (glucose != null) ps.setDouble(8, glucose); else ps.setNull(8, java.sql.Types.DECIMAL);
+            if (hba1c != null) ps.setDouble(9, hba1c); else ps.setNull(9, java.sql.Types.DECIMAL);
+            if (cholesterol != null) ps.setDouble(10, cholesterol); else ps.setNull(10, java.sql.Types.DECIMAL);
+            if (triglyceride != null) ps.setDouble(11, triglyceride); else ps.setNull(11, java.sql.Types.DECIMAL);
+            
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public HealthRecord getLatestHealthRecord(String patientId) {
         String sql = "SELECT * FROM health_records WHERE patient_id = ? AND duong_huyet_mgdl IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1";
         try (Connection conn = DBContext.getConnection();
@@ -468,6 +491,17 @@ public class HealthRecordDAO {
 
     public HealthRecord getLatestComprehensiveRecord(String patientId) {
         String sql = "SELECT " +
+                     "(SELECT duong_huyet_mgdl FROM health_records WHERE patient_id = p.id AND duong_huyet_mgdl IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as duong_huyet_mgdl, " +
+                     "(SELECT huyet_ap_tam_thu FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_thu IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_thu, " +
+                     "(SELECT huyet_ap_tam_truong FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_truong IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_truong, " +
+                     "(SELECT nhip_tim FROM health_records WHERE patient_id = p.id AND nhip_tim IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as nhip_tim, " +
+                     "(SELECT can_nang_kg FROM health_records WHERE patient_id = p.id AND can_nang_kg IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as can_nang_kg, " +
+                     "(SELECT bmi FROM health_records WHERE patient_id = p.id AND bmi IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as bmi, " +
+                     "(SELECT thoi_gian_do FROM health_records WHERE patient_id = p.id ORDER BY thoi_gian_do DESC LIMIT 1) as thoi_gian_do, " +
+                     "(SELECT hba1c_percent FROM health_records WHERE patient_id = p.id AND hba1c_percent IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as hba1c_percent, " +
+                     "(SELECT cholesterol_mmol FROM health_records WHERE patient_id = p.id AND cholesterol_mmol IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as cholesterol_mmol, " +
+                     "(SELECT triglyceride_mmol FROM health_records WHERE patient_id = p.id AND triglyceride_mmol IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as triglyceride_mmol " +
+                     "FROM (SELECT ? as id) p";
                 "(SELECT duong_huyet_mgdl FROM health_records WHERE patient_id = p.id AND duong_huyet_mgdl IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as duong_huyet_mgdl, " +
                 "(SELECT huyet_ap_tam_thu FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_thu IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_thu, " +
                 "(SELECT huyet_ap_tam_truong FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_truong IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_truong, " +
@@ -507,6 +541,9 @@ public class HealthRecordDAO {
                 ps.setString(1, patientId);
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
+                    if (hr.getHba1cPercent() == null && rs.getObject("hba1c") != null) hr.setHba1cPercent(rs.getDouble("hba1c"));
+                    if (hr.getCholesterolMmol() == null && rs.getObject("cholesterol_tp") != null) hr.setCholesterolMmol(rs.getDouble("cholesterol_tp"));
+                    if (hr.getTriglycerideMmol() == null && rs.getObject("triglyceride") != null) hr.setTriglycerideMmol(rs.getDouble("triglyceride"));
                     if (rs.getObject("hba1c") != null) {
                         hr.setHba1cPercent(rs.getDouble("hba1c"));
                     }

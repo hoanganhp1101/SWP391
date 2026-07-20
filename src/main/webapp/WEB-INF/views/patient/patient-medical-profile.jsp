@@ -129,6 +129,31 @@
 
         .btn-print { background-color: var(--primary-light); color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-print:hover { background-color: var(--primary); color: white; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background: var(--bg-white); border-radius: 12px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 2rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); transform: translateY(-20px); transition: transform 0.3s; }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-title { font-size: 1.25rem; font-weight: 600; }
+        .close-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted); }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-dark); }
+        .form-control { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.875rem; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        .form-row { display: flex; gap: 1rem; }
+        .form-row .form-group { flex: 1; }
+        .modal-footer { margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem; }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 0.875rem; }
+        .btn-cancel { background: var(--bg-body); color: var(--text-dark); }
+        .btn-save { background: var(--primary); color: white; }
+        
+        /* Spinner for AI extraction */
+        .spinner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .spinner-overlay.active { opacity: 1; pointer-events: auto; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -169,6 +194,7 @@
                 <a href="patient-medical-profile" class="menu-btn active"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
                 <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
                 <a href="patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
+                <a href="patient-diet" class="menu-btn"><i class="fas fa-utensils"></i> Thực đơn AI</a>
                 <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
                 <a href="patient-medical-history" class="menu-btn"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
             </nav>
@@ -183,8 +209,22 @@
         <main class="content">
             <div class="page-header">
                 <h1 class="page-title">Hồ sơ Bệnh án Điện tử (EHR)</h1>
-                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> In Hồ Sơ</button>
+                <div>
+                    <button class="btn-print" onclick="openUpdateModal()" style="margin-right: 10px;"><i class="fas fa-edit"></i> Cập nhật Bệnh án</button>
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> In Hồ Sơ</button>
+                </div>
             </div>
+
+            <c:if test="${param.success == 'true'}">
+                <div style="background-color: var(--success-light); color: var(--success); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 500;">
+                    Cập nhật bệnh án thành công!
+                </div>
+            </c:if>
+            <c:if test="${param.error == 'true'}">
+                <div style="background-color: var(--danger-light); color: var(--danger); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 500;">
+                    Đã có lỗi xảy ra. Vui lòng thử lại.
+                </div>
+            </c:if>
 
             <!-- 1. Thông tin Hành chính & Tiền sử -->
             <div class="card">
@@ -392,9 +432,33 @@
                 </c:choose>
             </div>
 
-            <!-- 5. Nhật ký y khoa & Tiến triển (Progress Notes) -->
+            <!-- 5. Tài liệu y khoa (Medical Documents) -->
             <div class="card">
-                <h2 class="section-title"><i class="fas fa-clipboard-list"></i> 5. Nhật ký y khoa & Tiến triển (Progress Notes)</h2>
+                <h2 class="section-title"><i class="fas fa-file-pdf"></i> 5. Tài liệu y khoa đính kèm</h2>
+                <c:choose>
+                    <c:when test="${not empty medicalDocuments}">
+                        <div class="grid-2">
+                            <c:forEach var="doc" items="${medicalDocuments}">
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">
+                                    <i class="fas fa-file-pdf" style="font-size: 2rem; color: var(--danger);"></i>
+                                    <div style="flex-grow: 1;">
+                                        <div style="font-weight: 600; font-size: 0.875rem;">${doc.loaiTaiLieu}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">${doc.ngayThucHien}</div>
+                                    </div>
+                                    <a href="${pageContext.request.contextPath}/${doc.fileUrl}" target="_blank" class="btn-print" style="text-decoration: none; padding: 0.25rem 0.5rem; font-size: 0.75rem;">Xem</a>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <p style="color: var(--text-muted); font-style: italic;">Chưa có tài liệu y khoa nào được tải lên.</p>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+
+            <!-- 6. Nhật ký y khoa & Tiến triển (Progress Notes) -->
+            <div class="card">
+                <h2 class="section-title"><i class="fas fa-clipboard-list"></i> 6. Nhật ký y khoa & Tiến triển (Progress Notes)</h2>
                 <div class="info-label" style="margin-bottom: 1rem;">CÁC CẢNH BÁO / LƯU Ý LÂM SÀNG GẦN ĐÂY</div>
                 
                 <c:choose>
@@ -420,9 +484,211 @@
 
         </main>
     </div>
+
+    <!-- Update Medical Profile Modal -->
+    <div class="modal-overlay" id="updateProfileModal">
+        <div class="modal" style="position: relative;">
+            <!-- Loading Spinner -->
+            <div class="spinner-overlay" id="aiLoadingSpinner">
+                <div class="spinner"></div>
+                <div style="font-weight: 600; color: var(--primary);">AI đang đọc bệnh án...</div>
+            </div>
+
+            <div class="modal-header">
+                <h2 class="modal-title">Cập nhật Bệnh án</h2>
+                <button class="close-btn" onclick="closeUpdateModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form action="${pageContext.request.contextPath}/patient-medical-profile" method="POST" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Giới tính</label>
+                        <select name="gioiTinh" class="form-control">
+                            <option value="nam" ${patientInfo.gioiTinh == 'nam' ? 'selected' : ''}>Nam</option>
+                            <option value="nu" ${patientInfo.gioiTinh == 'nu' ? 'selected' : ''}>Nữ</option>
+                            <option value="khac" ${patientInfo.gioiTinh == 'khac' ? 'selected' : ''}>Khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Chiều cao (cm)</label>
+                        <input type="number" step="0.1" name="chieuCaoCm" class="form-control" value="${patientInfo.chieuCaoCm}">
+                    </div>
+                    <div class="form-group">
+                        <label>Cân nặng (kg)</label>
+                        <input type="number" step="0.1" name="canNangKg" id="canNangKg" class="form-control" value="${latestRecord.canNangKg}">
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--primary);">Các chỉ số sức khỏe (Vitals)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Huyết áp tâm thu</label>
+                        <input type="number" name="huyetApTamThu" id="huyetApTamThu" class="form-control" placeholder="VD: 120">
+                    </div>
+                    <div class="form-group">
+                        <label>Huyết áp tâm trương</label>
+                        <input type="number" name="huyetApTamTruong" id="huyetApTamTruong" class="form-control" placeholder="VD: 80">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nhịp tim (BPM)</label>
+                        <input type="number" name="nhipTim" id="nhipTim" class="form-control" placeholder="VD: 75">
+                    </div>
+                    <div class="form-group">
+                        <label>Đường huyết (mg/dL)</label>
+                        <input type="number" step="0.1" name="duongHuyetMgdl" id="duongHuyetMgdl" class="form-control" placeholder="VD: 90.0">
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--primary);">Chỉ số sinh hóa (Lab Results)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>HbA1c (%)</label>
+                        <input type="number" step="0.1" name="hba1c" id="hba1c" class="form-control" placeholder="VD: 6.5" value="${latestRecord.hba1cPercent}">
+                    </div>
+                    <div class="form-group">
+                        <label>Cholesterol (mmol/L)</label>
+                        <input type="number" step="0.1" name="cholesterol" id="cholesterol" class="form-control" placeholder="VD: 5.2" value="${latestRecord.cholesterolMmol}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Triglyceride (mmol/L)</label>
+                        <input type="number" step="0.1" name="triglyceride" id="triglyceride" class="form-control" placeholder="VD: 1.7" value="${latestRecord.triglycerideMmol}">
+                    </div>
+                    <div class="form-group">
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--primary);">Thông tin chung</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nhóm máu</label>
+                        <input type="text" name="nhomMau" id="nhomMau" class="form-control" value="${patientInfo.nhomMau}">
+                    </div>
+                    <div class="form-group">
+                        <label>Ngày chẩn đoán tiểu đường</label>
+                        <input type="date" name="ngayChanDoanTieuDuong" id="ngayChanDoanTieuDuong" class="form-control" value="${patientInfo.ngayChanDoanTieuDuong}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ</label>
+                    <input type="text" name="diaChi" class="form-control" value="${patientInfo.diaChi}">
+                </div>
+                <div class="form-group">
+                    <label>Bảo hiểm y tế</label>
+                    <input type="text" name="baoHiemYTe" class="form-control" value="${patientInfo.baoHiemYTe}">
+                </div>
+                <div class="form-group">
+                    <label>Tiền sử bệnh</label>
+                    <textarea name="tienSuBenh" id="tienSuBenh" class="form-control" rows="2">${patientInfo.tienSuBenh}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tiền sử gia đình</label>
+                    <textarea name="tienSuGiaDinh" class="form-control" rows="2">${patientInfo.tienSuGiaDinh}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Dị ứng</label>
+                    <input type="text" name="diUng" class="form-control" value="${patientInfo.diUng}">
+                </div>
+                
+                <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--primary);">Tải lên tài liệu y khoa mới (PDF)</h3>
+                <div class="form-group">
+                    <label>Loại tài liệu</label>
+                    <input type="text" name="loaiTaiLieu" class="form-control" placeholder="VD: Kết quả xét nghiệm máu 15/07">
+                </div>
+                <div class="form-group">
+                    <label>Tệp đính kèm (.pdf)</label>
+                    <input type="file" name="pdfFile" id="pdfFile" class="form-control" accept="application/pdf" style="padding: 0.5rem 1rem;" onchange="handlePDFUpload(this)">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" onclick="closeUpdateModal()">Hủy</button>
+                    <button type="submit" class="btn btn-save">Lưu Cập Nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <jsp:include page="profile-modal.jsp">
         <jsp:param name="profileReturnUrl" value="patient-medical-profile" />
     </jsp:include>
     <jsp:include page="chatbot.jsp" />
+
+    <script>
+        function openUpdateModal() {
+            document.getElementById('updateProfileModal').classList.add('active');
+        }
+        function closeUpdateModal() {
+            document.getElementById('updateProfileModal').classList.remove('active');
+        }
+
+        async function handlePDFUpload(inputElement) {
+            const file = inputElement.files[0];
+            if (!file) return;
+
+            // Hiển thị vòng xoay loading
+            document.getElementById('aiLoadingSpinner').classList.add('active');
+
+            const formData = new FormData();
+            formData.append('pdfFile', file);
+
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/api/extract-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Lỗi khi đọc bệnh án: ' + data.error);
+                } else {
+                    // Autofill các trường
+                    const parseNum = (val) => {
+                        if (val === null || val === undefined) return null;
+                        let str = String(val).replace(',', '.').replace(/[^0-9.-]/g, '');
+                        let num = parseFloat(str);
+                        return isNaN(num) ? null : num;
+                    };
+
+                    if (data.canNangKg) document.getElementById('canNangKg').value = parseNum(data.canNangKg);
+                    if (data.chieuCaoCm) document.getElementsByName('chieuCaoCm')[0].value = parseNum(data.chieuCaoCm);
+                    if (data.nhomMau) document.getElementById('nhomMau').value = data.nhomMau;
+                    if (data.ngayChanDoanTieuDuong) document.getElementById('ngayChanDoanTieuDuong').value = data.ngayChanDoanTieuDuong;
+                    if (data.huyetApTamThu) document.getElementById('huyetApTamThu').value = parseNum(data.huyetApTamThu);
+                    if (data.huyetApTamTruong) document.getElementById('huyetApTamTruong').value = parseNum(data.huyetApTamTruong);
+                    if (data.nhipTim) document.getElementById('nhipTim').value = parseNum(data.nhipTim);
+                    if (data.duongHuyetMgdl) document.getElementById('duongHuyetMgdl').value = parseNum(data.duongHuyetMgdl);
+                    
+                    if (data.hba1c !== undefined && data.hba1c !== null) {
+                        let val = parseNum(data.hba1c);
+                        if (val !== null) document.getElementById('hba1c').value = val;
+                    }
+                    if (data.cholesterol !== undefined && data.cholesterol !== null) {
+                        let val = parseNum(data.cholesterol);
+                        if (val !== null) document.getElementById('cholesterol').value = val;
+                    }
+                    if (data.triglyceride !== undefined && data.triglyceride !== null) {
+                        let val = parseNum(data.triglyceride);
+                        if (val !== null) document.getElementById('triglyceride').value = val;
+                    }
+                    
+                    if (data.ghiChu) {
+                        let currentHistory = document.getElementById('tienSuBenh').value;
+                        document.getElementById('tienSuBenh').value = currentHistory ? currentHistory + '\n- ' + data.ghiChu : '- ' + data.ghiChu;
+                    }
+                    
+                    alert('AI đã phân tích và điền các chỉ số vào form. Hãy kiểm tra lại trước khi Lưu!');
+                }
+            } catch (error) {
+                console.error('Error extracting PDF:', error);
+                alert('Không thể kết nối đến máy chủ AI.');
+            } finally {
+                // Tắt vòng xoay loading
+                document.getElementById('aiLoadingSpinner').classList.remove('active');
+            }
+        }
+    </script>
 </body>
 </html>

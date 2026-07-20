@@ -162,9 +162,14 @@
                 <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
                 <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
                 <a href="patient-prescriptions" class="menu-btn active"><i class="fas fa-pills"></i> Đơn thuốc</a>
+                <a href="patient-diet" class="menu-btn"><i class="fas fa-utensils"></i> Thực đơn AI</a>
                 <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
                 <a href="patient-medical-history" class="menu-btn"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
             </nav>
+
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
+                <a href="#" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
             <div class="sidebar-bottom">
                 <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
                 <a href="${pageContext.request.contextPath}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
