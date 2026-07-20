@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.List" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -110,27 +110,27 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <%
-                            List<String[]> systemLogs = (List<String[]>) request.getAttribute("systemLogs");
-                            if(systemLogs != null) {
-                                for(String[] log : systemLogs) {
-                        %>
+                        <c:forEach var="log" items="${systemLogs}">
                         <tr>
-                            <td class="text-muted"><small><%= log[0] %></small></td>
+                            <td class="text-muted"><small><c:out value="${log[0]}"/></small></td>
                             <td>
-                                <% if(log[1].equals("ERROR") || log[1].equals("CRITICAL")) { %>
-                                <span class="badge bg-danger"><%= log[1] %></span>
-                                <% } else if(log[1].equals("WARNING")) { %>
-                                <span class="badge bg-warning text-dark"><%= log[1] %></span>
-                                <% } else { %>
-                                <span class="badge bg-success"><%= log[1] %></span>
-                                <% } %>
+                                <c:choose>
+                                    <c:when test="${log[1] eq 'ERROR' or log[1] eq 'CRITICAL'}">
+                                        <span class="badge bg-danger"><c:out value="${log[1]}"/></span>
+                                    </c:when>
+                                    <c:when test="${log[1] eq 'WARNING'}">
+                                        <span class="badge bg-warning text-dark"><c:out value="${log[1]}"/></span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge bg-success"><c:out value="${log[1]}"/></span>
+                                    </c:otherwise>
+                                </c:choose>
                             </td>
-                            <td><%= log[2] %></td>
-                            <td><%= log[3] %></td>
-                            <td class="text-muted"><small><%= log[4] %></small></td>
+                            <td><c:out value="${log[2]}"/></td>
+                            <td><c:out value="${log[3]}"/></td>
+                            <td class="text-muted"><small><c:out value="${log[4]}"/></small></td>
                         </tr>
-                        <% } } %>
+                        </c:forEach>
                         </tbody>
                     </table>
                 </div>

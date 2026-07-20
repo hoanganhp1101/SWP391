@@ -32,11 +32,13 @@ public class PatientDAO {
                     "LEFT JOIN users doc ON p.bac_si_id = doc.id ";
 
     public List<Patient> getPatients(String scopeDoctorId) {
-        return searchPatients(null, null, null, null, null, scopeDoctorId);
+        return searchPatients(null, null, null, null, null, null, null, null, null, scopeDoctorId);
     }
 
     public List<Patient> searchPatients(String keyword, String glucose, String hba1c,
-                                        String bmi, String action, String scopeDoctorId) {
+                                        String bmi, String bloodPressure, String age,
+                                        String gender, String diabetesType,
+                                        String action, String scopeDoctorId) {
         StringBuilder sql = new StringBuilder(SUMMARY_SELECT);
         sql.append(scopeDoctorId == null ? "WHERE 1=1 " : "WHERE doc.id = ? ");
 
@@ -47,6 +49,10 @@ public class PatientDAO {
         appendGlucoseFilter(sql, glucose);
         appendHba1cFilter(sql, hba1c);
         appendBmiFilter(sql, bmi);
+        appendBloodPressureFilter(sql, bloodPressure);
+        appendAgeFilter(sql, age);
+        appendGenderFilter(sql, gender);
+        appendDiabetesTypeFilter(sql, diabetesType);
         appendActionFilter(sql, action);
         return queryPatients(sql.toString(), scopeDoctorId, keyword);
     }
@@ -263,6 +269,45 @@ public class PatientDAO {
         } else if ("no-followup".equalsIgnoreCase(action)) {
             sql.append("AND (vps.lan_do_cuoi IS NULL " +
                     "OR vps.lan_do_cuoi < DATE_SUB(NOW(), INTERVAL 30 DAY)) ");
+        }
+    }
+
+    private void appendBloodPressureFilter(StringBuilder sql, String bloodPressure) {
+        // Disabled for current database schema (v_patient_summary does not expose huyet_ap_tam_thu/huyet_ap_tam_truong).
+        // Keep method signature to avoid changing controller/JSP flow.
+    }
+
+    private void appendAgeFilter(StringBuilder sql, String age) {
+        if ("child".equalsIgnoreCase(age)) {
+            sql.append("AND vps.tuoi < 18 ");
+        } else if ("adult".equalsIgnoreCase(age)) {
+            sql.append("AND vps.tuoi BETWEEN 18 AND 39 ");
+        } else if ("middle".equalsIgnoreCase(age)) {
+            sql.append("AND vps.tuoi BETWEEN 40 AND 59 ");
+        } else if ("senior".equalsIgnoreCase(age)) {
+            sql.append("AND vps.tuoi >= 60 ");
+        }
+    }
+
+    private void appendGenderFilter(StringBuilder sql, String gender) {
+        if ("nam".equalsIgnoreCase(gender)) {
+            sql.append("AND vps.gioi_tinh = 'nam' ");
+        } else if ("nu".equalsIgnoreCase(gender)) {
+            sql.append("AND vps.gioi_tinh = 'nu' ");
+        } else if ("khac".equalsIgnoreCase(gender)) {
+            sql.append("AND vps.gioi_tinh = 'khac' ");
+        }
+    }
+
+    private void appendDiabetesTypeFilter(StringBuilder sql, String diabetesType) {
+        if ("Type 1".equals(diabetesType)) {
+            sql.append("AND vps.loai_tieu_duong = 'Type 1' ");
+        } else if ("Type 2".equals(diabetesType)) {
+            sql.append("AND vps.loai_tieu_duong = 'Type 2' ");
+        } else if ("Thai kỳ".equals(diabetesType)) {
+            sql.append("AND vps.loai_tieu_duong = 'Thai kỳ' ");
+        } else if ("Khác".equals(diabetesType)) {
+            sql.append("AND vps.loai_tieu_duong = 'Khác' ");
         }
     }
 

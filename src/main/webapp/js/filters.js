@@ -1,50 +1,66 @@
 /* =========================================================
    HealthAlert — Shared Filter Dropdown Controller
-   Điều khiển toàn bộ dropdown/filter trong project bằng
-   event delegation: mở/đóng bằng click, chỉ 1 cái mở tại một
-   thời điểm, click ngoài đóng, ESC đóng. Không dùng :hover.
-   Không phụ thuộc jQuery.
+   Mở/đóng bằng click, chỉ 1 dropdown mở, click ngoài đóng, ESC đóng.
    ========================================================= */
 (function () {
     "use strict";
 
-    function panelOf(button) {
-        // Panel là phần tử .filter-menu / .filter-popup nằm cùng .filter-dropdown
-        var dropdown = button.closest(".filter-dropdown");
+    if (window.__healthAlertFiltersInit) {
+        return;
+    }
+    window.__healthAlertFiltersInit = true;
+
+    function panelOf(dropdown) {
         return dropdown ? dropdown.querySelector(".filter-menu, .filter-popup") : null;
     }
 
-    function closeAll(except) {
-        document.querySelectorAll(".filter-menu.show, .filter-popup.show")
-            .forEach(function (panel) {
-                if (panel !== except) {
-                    panel.classList.remove("show");
-                }
-            });
+    function setDropdownOpen(dropdown, open) {
+        if (!dropdown) {
+            return;
+        }
+        var panel = panelOf(dropdown);
+        dropdown.classList.toggle("open", open);
+        if (panel) {
+            panel.classList.toggle("show", open);
+        }
+    }
+
+    function closeAll(exceptDropdown) {
+        document.querySelectorAll(".filter-dropdown.open").forEach(function (dropdown) {
+            if (dropdown !== exceptDropdown) {
+                setDropdownOpen(dropdown, false);
+            }
+        });
+        document.querySelectorAll(".filter-menu.show, .filter-popup.show").forEach(function (panel) {
+            var owner = panel.closest(".filter-dropdown");
+            if (owner !== exceptDropdown) {
+                panel.classList.remove("show");
+            }
+        });
     }
 
     function onClick(e) {
         var button = e.target.closest(".filter-button");
         if (button) {
-            // Toggle panel của nút được bấm
-            e.preventDefault();
-            var panel = panelOf(button);
-            if (!panel) {
+            var dropdown = button.closest(".filter-dropdown");
+            if (!dropdown) {
                 return;
             }
-            var willOpen = !panel.classList.contains("show");
-            closeAll(willOpen ? panel : null);
-            panel.classList.toggle("show", willOpen);
+            e.preventDefault();
+            e.stopPropagation();
+
+            var willOpen = !dropdown.classList.contains("open");
+            closeAll(willOpen ? dropdown : null);
+            setDropdownOpen(dropdown, willOpen);
             return;
         }
 
-        // Bấm bên trong panel (chọn ngày, submit...) => giữ nguyên,
-        // link .filter-item vẫn điều hướng bình thường.
-        if (e.target.closest(".filter-menu, .filter-popup")) {
+        var insideDropdown = e.target.closest(".filter-dropdown");
+        if (insideDropdown) {
+            e.stopPropagation();
             return;
         }
 
-        // Bấm ra ngoài => đóng tất cả
         closeAll(null);
     }
 

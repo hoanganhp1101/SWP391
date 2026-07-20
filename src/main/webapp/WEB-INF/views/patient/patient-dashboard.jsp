@@ -555,18 +555,21 @@
                 <div class="quick-log">
                     <h3>Ghi nhanh</h3>
                     <p>Nhập dữ liệu nhanh</p>
-                    <form action="logData" method="POST">
+                    <form action="logData" method="POST" id="quickLogForm" novalidate>
                         <div class="form-group">
                             <label class="red"><i class="fas fa-tint"></i> Đường huyết (mg/dL)</label>
-                            <input type="number" class="form-control" placeholder="120" name="glucose">
+                            <input type="number" class="form-control" placeholder="120" name="glucose" step="any" min="0" inputmode="decimal">
+                            <div class="field-error" data-error-for="glucose" style="color:#dc2626;font-size:13px;min-height:18px;margin-top:4px;"></div>
                         </div>
                         <div class="form-group">
                             <label class="orange"><i class="fas fa-utensils"></i> Tinh bột (g)</label>
-                            <input type="number" class="form-control" placeholder="45" name="carbs">
+                            <input type="number" class="form-control" placeholder="45" name="carbs" step="any" min="0" inputmode="decimal">
+                            <div class="field-error" data-error-for="carbs" style="color:#dc2626;font-size:13px;min-height:18px;margin-top:4px;"></div>
                         </div>
                         <div class="form-group">
                             <label class="purple"><i class="fas fa-wave-square"></i> Insulin (đơn vị)</label>
-                            <input type="number" class="form-control" placeholder="8" name="insulin">
+                            <input type="number" class="form-control" placeholder="8" name="insulin" step="any" min="0" inputmode="decimal">
+                            <div class="field-error" data-error-for="insulin" style="color:#dc2626;font-size:13px;min-height:18px;margin-top:4px;"></div>
                         </div>
                         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu dữ liệu</button>
                     </form>
@@ -686,6 +689,63 @@
                 }
             }
         });
+
+        (function () {
+            const form = document.getElementById('quickLogForm');
+            if (!form) return;
+            const NUMBER_RE = /^\d+(\.\d+)?$/;
+            const fields = ['glucose', 'carbs', 'insulin'];
+
+            function setError(name, message) {
+                const input = form.elements[name];
+                const box = form.querySelector('[data-error-for="' + name + '"]');
+                if (input) {
+                    input.style.borderColor = message ? '#dc2626' : '';
+                }
+                if (box) box.textContent = message || '';
+            }
+
+            function validateField(name) {
+                const input = form.elements[name];
+                if (!input) return null;
+                const raw = (input.value || '').trim();
+                if (input.validity && input.validity.badInput) {
+                    setError(name, 'Chỉ được nhập số.');
+                    return 'Chỉ được nhập số.';
+                }
+                if (!raw) {
+                    setError(name, '');
+                    return null;
+                }
+                if (!NUMBER_RE.test(raw.replace(',', '.')) || !Number.isFinite(Number(raw.replace(',', '.')))) {
+                    setError(name, 'Chỉ được nhập số.');
+                    return 'Chỉ được nhập số.';
+                }
+                setError(name, '');
+                return null;
+            }
+
+            fields.forEach(function (name) {
+                const input = form.elements[name];
+                if (!input) return;
+                input.addEventListener('blur', function () { validateField(name); });
+                input.addEventListener('input', function () {
+                    if ((input.value || '').trim() || input.style.borderColor) validateField(name);
+                });
+            });
+
+            form.addEventListener('submit', function (e) {
+                let firstInvalid = null;
+                fields.forEach(function (name) {
+                    const msg = validateField(name);
+                    if (msg && !firstInvalid) firstInvalid = form.elements[name];
+                });
+                if (firstInvalid) {
+                    e.preventDefault();
+                    firstInvalid.focus();
+                }
+            });
+        })();
     </script>
 </body>
 </html>

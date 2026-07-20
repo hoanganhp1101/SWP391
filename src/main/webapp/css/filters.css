@@ -90,13 +90,22 @@
 .filter-popup {
     width: 320px;
     padding: 20px;
+    transform: translateY(-6px) scale(0.96);
+}
+
+.filter-dropdown.open > .filter-menu,
+.filter-dropdown.open > .filter-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
 .filter-menu.show,
 .filter-popup.show {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 /* Item trong menu */
@@ -180,4 +189,107 @@
 .filter-popup .filter-actions .btn-clear {
     background: #f3f4f6;
     color: #374151;
+}
+
+/* Bộ lọc lịch sử khám bệnh — patient detail (đồng bộ appointments) */
+.history-filter {
+    padding: 0 32px 24px;
+    position: relative;
+    z-index: 2;
+}
+
+.history-filter .filter-dropdown {
+    width: 280px;
+    position: relative;
+    z-index: 1;
+}
+
+.history-filter .filter-dropdown.open,
+.history-filter .filter-dropdown:has(.filter-menu.show) {
+    z-index: 10050;
+}
+
+.history-filter .filter-menu {
+    min-width: 280px;
+    max-width: 320px;
+    padding-bottom: 4px;
+}
+
+.history-filter .filter-menu .filter-item {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.history-filter .filter-menu .filter-item-heading {
+    cursor: default;
+    border-top: 1px solid #eef2f7;
+    margin-top: 4px;
+    pointer-events: none;
+}
+
+.history-filter .filter-menu .filter-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 18px;
+}
+
+.history-filter .filter-menu .filter-fields label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.history-filter .filter-menu .filter-fields input[type="date"] {
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 100%;
+    background: #fff;
+    cursor: pointer;
+}
+
+.history-filter .filter-menu .filter-actions {
+    margin-top: 12px;
+    padding: 0 18px 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.history-filter .filter-menu .filter-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.history-filter .filter-menu .filter-actions .btn-apply {
+    background: #6c63ff;
+    color: #fff;
+}
+
+.history-filter .filter-menu .filter-error {
+    padding: 0 18px;
+}
+
+.filter-error {
+    display: none;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #dc2626;
+}
+
+.filter-error.show {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .history-filter .filter-dropdown,
+    .history-filter .filter-menu {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
 }

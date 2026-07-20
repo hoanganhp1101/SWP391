@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -121,6 +122,101 @@ public class MedicalEncounterDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Lịch sử khám của bệnh nhân (mới → cũ), kèm đường huyết/HbA1c theo từng lần khám.
+     */
+    public List<MedicalEncounter> getHistoryByPatientId(String patientId, String scopeDoctorId) {
+        return queryPatientHistory(patientId, scopeDoctorId, null, null);
+    }
+
+    public List<MedicalEncounter> getHistoryByPatientAndDateRange(
+            String patientId, String scopeDoctorId, LocalDate from, LocalDate to) {
+        if (from == null || to == null) {
+            return getHistoryByPatientId(patientId, scopeDoctorId);
+        }
+        return queryPatientHistory(patientId, scopeDoctorId, from, to);
+    }
+
+    private List<MedicalEncounter> queryPatientHistory(
+            String patientId, String scopeDoctorId, LocalDate from, LocalDate to) {
+        if (patientId == null || patientId.isBlank()) {
+            return List.of();
+        }
+        StringBuilder sql = new StringBuilder(ENCOUNTER_SELECT)
+                .append(", hr.duong_huyet_mgdl AS hr_duong_huyet, hr.hba1c_percent AS hr_hba1c ")
+                .append(", lr.glucose_mau AS lab_glucose_mau, lr.hba1c AS lab_hba1c ")
+                .append(ENCOUNTER_FROM)
+                .append("LEFT JOIN health_records hr ON hr.encounter_id = me.id ")
+                .append("LEFT JOIN lab_results lr ON lr.encounter_id = me.id ")
+                .append("WHERE me.patient_id = ? ");
+        if (scopeDoctorId != null) {
+            sql.append("AND (p.bac_si_id = ? OR me.bac_si_id = ?) ");
+        }
+        if (from != null && to != null) {
+            sql.append("AND DATE(me.ngay_kham) BETWEEN ? AND ? ");
+        }
+        sql.append("ORDER BY me.ngay_kham DESC, me.ngay_tao DESC, me.id DESC");
+
+        List<MedicalEncounter> list = new ArrayList<>();
+        try (
+                Connection con = DBContext.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())
+        ) {
+            int idx = 1;
+            ps.setString(idx++, patientId.trim());
+            if (scopeDoctorId != null) {
+                ps.setString(idx++, scopeDoctorId);
+                ps.setString(idx++, scopeDoctorId);
+            }
+            if (from != null && to != null) {
+                ps.setDate(idx++, java.sql.Date.valueOf(from));
+                ps.setDate(idx, java.sql.Date.valueOf(to));
+            }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                MedicalEncounter enc = mapWithPatient(rs);
+                enc.setDuongHuyetMgdl(resolveHistoryGlucose(rs));
+                enc.setHba1cPercent(resolveHistoryHba1c(rs));
+                list.add(enc);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    private static Double resolveHistoryGlucose(ResultSet rs) throws SQLException {
+        Double fromHealth = optionalDouble(rs, "hr_duong_huyet");
+        if (fromHealth != null) {
+            return fromHealth;
+        }
+        Double labMmol = optionalDouble(rs, "lab_glucose_mau");
+        if (labMmol == null) {
+            return null;
+        }
+        return Math.round(labMmol * 18.0182 * 10.0) / 10.0;
+    }
+
+    private static Double resolveHistoryHba1c(ResultSet rs) throws SQLException {
+        Double fromHealth = optionalDouble(rs, "hr_hba1c");
+        if (fromHealth != null) {
+            return fromHealth;
+        }
+        return optionalDouble(rs, "lab_hba1c");
+    }
+
+    private static Double optionalDouble(ResultSet rs, String column) throws SQLException {
+        try {
+            Object value = rs.getObject(column);
+            if (value == null) {
+                return null;
+            }
+            return rs.getDouble(column);
+        } catch (SQLException ex) {
+            return null;
+        }
     }
 
     public MedicalEncounter getEncounterById(String encounterId, String scopeDoctorId) {

@@ -1,8 +1,12 @@
 package com.example.diabetesmanage.model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class MedicalEncounter {
+
+    private static final DateTimeFormatter HISTORY_DATETIME_FMT =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private String id;
     private String displayCode;
@@ -21,6 +25,8 @@ public class MedicalEncounter {
     private String doctorName;
     private LocalDateTime ngayTao;
     private String trangThai;
+    private Double duongHuyetMgdl;
+    private Double hba1cPercent;
 
     public String getId() {
         return id;
@@ -134,6 +140,25 @@ public class MedicalEncounter {
         this.doctorName = doctorName;
     }
 
+    public String getNgayKhamDisplay() {
+        return ngayKham == null ? "—" : ngayKham.format(HISTORY_DATETIME_FMT);
+    }
+
+    public String getNgayTaoDisplay() {
+        if (ngayTao != null) {
+            return ngayTao.format(HISTORY_DATETIME_FMT);
+        }
+        return getNgayKhamDisplay();
+    }
+
+    public String getPatientDisplayName() {
+        return patientName != null ? patientName : patientCode;
+    }
+
+    public String getDoctorDisplayName() {
+        return doctorName != null ? doctorName : "—";
+    }
+
     public LocalDateTime getNgayTao() {
         return ngayTao;
     }
@@ -148,6 +173,67 @@ public class MedicalEncounter {
 
     public void setTrangThai(String trangThai) {
         this.trangThai = trangThai;
+    }
+
+    public Double getDuongHuyetMgdl() {
+        return duongHuyetMgdl;
+    }
+
+    public void setDuongHuyetMgdl(Double duongHuyetMgdl) {
+        this.duongHuyetMgdl = duongHuyetMgdl;
+    }
+
+    public Double getHba1cPercent() {
+        return hba1cPercent;
+    }
+
+    public void setHba1cPercent(Double hba1cPercent) {
+        this.hba1cPercent = hba1cPercent;
+    }
+
+    /** Nhãn ngắn cho bảng lịch sử khám. */
+    public String getShortEncounterTypeLabel() {
+        if (loaiEncounter == null || loaiEncounter.isBlank()) {
+            return "Không xác định";
+        }
+        switch (loaiEncounter.trim().toLowerCase()) {
+            case "tai_kham_noi_tiet":
+            case "internal_examination":
+            case "noi_tiet":
+            case "kham_noi_tiet":
+                return "Khám Nội tiết";
+            case "mau_tong_quat":
+            case "general_blood_test":
+            case "blood_test":
+            case "cbc":
+                return "Xét nghiệm CBC";
+            case "sinh_hoa_mau":
+            case "biochemistry_test":
+            case "biochemistry":
+            case "sinh_hoa":
+                return "Sinh hóa máu";
+            default:
+                return getEncounterTypeLabel();
+        }
+    }
+
+    /** Chẩn đoán hiển thị trên lịch sử — bỏ nhãn loại hồ sơ placeholder. */
+    public String getHistoryDiagnosisDisplay() {
+        if (chanDoanChinh != null && !chanDoanChinh.isBlank()
+                && !isEncounterTypePlaceholder(chanDoanChinh)) {
+            return chanDoanChinh.trim();
+        }
+        return null;
+    }
+
+    private boolean isEncounterTypePlaceholder(String value) {
+        if (value == null) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return "Bệnh án tái khám Nội tiết".equalsIgnoreCase(trimmed)
+                || "Kết quả xét nghiệm máu tổng quát".equalsIgnoreCase(trimmed)
+                || "Kết quả sinh hóa máu".equalsIgnoreCase(trimmed);
     }
 
     public String getLoaiEncounter() {

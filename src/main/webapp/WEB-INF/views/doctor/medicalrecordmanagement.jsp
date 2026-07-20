@@ -1,6 +1,3 @@
-<%@ page import="com.example.diabetesmanage.model.MedicalEncounter" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
@@ -558,67 +555,26 @@
                         </thead>
 
                         <tbody>
-
-                        <%
-                            List<MedicalEncounter> records =
-                                    (List<MedicalEncounter>) request.getAttribute("records");
-                            DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-                            if (records != null) {
-                                for (MedicalEncounter record : records) {
-                        %>
-
+                        <c:forEach var="record" items="${records}">
                         <tr>
-
+                            <td><c:out value="${record.displayCode}"/></td>
+                            <td><c:out value="${record.encounterTypeLabel}"/></td>
+                            <td><c:out value="${record.patientDisplayName}"/></td>
+                            <td><c:out value="${record.doctorDisplayName}"/></td>
+                            <td><c:out value="${record.ngayKhamDisplay}"/></td>
+                            <td><c:out value="${record.statusLabel}"/></td>
+                            <td><c:out value="${record.ngayTaoDisplay}"/></td>
                             <td>
-                                <%= record.getDisplayCode() %>
-                            </td>
-
-                            <td>
-                                <%= record.getEncounterTypeLabel() %>
-                            </td>
-
-                            <td>
-                                <%= record.getPatientName() != null ? record.getPatientName() : record.getPatientCode() %>
-                            </td>
-
-                            <td>
-                                <%= record.getDoctorName() != null ? record.getDoctorName() : "—" %>
-                            </td>
-
-                            <td>
-                                <%= record.getNgayKham() != null ? record.getNgayKham().format(dateFmt) : "—" %>
-                            </td>
-
-                            <td>
-                                <%= record.getStatusLabel() %>
-                            </td>
-
-                            <td>
-                                <%= record.getNgayTao() != null ? record.getNgayTao().format(dateFmt)
-                                        : (record.getNgayKham() != null ? record.getNgayKham().format(dateFmt) : "—") %>
-                            </td>
-
-                            <td>
-                                <!-- debug encounter id: <%= record.getId() %> -->
-                                <span style="font-size:10px;color:#999;display:block;margin-bottom:4px;"><%= record.getId() %></span>
-
                                 <form method="post" action="${pageContext.request.contextPath}/doctor/patient-records" style="display:inline;">
                                     <input type="hidden" name="action" value="detail">
-                                    <input type="hidden" name="id" value="<%= record.getId() %>">
+                                    <input type="hidden" name="id" value="${record.id}">
                                     <button type="submit" class="table-icon-btn edit-btn" title="Xem chi tiết">
                                         <i class="fa-solid fa-eye"></i>
                                     </button>
                                 </form>
                             </td>
-
                         </tr>
-
-                        <%
-                                }
-                            }
-                        %>
-
+                        </c:forEach>
                         </tbody>
 
                     </table>

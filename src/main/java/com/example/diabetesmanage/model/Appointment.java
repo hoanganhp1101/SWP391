@@ -1,6 +1,8 @@
 package com.example.diabetesmanage.model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class Appointment {
 
@@ -8,6 +10,9 @@ public class Appointment {
     public static final String STATUS_DA_KHAM = "da_kham";
     /** Khớp ENUM trong DB: da_huy */
     public static final String STATUS_HUY = "da_huy";
+
+    private static final DateTimeFormatter THOI_GIAN_HEN_FMT =
+            DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a", Locale.US);
 
     private String id;
     private String patientId;
@@ -108,6 +113,18 @@ public class Appointment {
             return "Hủy";
         }
         return "Chờ khám";
+    }
+
+    public String getThoiGianHenDisplay() {
+        return thoiGianHen == null ? "—" : thoiGianHen.format(THOI_GIAN_HEN_FMT);
+    }
+
+    public String getStatusCssClass() {
+        return trangThai == null ? "status-cho_kham" : "status-" + trangThai;
+    }
+
+    public boolean isChoKham() {
+        return STATUS_CHO_KHAM.equals(trangThai);
     }
 
     /** Chuẩn hóa tham số filter từ URL (huy -> da_huy). */

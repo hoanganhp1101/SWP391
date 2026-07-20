@@ -155,8 +155,6 @@
     </style>
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -305,51 +303,51 @@
                         <div class="form-container">
                             <div class="form-group">
                                 <label>Đường huyết (mg/dL) <span class="req tai-kham-required">*</span></label>
-                                <input type="number" step="0.1" min="20" max="800" name="duongHuyetMgdl" value="${form.duongHuyetMgdl}" data-tai-kham-required="true">
+                                <input type="number" step="any" min="0" max="800" name="duongHuyetMgdl" value="${form.duongHuyetMgdl}" data-tai-kham-required="true" inputmode="decimal">
                                 <div class="field-error" data-error-for="duongHuyetMgdl"><c:out value="${fieldErrors['duongHuyetMgdl']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>HbA1c (%)</label>
-                                <input type="number" step="0.1" min="3" max="20" name="hba1cPercent" value="${form.hba1cPercent}">
+                                <input type="number" step="any" min="0" max="20" name="hba1cPercent" value="${form.hba1cPercent}" inputmode="decimal">
                                 <div class="field-error" data-error-for="hba1cPercent"><c:out value="${fieldErrors['hba1cPercent']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Chiều cao (cm)</label>
-                                <input type="number" step="0.1" min="50.1" max="250" name="chieuCaoCm" id="chieuCaoCm" value="${form.chieuCaoCm}">
+                                <input type="number" step="any" min="0" max="250" name="chieuCaoCm" id="chieuCaoCm" value="${form.chieuCaoCm}" inputmode="decimal">
                                 <div class="field-error" data-error-for="chieuCaoCm"><c:out value="${fieldErrors['chieuCaoCm']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Cân nặng (kg)</label>
-                                <input type="number" step="0.1" min="2" max="500" name="canNangKg" id="canNangKg" value="${form.canNangKg}">
+                                <input type="number" step="any" min="0" max="500" name="canNangKg" id="canNangKg" value="${form.canNangKg}" inputmode="decimal">
                                 <div class="field-error" data-error-for="canNangKg"><c:out value="${fieldErrors['canNangKg']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>BMI</label>
-                                <input type="number" step="0.01" min="0" name="bmi" id="bmi" value="${form.bmi}" readonly>
+                                <input type="number" step="any" min="0" name="bmi" id="bmi" value="${form.bmi}" readonly>
                             </div>
                             <div class="form-group">
                                 <label>Huyết áp tâm thu</label>
-                                <input type="number" min="50" max="300" name="huyetApTamThu" value="${form.huyetApTamThu}">
+                                <input type="number" step="1" min="0" max="300" name="huyetApTamThu" value="${form.huyetApTamThu}" inputmode="numeric">
                                 <div class="field-error" data-error-for="huyetApTamThu"><c:out value="${fieldErrors['huyetApTamThu']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Huyết áp tâm trương</label>
-                                <input type="number" min="30" max="200" name="huyetApTamTruong" value="${form.huyetApTamTruong}">
+                                <input type="number" step="1" min="0" max="200" name="huyetApTamTruong" value="${form.huyetApTamTruong}" inputmode="numeric">
                                 <div class="field-error" data-error-for="huyetApTamTruong"><c:out value="${fieldErrors['huyetApTamTruong']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Nhịp tim (bpm)</label>
-                                <input type="number" min="20" max="250" name="nhipTim" value="${form.nhipTim}">
+                                <input type="number" step="1" min="0" max="250" name="nhipTim" value="${form.nhipTim}" inputmode="numeric">
                                 <div class="field-error" data-error-for="nhipTim"><c:out value="${fieldErrors['nhipTim']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Nhiệt độ (°C)</label>
-                                <input type="number" step="0.1" min="30" max="45" name="nhietDoC" value="${form.nhietDoC}">
+                                <input type="number" step="any" min="0" max="45" name="nhietDoC" value="${form.nhietDoC}" inputmode="decimal">
                                 <div class="field-error" data-error-for="nhietDoC"><c:out value="${fieldErrors['nhietDoC']}"/></div>
                             </div>
                             <div class="form-group">
                                 <label>Nhịp thở</label>
-                                <input type="number" min="5" max="80" name="nhipTho" value="${form.nhipTho}">
+                                <input type="number" step="1" min="0" max="80" name="nhipTho" value="${form.nhipTho}" inputmode="numeric">
                                 <div class="field-error" data-error-for="nhipTho"><c:out value="${fieldErrors['nhipTho']}"/></div>
                             </div>
                         </div>
@@ -361,16 +359,16 @@
                     <div class="card-top"><i class="fa-solid fa-flask"></i> D. Kết quả sinh hóa máu</div>
                     <div class="card-body">
                         <div class="form-container">
-                            <div class="form-group"><label>Đường huyết (mmol/L)</label><input type="number" step="0.01" min="0" name="labGlucoseMau" value="${form.labGlucoseMau}"><div class="field-error" data-error-for="labGlucoseMau"><c:out value="${fieldErrors['labGlucoseMau']}"/></div></div>
-                            <div class="form-group"><label>HbA1c (%)</label><input type="number" step="0.1" min="3" max="20" name="labHba1c" value="${form.labHba1c}"><div class="field-error" data-error-for="labHba1c"><c:out value="${fieldErrors['labHba1c']}"/></div></div>
-                            <div class="form-group"><label>Cholesterol (mmol/L)</label><input type="number" step="0.01" min="0" name="labCholesterol" value="${form.labCholesterol}"><div class="field-error" data-error-for="labCholesterol"><c:out value="${fieldErrors['labCholesterol']}"/></div></div>
-                            <div class="form-group"><label>Triglyceride (mmol/L)</label><input type="number" step="0.01" min="0" name="labTriglyceride" value="${form.labTriglyceride}"><div class="field-error" data-error-for="labTriglyceride"><c:out value="${fieldErrors['labTriglyceride']}"/></div></div>
-                            <div class="form-group"><label>HDL (mmol/L)</label><input type="number" step="0.01" min="0" name="labHdl" value="${form.labHdl}"><div class="field-error" data-error-for="labHdl"><c:out value="${fieldErrors['labHdl']}"/></div></div>
-                            <div class="form-group"><label>LDL (mmol/L)</label><input type="number" step="0.01" min="0" name="labLdl" value="${form.labLdl}"><div class="field-error" data-error-for="labLdl"><c:out value="${fieldErrors['labLdl']}"/></div></div>
-                            <div class="form-group"><label>AST (U/L)</label><input type="number" step="0.01" min="0" name="labAst" value="${form.labAst}"><div class="field-error" data-error-for="labAst"><c:out value="${fieldErrors['labAst']}"/></div></div>
-                            <div class="form-group"><label>ALT (U/L)</label><input type="number" step="0.01" min="0" name="labAlt" value="${form.labAlt}"><div class="field-error" data-error-for="labAlt"><c:out value="${fieldErrors['labAlt']}"/></div></div>
-                            <div class="form-group"><label>Creatinine (µmol/L)</label><input type="number" step="0.01" min="0" name="labCreatinine" value="${form.labCreatinine}"><div class="field-error" data-error-for="labCreatinine"><c:out value="${fieldErrors['labCreatinine']}"/></div></div>
-                            <div class="form-group"><label>Urê (mmol/L)</label><input type="number" step="0.01" min="0" name="labUre" value="${form.labUre}"><div class="field-error" data-error-for="labUre"><c:out value="${fieldErrors['labUre']}"/></div></div>
+                            <div class="form-group"><label>Đường huyết (mmol/L)</label><input type="number" step="any" min="0" name="labGlucoseMau" value="${form.labGlucoseMau}" inputmode="decimal"><div class="field-error" data-error-for="labGlucoseMau"><c:out value="${fieldErrors['labGlucoseMau']}"/></div></div>
+                            <div class="form-group"><label>HbA1c (%)</label><input type="number" step="any" min="0" max="20" name="labHba1c" value="${form.labHba1c}" inputmode="decimal"><div class="field-error" data-error-for="labHba1c"><c:out value="${fieldErrors['labHba1c']}"/></div></div>
+                            <div class="form-group"><label>Cholesterol (mmol/L)</label><input type="number" step="any" min="0" name="labCholesterol" value="${form.labCholesterol}" inputmode="decimal"><div class="field-error" data-error-for="labCholesterol"><c:out value="${fieldErrors['labCholesterol']}"/></div></div>
+                            <div class="form-group"><label>Triglyceride (mmol/L)</label><input type="number" step="any" min="0" name="labTriglyceride" value="${form.labTriglyceride}" inputmode="decimal"><div class="field-error" data-error-for="labTriglyceride"><c:out value="${fieldErrors['labTriglyceride']}"/></div></div>
+                            <div class="form-group"><label>HDL (mmol/L)</label><input type="number" step="any" min="0" name="labHdl" value="${form.labHdl}" inputmode="decimal"><div class="field-error" data-error-for="labHdl"><c:out value="${fieldErrors['labHdl']}"/></div></div>
+                            <div class="form-group"><label>LDL (mmol/L)</label><input type="number" step="any" min="0" name="labLdl" value="${form.labLdl}" inputmode="decimal"><div class="field-error" data-error-for="labLdl"><c:out value="${fieldErrors['labLdl']}"/></div></div>
+                            <div class="form-group"><label>AST (U/L)</label><input type="number" step="any" min="0" name="labAst" value="${form.labAst}" inputmode="decimal"><div class="field-error" data-error-for="labAst"><c:out value="${fieldErrors['labAst']}"/></div></div>
+                            <div class="form-group"><label>ALT (U/L)</label><input type="number" step="any" min="0" name="labAlt" value="${form.labAlt}" inputmode="decimal"><div class="field-error" data-error-for="labAlt"><c:out value="${fieldErrors['labAlt']}"/></div></div>
+                            <div class="form-group"><label>Creatinine (µmol/L)</label><input type="number" step="any" min="0" name="labCreatinine" value="${form.labCreatinine}" inputmode="decimal"><div class="field-error" data-error-for="labCreatinine"><c:out value="${fieldErrors['labCreatinine']}"/></div></div>
+                            <div class="form-group"><label>Urê (mmol/L)</label><input type="number" step="any" min="0" name="labUre" value="${form.labUre}" inputmode="decimal"><div class="field-error" data-error-for="labUre"><c:out value="${fieldErrors['labUre']}"/></div></div>
                         </div>
                     </div>
                 </div>
@@ -380,11 +378,11 @@
                     <div class="card-top"><i class="fa-solid fa-vial"></i> E. Xét nghiệm máu tổng quát</div>
                     <div class="card-body">
                         <div class="form-container">
-                            <div class="form-group"><label>Bạch cầu (WBC, G/L)</label><input type="number" step="0.01" min="0" name="labWbc" value="${form.labWbc}"><div class="field-error" data-error-for="labWbc"><c:out value="${fieldErrors['labWbc']}"/></div></div>
-                            <div class="form-group"><label>Hồng cầu (RBC, T/L)</label><input type="number" step="0.01" min="0" name="labRbc" value="${form.labRbc}"><div class="field-error" data-error-for="labRbc"><c:out value="${fieldErrors['labRbc']}"/></div></div>
-                            <div class="form-group"><label>Huyết sắc tố (HGB, g/dL)</label><input type="number" step="0.01" min="0" name="labHgb" value="${form.labHgb}"><div class="field-error" data-error-for="labHgb"><c:out value="${fieldErrors['labHgb']}"/></div></div>
-                            <div class="form-group"><label>Dung tích hồng cầu (HCT, %)</label><input type="number" step="0.01" min="0" name="labHct" value="${form.labHct}"><div class="field-error" data-error-for="labHct"><c:out value="${fieldErrors['labHct']}"/></div></div>
-                            <div class="form-group"><label>Tiểu cầu (PLT, G/L)</label><input type="number" step="0.01" min="0" name="labPlt" value="${form.labPlt}"><div class="field-error" data-error-for="labPlt"><c:out value="${fieldErrors['labPlt']}"/></div></div>
+                            <div class="form-group"><label>Bạch cầu (WBC, G/L)</label><input type="number" step="any" min="0" name="labWbc" value="${form.labWbc}" inputmode="decimal"><div class="field-error" data-error-for="labWbc"><c:out value="${fieldErrors['labWbc']}"/></div></div>
+                            <div class="form-group"><label>Hồng cầu (RBC, T/L)</label><input type="number" step="any" min="0" name="labRbc" value="${form.labRbc}" inputmode="decimal"><div class="field-error" data-error-for="labRbc"><c:out value="${fieldErrors['labRbc']}"/></div></div>
+                            <div class="form-group"><label>Huyết sắc tố (HGB, g/dL)</label><input type="number" step="any" min="0" name="labHgb" value="${form.labHgb}" inputmode="decimal"><div class="field-error" data-error-for="labHgb"><c:out value="${fieldErrors['labHgb']}"/></div></div>
+                            <div class="form-group"><label>Dung tích hồng cầu (HCT, %)</label><input type="number" step="any" min="0" name="labHct" value="${form.labHct}" inputmode="decimal"><div class="field-error" data-error-for="labHct"><c:out value="${fieldErrors['labHct']}"/></div></div>
+                            <div class="form-group"><label>Tiểu cầu (PLT, G/L)</label><input type="number" step="any" min="0" name="labPlt" value="${form.labPlt}" inputmode="decimal"><div class="field-error" data-error-for="labPlt"><c:out value="${fieldErrors['labPlt']}"/></div></div>
                         </div>
                     </div>
                 </div>
@@ -580,7 +578,12 @@
         const type = encounterTypeSelect.value;
         const isTaiKham = type === 'tai_kham_noi_tiet';
         document.querySelectorAll('[data-encounter-section]').forEach(function (card) {
-            card.style.display = card.getAttribute('data-encounter-section') === type ? '' : 'none';
+            const active = card.getAttribute('data-encounter-section') === type;
+            card.style.display = active ? '' : 'none';
+            // Input ẩn vẫn bị FormData submit → disable để không gửi dữ liệu loại hồ sơ khác.
+            card.querySelectorAll('input, select, textarea').forEach(function (el) {
+                el.disabled = !active;
+            });
         });
         document.querySelectorAll('[data-tai-kham-required]').forEach(function (field) {
             if (isTaiKham) { field.setAttribute('required', 'required'); }
@@ -625,18 +628,27 @@
         + '-' + String(now.getDate()).padStart(2, '0');
     visitDateInput.max = today;
 
+    const DECIMAL_PATTERN = /^\d+(\.\d+)?$/;
+    const INTEGER_PATTERN = /^\d+$/;
+    const INTEGER_FIELDS = {
+        huyetApTamThu: true,
+        huyetApTamTruong: true,
+        nhipTim: true,
+        nhipTho: true
+    };
+
     const validationRules = {
-        duongHuyetMgdl: {label: 'Đường huyết', min: 20, max: 800, range: 'Đường huyết phải nằm trong khoảng 20–800 mg/dL.'},
-        hba1cPercent: {label: 'HbA1c', min: 3, max: 20, range: 'HbA1c chỉ được nhập từ 3% đến 20%.'},
-        chieuCaoCm: {label: 'Chiều cao', minExclusive: 50, max: 250},
-        canNangKg: {label: 'Cân nặng', min: 2, max: 500, range: 'Cân nặng phải nằm trong khoảng 2–500 kg.'},
-        huyetApTamThu: {label: 'Huyết áp tâm thu', min: 50, max: 300, range: 'Huyết áp tâm thu phải từ 50–300 mmHg.'},
-        huyetApTamTruong: {label: 'Huyết áp tâm trương', min: 30, max: 200, range: 'Huyết áp tâm trương phải từ 30–200 mmHg.'},
-        nhipTim: {label: 'Nhịp tim', min: 20, max: 250, range: 'Nhịp tim phải từ 20–250 bpm.'},
-        nhietDoC: {label: 'Nhiệt độ', min: 30, max: 45, range: 'Nhiệt độ cơ thể phải từ 30°C đến 45°C.'},
-        nhipTho: {label: 'Nhịp thở', min: 5, max: 80, range: 'Nhịp thở phải từ 5–80 lần/phút.'},
+        duongHuyetMgdl: {label: 'Đường huyết', min: 0, max: 800, range: 'Đường huyết phải nằm trong khoảng 0–800 mg/dL.'},
+        hba1cPercent: {label: 'HbA1c', min: 0, max: 20, range: 'HbA1c chỉ được nhập từ 0% đến 20%.'},
+        chieuCaoCm: {label: 'Chiều cao', min: 0, max: 250, range: 'Chiều cao phải nằm trong khoảng 0–250 cm.'},
+        canNangKg: {label: 'Cân nặng', min: 0, max: 500, range: 'Cân nặng phải nằm trong khoảng 0–500 kg.'},
+        huyetApTamThu: {label: 'Huyết áp tâm thu', min: 0, max: 300, range: 'Huyết áp tâm thu phải từ 0–300 mmHg.'},
+        huyetApTamTruong: {label: 'Huyết áp tâm trương', min: 0, max: 200, range: 'Huyết áp tâm trương phải từ 0–200 mmHg.'},
+        nhipTim: {label: 'Nhịp tim', min: 0, max: 250, range: 'Nhịp tim phải từ 0–250 bpm.'},
+        nhietDoC: {label: 'Nhiệt độ', min: 0, max: 45, range: 'Nhiệt độ cơ thể phải từ 0°C đến 45°C.'},
+        nhipTho: {label: 'Nhịp thở', min: 0, max: 80, range: 'Nhịp thở phải từ 0–80 lần/phút.'},
         labGlucoseMau: {label: 'Đường huyết', min: 0},
-        labHba1c: {label: 'HbA1c', min: 3, max: 20, range: 'HbA1c chỉ được nhập từ 3% đến 20%.'},
+        labHba1c: {label: 'HbA1c', min: 0, max: 20, range: 'HbA1c chỉ được nhập từ 0% đến 20%.'},
         labCholesterol: {label: 'Cholesterol', min: 0},
         labTriglyceride: {label: 'Triglyceride', min: 0},
         labHdl: {label: 'HDL', min: 0},
@@ -662,6 +674,20 @@
         if (error) error.textContent = message || '';
     }
 
+    function isNumericTextInvalid(field, raw) {
+        if (field.validity && field.validity.badInput) {
+            return true;
+        }
+        if (!raw) {
+            return false;
+        }
+        const normalized = raw.replace(',', '.');
+        if (INTEGER_FIELDS[field.name]) {
+            return !INTEGER_PATTERN.test(normalized);
+        }
+        return !DECIMAL_PATTERN.test(normalized);
+    }
+
     function validateNumberField(name) {
         const field = form.elements[name];
         const rule = validationRules[name];
@@ -669,27 +695,29 @@
             setFieldError(name, '');
             return null;
         }
-        const raw = field.value.trim();
+        if (field.readOnly) {
+            setFieldError(name, '');
+            return null;
+        }
+        const raw = (field.value || '').trim();
+        if (isNumericTextInvalid(field, raw)) {
+            const message = 'Chỉ được nhập số.';
+            setFieldError(name, message);
+            return message;
+        }
         if (!raw) {
             setFieldError(name, '');
             return null;
         }
-        if (field.validity.badInput || !Number.isFinite(Number(raw))) {
-            const message = (rule.label === 'Đường huyết' || rule.label === 'HbA1c')
-                ? rule.label + ' phải là số.'
-                : rule.label + ' phải là số hợp lệ.';
+        const value = Number(raw.replace(',', '.'));
+        if (!Number.isFinite(value)) {
+            const message = 'Chỉ được nhập số.';
             setFieldError(name, message);
             return message;
         }
-        const value = Number(raw);
         let message = null;
-        if (name === 'chieuCaoCm' && value <= 50) {
-            message = 'Chiều cao phải lớn hơn 50 cm.';
-        } else if (name === 'chieuCaoCm' && value > 250) {
-            message = 'Chiều cao không được vượt quá 250 cm.';
-        } else if ((rule.min != null && value < rule.min)
-                || (rule.max != null && value > rule.max)) {
-            message = rule.range || (rule.label + ' không được là số âm.');
+        if ((rule.min != null && value < rule.min) || (rule.max != null && value > rule.max)) {
+            message = rule.range || (rule.label + ' không hợp lệ.');
         }
         setFieldError(name, message);
         return message;
@@ -727,10 +755,15 @@
                 setFieldError('trieuChung', message);
                 errors.push(message);
             } else setFieldError('trieuChung', '');
-            if (!form.elements.duongHuyetMgdl.value.trim()) {
-                const message = 'Vui lòng nhập Đường huyết.';
+            if (!form.elements.duongHuyetMgdl.value.trim()
+                    || (form.elements.duongHuyetMgdl.validity
+                        && form.elements.duongHuyetMgdl.validity.badInput)) {
+                const message = form.elements.duongHuyetMgdl.validity
+                        && form.elements.duongHuyetMgdl.validity.badInput
+                    ? 'Chỉ được nhập số.'
+                    : 'Vui lòng nhập Đường huyết.';
                 setFieldError('duongHuyetMgdl', message);
-                errors.push(message);
+                if (!errors.includes(message)) errors.push(message);
             }
         } else {
             setFieldError('trieuChung', '');
@@ -756,11 +789,21 @@
         return errors;
     }
 
+    Object.keys(validationRules).forEach(function (name) {
+        const field = form.elements[name];
+        if (!field) return;
+        field.addEventListener('blur', function () { validateNumberField(name); });
+        field.addEventListener('input', function () {
+            if (field.classList.contains('input-error') || (field.value || '').trim()) {
+                validateNumberField(name);
+            }
+        });
+    });
     form.querySelectorAll('input, select, textarea').forEach(function (field) {
+        if (validationRules[field.name]) return;
         const eventName = field.tagName === 'SELECT' ? 'change' : 'input';
         field.addEventListener(eventName, function () {
-            if (validationRules[field.name]) validateNumberField(field.name);
-            else if (field.name) setFieldError(field.name, '');
+            if (field.name) setFieldError(field.name, '');
         });
     });
 
@@ -866,6 +909,18 @@
         const submitBtn = activeSubmitButton();
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+    });
+
+    // Hiển thị lại lỗi server dưới từng ô (nếu có).
+    form.querySelectorAll('[data-error-for]').forEach(function (errorBox) {
+        if ((errorBox.textContent || '').trim()) {
+            const name = errorBox.getAttribute('data-error-for');
+            const field = form.elements[name];
+            if (field && field.classList) {
+                field.classList.add('input-error');
+                field.setAttribute('aria-invalid', 'true');
+            }
+        }
     });
 })();
 </script>

@@ -26,7 +26,7 @@ public class AppointmentDAO {
                     "WHERE 1=1 ";
 
     public List<Appointment> findAll(
-            String scopeDoctorId, String status, String keyword, String fromDate, String toDate
+            String scopeDoctorId, String status, String keyword, String fromDate, String toDate, String type
     ) {
         List<Appointment> list = new ArrayList<>();
         String normalizedStatus = Appointment.normalizeStatusFilter(status);

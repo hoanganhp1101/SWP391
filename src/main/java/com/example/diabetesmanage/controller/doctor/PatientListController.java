@@ -1,31 +1,32 @@
 package com.example.diabetesmanage.controller.doctor;
 
-import com.example.diabetesmanage.dao.HealthRecordDAO;
-import com.example.diabetesmanage.dao.LabResultDAO;
-import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
-import com.example.diabetesmanage.dao.PrescriptionDAO;
-import com.example.diabetesmanage.model.HealthRecord;
-import com.example.diabetesmanage.model.LabResult;
-import com.example.diabetesmanage.model.MedicalEncounter;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
+import com.example.diabetesmanage.service.PatientDetailService;
+import com.example.diabetesmanage.service.PatientDetailService.DetailBundle;
 import com.example.diabetesmanage.util.AuthContext;
 import com.example.diabetesmanage.util.DoctorLayoutHelper;
-import com.example.diabetesmanage.util.EncounterClinicalJson;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 
 @WebServlet("/doctor/patient-list")
 public class PatientListController extends HttpServlet {
 
+    private static final DateTimeFormatter DISPLAY_DATE =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final PatientDAO patientDAO = new PatientDAO();
+    private final PatientDetailService patientDetailService = new PatientDetailService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -36,25 +37,32 @@ public class PatientListController extends HttpServlet {
             return;
         }
 
+        String patientId = request.getParameter("id");
+        if (patientId != null && !patientId.isBlank()) {
+            forwardPatientDetail(request, response, user);
+            return;
+        }
+
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
         String keyword = request.getParameter("keyword");
         String glucose = request.getParameter("glucose");
         String hba1c = request.getParameter("hba1c");
         String bmi = request.getParameter("bmi");
+        String bloodPressure = request.getParameter("bloodPressure");
+        String age = request.getParameter("age");
+        String gender = request.getParameter("gender");
+        String diabetesType = request.getParameter("diabetesType");
         String action = request.getParameter("action");
 
         List<Patient> patients =
-                patientDAO.searchPatients(keyword, glucose, hba1c, bmi, action, scopeDoctorId);
+                patientDAO.searchPatients(keyword, glucose, hba1c, bmi,
+                        bloodPressure, age, gender, diabetesType, action, scopeDoctorId);
 
         DoctorLayoutHelper.prepare(request, user, "patients");
         request.setAttribute("patients", patients);
         request.getRequestDispatcher("/WEB-INF/views/doctor/patientmanagement.jsp")
                 .forward(request, response);
     }
-    private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
-    private final LabResultDAO labResultDAO = new LabResultDAO();
-    private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
-    private final PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -71,136 +79,138 @@ public class PatientListController extends HttpServlet {
             return;
         }
 
+        forwardPatientDetail(request, response, user);
+    }
+
+    private void forwardPatientDetail(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+
+        String patientId = request.getParameter("id").trim();
         if (!AuthContext.ensurePatientAccess(user, patientDAO, patientId, response)) {
             return;
         }
+
+        LocalDate fromDate = parseDateParam(request.getParameter("fromDate"));
+        LocalDate toDate = parseDateParam(request.getParameter("toDate"));
+        String fromRaw = request.getParameter("fromDate");
+        String toRaw = request.getParameter("toDate");
+        boolean fromBlank = fromRaw == null || fromRaw.isBlank();
+        boolean toBlank = toRaw == null || toRaw.isBlank();
+        String historyFilterError = null;
+
+        if (fromBlank != toBlank) {
+            historyFilterError = "Vui lòng chọn đủ từ ngày và đến ngày.";
+            if (!fromBlank) {
+                request.setAttribute("fromDate", fromRaw.trim());
+            }
+            if (!toBlank) {
+                request.setAttribute("toDate", toRaw.trim());
+            }
+            fromDate = null;
+            toDate = null;
+        } else if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            historyFilterError =
+                    "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.";
+            request.setAttribute("fromDate", fromDate.toString());
+            request.setAttribute("toDate", toDate.toString());
+            fromDate = null;
+            toDate = null;
+        }
+
         String scopeDoctorId = AuthContext.scopeDoctorId(user);
-        Patient patient = patientDAO.getPatientById(patientId.trim(), scopeDoctorId);
-        MedicalEncounter encounter =
-                encounterDAO.getLatestEncounterByPatient(patientId.trim(), scopeDoctorId);
-        HealthRecord record =
-                healthRecordDAO.getLatestByPatientId(patientId.trim());
-        // Hồ sơ tổng quan: gộp giá trị mới nhất của TỪNG chỉ số trên mọi encounter
-        // (encounter cũ có CBC, encounter mới có sinh hóa vẫn hiển thị đủ cả hai).
-        LabResult lab = labResultDAO.getLatestSummaryByPatientId(patientId.trim());
-        if (record == null && (lab != null || encounter != null)) {
-            record = new HealthRecord();
-            record.setPatient(patient);
-            if (encounter != null) {
-                record.setEncounterId(encounter.getId());
-                record.setThoiGianDo(encounter.getNgayKham());
-            } else {
-                record.setThoiGianDo(lab.getNgayXetNghiem());
-            }
-        }
-        if (record != null && lab != null) {
-            record.setHba1cPercent(lab.getHba1c());
-            record.setCholesterolMmol(lab.getCholesterolTp());
-            record.setTriglycerideMmol(lab.getTriglyceride());
-            record.setHdlMmol(lab.getHdlC());
-            record.setLdlMmol(lab.getLdlC());
-            record.setWbc(lab.getWbc());
-            record.setRbc(lab.getRbc());
-            record.setHgb(lab.getHgb());
-            record.setHct(lab.getHct());
-            record.setPlt(lab.getPlt());
-            record.setAst(lab.getAst());
-            record.setAlt(lab.getAlt());
-            record.setUre(lab.getUre());
-            record.setCreatinine(lab.getCreatinine());
-        }
-        if (record != null) {
-            // Các trường lâm sàng không còn lưu trong health_records: lấy từ bảng nguồn.
-            // Ưu tiên encounter hiện tại, sau đó lùi dần về encounter cũ hơn có dữ liệu.
-            List<MedicalEncounter> encounterHistory = encounterDAO.searchEncounters(
-                    scopeDoctorId, null, null, null, null, null, patientId.trim());
-            Map<String, String> prescriptionAdvice =
-                    prescriptionDAO.getAdviceForEncounterOrLatestPatient(
-                            encounter != null ? encounter.getId() : null, patientId.trim());
-            if (patient != null) {
-                record.setTienSuBenh(patient.getTienSuBenh());
-                record.setPhanLoaiTieuDuong(patient.getLoaiTieuDuong());
-                record.setChieuCaoCm(patient.getChieuCaoCm());
-            }
+        DetailBundle bundle = patientDetailService.load(patientId, scopeDoctorId, fromDate, toDate);
+        Patient patient = bundle.patient;
 
-            if (encounterHistory != null) {
-                for (MedicalEncounter enc : encounterHistory) {
-                    if (isBlank(record.getTrieuChung())) {
-                        String trieuChung = EncounterClinicalJson.parseString(
-                                enc.getKhamLamSang(), "trieu_chung");
-                        if (isBlank(trieuChung) && !isTypeLabel(enc.getLyDoKham())) {
-                            trieuChung = enc.getLyDoKham();
-                        }
-                        if (!isBlank(trieuChung)) {
-                            record.setTrieuChung(trieuChung.trim());
-                        }
-                    }
-                    if (isBlank(record.getKhamLamSang())) {
-                        String storedValue = enc.getKhamLamSang();
-                        String khamLamSang = null;
-                        if (!isBlank(storedValue)) {
-                            String jsonValue = EncounterClinicalJson.parseString(storedValue, "noi_dung");
-                            if (!isBlank(jsonValue)) {
-                                khamLamSang = jsonValue;
-                            } else {
-                                String trimmed = storedValue.trim();
-                                khamLamSang = trimmed.startsWith("{") ? null : trimmed;
-                            }
-                        }
-                        if (!isBlank(khamLamSang)) {
-                            record.setKhamLamSang(khamLamSang.trim());
-                        }
-                    }
-                    if (isBlank(record.getChanDoanChinh()) && !isBlank(enc.getChanDoanChinh())
-                            && !isTypeLabel(enc.getChanDoanChinh())) {
-                        record.setChanDoanChinh(enc.getChanDoanChinh().trim());
-                    }
-                    if (isBlank(record.getChanDoanPhu()) && !isBlank(enc.getChanDoanPhu())) {
-                        record.setChanDoanPhu(enc.getChanDoanPhu().trim());
-                    }
-                    if (isBlank(record.getHuongXuTri()) && !isBlank(enc.getHuongXuTri())) {
-                        record.setHuongXuTri(enc.getHuongXuTri().trim());
-                    }
-                }
-                // Không có chẩn đoán "thật" ở bất kỳ encounter nào: dùng nhãn loại hồ sơ mới nhất.
-                if (isBlank(record.getChanDoanChinh())) {
-                    for (MedicalEncounter enc : encounterHistory) {
-                        if (!isBlank(enc.getChanDoanChinh())) {
-                            record.setChanDoanChinh(enc.getChanDoanChinh().trim());
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (prescriptionAdvice != null) {
-                record.setKhuyenNghiDieuTri(prescriptionAdvice.get("huong_dieu_tri"));
-                record.setCheDoAn(prescriptionAdvice.get("che_do_an"));
-                record.setLuyenTap(prescriptionAdvice.get("luyen_tap"));
-            }
-        }
         DoctorLayoutHelper.prepare(request, user, "patients");
         request.setAttribute("patient", patient);
-        request.setAttribute("encounter", encounter);
-        request.setAttribute("healthRecord", record);
-        request.setAttribute("hasHealthRecord", record != null);
+        request.setAttribute("encounter", bundle.encounter);
+        request.setAttribute("healthRecord", bundle.healthRecord);
+        request.setAttribute("hasHealthRecord", bundle.healthRecord != null);
+        request.setAttribute("history", bundle.history);
         request.setAttribute("currentUser", user);
+
+        LocalDate today = LocalDate.now();
+        request.setAttribute("historyToday", today.toString());
+        request.setAttribute("historyQuick5From", quickRangeFrom(today, 5).toString());
+        request.setAttribute("historyQuick10From", quickRangeFrom(today, 10).toString());
+        request.setAttribute("historyQuick30From", quickRangeFrom(today, 30).toString());
+
+        String activeQuickRange = resolveActiveQuickRange(fromDate, toDate);
+        request.setAttribute("activeQuickRange", activeQuickRange);
+        request.setAttribute("historyDateLabel", resolveHistoryDateLabel(fromDate, toDate, activeQuickRange));
+
+        if (fromDate != null && toDate != null) {
+            request.setAttribute("fromDate", fromDate.toString());
+            request.setAttribute("toDate", toDate.toString());
+        }
+        if (historyFilterError != null) {
+            request.setAttribute("historyFilterError", historyFilterError);
+            request.setAttribute("activeQuickRange", "custom");
+        }
+
         request.getRequestDispatcher("/WEB-INF/views/doctor/patientdetail.jsp")
                 .forward(request, response);
     }
 
-    /** Nhãn placeholder theo loại hồ sơ, không phải chẩn đoán/triệu chứng thật. */
-    private boolean isTypeLabel(String value) {
-        if (value == null) {
-            return false;
+    private LocalDate parseDateParam(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
         }
-        String trimmed = value.trim();
-        return "Bệnh án tái khám Nội tiết".equalsIgnoreCase(trimmed)
-                || "Kết quả xét nghiệm máu tổng quát".equalsIgnoreCase(trimmed)
-                || "Kết quả sinh hóa máu".equalsIgnoreCase(trimmed);
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
+    /**
+     * Ngày bắt đầu cho quick filter (bao gồm cả hôm nay).
+     * Ví dụ 5 ngày: today-4 .. today.
+     */
+    static LocalDate quickRangeFrom(LocalDate today, int inclusiveDays) {
+        if (today == null || inclusiveDays < 1) {
+            return today;
+        }
+        return today.minusDays(inclusiveDays - 1L);
+    }
+
+    /**
+     * Xác định option dropdown đang active: 5, 10, 30, all, hoặc custom.
+     */
+    private String resolveActiveQuickRange(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null || toDate == null) {
+            return "all";
+        }
+        LocalDate today = LocalDate.now();
+        if (!toDate.equals(today)) {
+            return "custom";
+        }
+        long inclusiveDays = ChronoUnit.DAYS.between(fromDate, toDate) + 1;
+        if (inclusiveDays == 5) {
+            return "5";
+        }
+        if (inclusiveDays == 10) {
+            return "10";
+        }
+        if (inclusiveDays == 30) {
+            return "30";
+        }
+        return "custom";
+    }
+
+    private String resolveHistoryDateLabel(LocalDate fromDate, LocalDate toDate, String activeQuickRange) {
+        if (fromDate == null || toDate == null || "all".equals(activeQuickRange)) {
+            return "Tất cả lịch sử";
+        }
+        switch (activeQuickRange) {
+            case "5":
+                return "5 ngày gần nhất";
+            case "10":
+                return "10 ngày gần nhất";
+            case "30":
+                return "30 ngày gần nhất";
+            default:
+                return fromDate.format(DISPLAY_DATE) + " - " + toDate.format(DISPLAY_DATE);
+        }
     }
 }

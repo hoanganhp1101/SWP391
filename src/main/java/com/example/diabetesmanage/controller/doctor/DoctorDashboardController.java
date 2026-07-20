@@ -10,6 +10,7 @@ import com.example.diabetesmanage.service.DangerousPatientService;
 import com.example.diabetesmanage.service.DangerousPatientService.AnalysisResult;
 import com.example.diabetesmanage.util.AuthContext;
 import com.example.diabetesmanage.util.DoctorLayoutHelper;
+import com.example.diabetesmanage.util.HealthMetricAssessment;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -25,6 +26,7 @@ public class DoctorDashboardController extends HttpServlet {
 
     private final DoctorDashboardDAO dashboardDAO = new DoctorDashboardDAO();
     private final DangerousPatientService dangerousPatientService = new DangerousPatientService();
+    private final PatientDAO patientDAO = new PatientDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -64,7 +66,6 @@ public class DoctorDashboardController extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/doctor/doctordashboard.jsp")
                 .forward(request, response);
     }
-    private final PatientDAO patientDAO = new PatientDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -97,6 +98,7 @@ public class DoctorDashboardController extends HttpServlet {
 
         DoctorLayoutHelper.prepare(request, doctor, "alerts");
         request.setAttribute("detail", detail);
+        HealthMetricAssessment.populateMetricLevels(request, detail);
         request.getRequestDispatcher("/WEB-INF/views/doctor/dangerouspatientanalysis.jsp")
                 .forward(request, response);
     }

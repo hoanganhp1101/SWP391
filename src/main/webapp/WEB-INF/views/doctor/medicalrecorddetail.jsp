@@ -74,8 +74,6 @@
     </style>
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>

@@ -427,11 +427,14 @@ public class MedicalEncounterController extends HttpServlet {
         labels.put("hba1cPercent", "HbA1c");
         labels.put("chieuCaoCm", "Chiều cao");
         labels.put("canNangKg", "Cân nặng");
+        labels.put("bmi", "BMI");
         labels.put("huyetApTamThu", "Huyết áp tâm thu");
         labels.put("huyetApTamTruong", "Huyết áp tâm trương");
         labels.put("nhipTim", "Nhịp tim");
         labels.put("nhietDoC", "Nhiệt độ");
         labels.put("nhipTho", "Nhịp thở");
+        labels.put("carbsG", "Carbohydrate");
+        labels.put("lieuLuongInsulinUi", "Liều insulin");
         labels.put("labGlucoseMau", "Đường huyết");
         labels.put("labHba1c", "HbA1c");
         labels.put("labCholesterol", "Cholesterol");
@@ -454,30 +457,31 @@ public class MedicalEncounterController extends HttpServlet {
             if (value == null || value.isBlank()) {
                 continue;
             }
+            String normalized = value.trim().replace(',', '.');
+            boolean integerField = "huyetApTamThu".equals(field.getKey())
+                    || "huyetApTamTruong".equals(field.getKey())
+                    || "nhipTim".equals(field.getKey())
+                    || "nhipTho".equals(field.getKey())
+                    || "lieuLuongInsulinUi".equals(field.getKey());
+            boolean valid = integerField
+                    ? normalized.matches("^\\d+$")
+                    : normalized.matches("^\\d+(\\.\\d+)?$");
+            if (!valid) {
+                errors.add(field.getValue() + " chỉ được nhập số.");
+                continue;
+            }
             try {
-                String normalized = value.trim().replace(",", ".");
-                if ("huyetApTamThu".equals(field.getKey())
-                        || "huyetApTamTruong".equals(field.getKey())
-                        || "nhipTim".equals(field.getKey())
-                        || "nhipTho".equals(field.getKey())) {
+                if (integerField) {
                     Integer.parseInt(normalized);
                 } else {
                     Double.parseDouble(normalized);
                 }
             } catch (NumberFormatException ex) {
-                if ("Đường huyết".equals(field.getValue()) || "HbA1c".equals(field.getValue())) {
-                    errors.add(field.getValue() + " phải là số.");
-                } else {
-                    errors.add(field.getValue() + ("huyetApTamThu".equals(field.getKey())
-                        || "huyetApTamTruong".equals(field.getKey())
-                        || "nhipTim".equals(field.getKey())
-                        || "nhipTho".equals(field.getKey())
-                        ? " phải là số nguyên hợp lệ." : " phải là số hợp lệ."));
-                }
+                errors.add(field.getValue() + " chỉ được nhập số.");
             }
         }
         if (errors.isEmpty()) {
-            errors.add("Dữ liệu số không hợp lệ. Vui lòng kiểm tra lại trường vừa nhập.");
+            errors.add("Giá trị phải là số hợp lệ.");
         }
         return errors;
     }
