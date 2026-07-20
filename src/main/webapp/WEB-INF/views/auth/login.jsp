@@ -12,7 +12,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login — Diabetes Support System</title>
+        <title>Đăng nhập — HealthAlert</title>
          <style>
             * {
                 box-sizing: border-box;
@@ -189,9 +189,9 @@
 
     <body>
         <div class="container">
-            <div class="logo">👔</div>
-            <h1>Diabetes Support System</h1>
-            <p class="subtitle">Login into the system</p>
+            <div class="logo">🩺</div>
+            <h1>HealthAlert</h1>
+            <p class="subtitle">Đăng nhập hệ thống — tự chuyển theo vai trò</p>
 
             <%-- Form đăng nhập --%>
             <form action="Logincontroller" method="post">
@@ -209,20 +209,19 @@
                     <p class="error-text">${passError}</p>
                 </c:if>
 
-                <a href="ForgotPassword" class="forgot-link">Change Password?</a>
+                <a href="ForgotPassword" class="forgot-link">Quên mật khẩu?</a>
 
                 <c:if test="${not empty AccountError}">
                     <div class="alert-error">${AccountError}</div>
                 </c:if>
 
-                <button type="submit" class="login-btn">Login</button>
+                <button type="submit" class="login-btn">Đăng nhập</button>
             </form>
 
-            <div class="divider">Or</div>
+            <div class="divider">Hoặc</div>
 
-            <%-- Đã sửa link từ file JSP sang Controller điều hướng --%>
             <div class="register-link-container" style="margin-top: 15px; font-size: 0.9rem; color: #555;">
-                Don't have an account? <a href="RegisterController" style="color: #4169e1; text-decoration: none; font-weight: bold;">Register here</a>
+                Chưa có tài khoản? <a href="RegisterController" style="color: #4169e1; text-decoration: none; font-weight: bold;">Đăng ký</a>
             </div>
         </div>
     </body>

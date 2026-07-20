@@ -49,8 +49,7 @@ public class AdminSecurityFilter implements Filter {
         if (isLoggedInAdmin) {
             chain.doFilter(request, response);
         } else {
-            httpRequest.setAttribute("errorMessage", "Vui lòng đăng nhập tài khoản Quản trị để truy cập khu vực này.");
-            httpRequest.getRequestDispatcher("/WEB-INF/views/admin/admin-login.jsp").forward(httpRequest, httpResponse);
+            httpResponse.sendRedirect(httpRequest.getContextPath() + "/");
         }
     }
 }

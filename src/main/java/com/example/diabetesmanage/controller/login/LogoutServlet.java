@@ -1,6 +1,5 @@
-package com.example.diabetesmanage.controller.admin;
+package com.example.diabetesmanage.controller.login;
 
-import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,26 +7,31 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
+import java.io.IOException;
+
 /**
- * Legacy /admin/login → redirect to unified login.
+ * Unified logout for patient (and any) portal links that use /logout.
  */
-@WebServlet(name = "AdminLoginServlet", urlPatterns = {"/admin/login"})
-public class AdminLoginServlet extends HttpServlet {
+@WebServlet(name = "LogoutServlet", urlPatterns = {"/logout"})
+public class LogoutServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("adminUser") != null) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
-            return;
-        }
-        response.sendRedirect(request.getContextPath() + "/");
+        logout(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        logout(request, response);
+    }
+
+    private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
         response.sendRedirect(request.getContextPath() + "/");
     }
 }

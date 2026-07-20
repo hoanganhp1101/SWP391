@@ -24,19 +24,32 @@ public class LoginController extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         request.setCharacterEncoding("UTF-8");
 
-        HttpSession session = request.getSession(true);
+        HttpSession session = request.getSession(false);
         String service = request.getParameter("service");
 
-        // Hiển thị trang login
+        // Hiển thị trang login (nếu đã đăng nhập thì vào đúng portal theo role)
         if (service == null) {
+            if (session != null) {
+                User current = (User) session.getAttribute("user");
+                if (current != null) {
+                    redirectByRole(response, request.getContextPath(), current.getVaiTro());
+                    return;
+                }
+            }
             request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
             return;
         }
 
         if (service.equals("logout")) {
-            session.invalidate();
-            response.sendRedirect(request.getContextPath() + "/Logincontroller");
+            if (session != null) {
+                session.invalidate();
+            }
+            response.sendRedirect(request.getContextPath() + "/");
             return;
+        }
+
+        if (session == null) {
+            session = request.getSession(true);
         }
 
         // Chỉ cho phép forward khi đã đăng nhập đúng role
@@ -114,29 +127,34 @@ public class LoginController extends HttpServlet {
             // Đăng nhập thành công → set session (đồng bộ các key legacy)
             session.setAttribute("user", user);
             session.setAttribute("loginUser", user);
-            if ("quan_tri_vien".equalsIgnoreCase(user.getVaiTro())) {
-                session.setAttribute("adminUser", user);
-            }
 
-            // Redirect theo role tới CÁC CONTROLLER TƯƠNG ỨNG
             String role = user.getVaiTro();
             if ("quan_tri_vien".equalsIgnoreCase(role)) {
+                session.setAttribute("adminUser", user);
                 session.setAttribute("status", 1);
                 response.sendRedirect(request.getContextPath() + "/admin-dashboard");
-
             } else if ("benh_nhan".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 2);
-               response.sendRedirect(request.getContextPath() + "/patient-dashboard");
-
+                response.sendRedirect(request.getContextPath() + "/patient-dashboard");
             } else if ("bac_si".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 3);
                 response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
-
             } else {
                 request.setAttribute("AccountError", "Vai trò không được hỗ trợ đăng nhập.");
                 request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
             }
 
+        }
+    }
+
+    private void redirectByRole(HttpServletResponse response, String contextPath, String role)
+            throws IOException {
+        if ("quan_tri_vien".equalsIgnoreCase(role)) {
+            response.sendRedirect(contextPath + "/admin-dashboard");
+        } else if ("benh_nhan".equalsIgnoreCase(role)) {
+            response.sendRedirect(contextPath + "/patient-dashboard");
+        } else if ("bac_si".equalsIgnoreCase(role)) {
+            response.sendRedirect(contextPath + "/doctor-dashboard");
         }
     }
 

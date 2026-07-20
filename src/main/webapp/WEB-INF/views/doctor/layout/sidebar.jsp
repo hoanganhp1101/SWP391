@@ -66,7 +66,7 @@
             Hỗ trợ
         </a>
 
-        <a class="bottom-link" href="${ctx}/Logincontroller?service=logout">
+        <a class="bottom-link" href="${ctx}/logout">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
             Đăng xuất
         </a>
