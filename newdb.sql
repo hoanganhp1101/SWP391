@@ -11,6 +11,10 @@ USE diabcare_db;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP VIEW IF EXISTS v_patient_summary;
+DROP TABLE IF EXISTS diet_plan_details;
+DROP TABLE IF EXISTS diet_plans;
+DROP TABLE IF EXISTS patient_assignments;
+DROP TABLE IF EXISTS prescription_details;
 DROP TABLE IF EXISTS medical_documents;
 DROP TABLE IF EXISTS appointments;
 DROP TABLE IF EXISTS notifications;
@@ -23,6 +27,8 @@ DROP TABLE IF EXISTS health_records;
 DROP TABLE IF EXISTS lab_results;
 DROP TABLE IF EXISTS medical_encounters;
 DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS master_medications;
+DROP TABLE IF EXISTS master_foods;
 DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -35,7 +41,7 @@ CREATE TABLE users (
     ho_ten              VARCHAR(150)    NOT NULL,
     email               VARCHAR(255)    NOT NULL,
     so_dien_thoai       VARCHAR(20)     DEFAULT NULL,
-    vai_tro             ENUM('benh_nhan','bac_si','y_ta','quan_tri_vien') NOT NULL DEFAULT 'benh_nhan',
+    vai_tro             ENUM('benh_nhan','bac_si','quan_tri_vien') NOT NULL DEFAULT 'benh_nhan',
     mat_khau_hash       TEXT            NOT NULL,
     anh_dai_dien        TEXT            DEFAULT NULL,
     kich_hoat           TINYINT(1)      NOT NULL DEFAULT 1,
@@ -357,6 +363,54 @@ CREATE TABLE master_foods (
                               PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 3. Phân công bác sĩ điều trị
+CREATE TABLE patient_assignments (
+    id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+    patient_id      CHAR(36)        NOT NULL,
+    doctor_id       CHAR(36)        NOT NULL,
+    ngay_phan_cong  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    trang_thai      TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '1: Đang điều trị, 0: Đã dừng',
+    PRIMARY KEY (id),
+    INDEX idx_pa_patient_active (patient_id, trang_thai),
+    CONSTRAINT fk_pa_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_pa_doctor  FOREIGN KEY (doctor_id)  REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Thực đơn dinh dưỡng
+CREATE TABLE diet_plans (
+    id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+    patient_id      CHAR(36)        NOT NULL,
+    doctor_id       VARCHAR(50)     DEFAULT NULL COMMENT 'user.id hoặc AI_SYSTEM',
+    ngay_tao        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ghi_chu         TEXT            DEFAULT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_diet_patient_created (patient_id, ngay_tao),
+    CONSTRAINT fk_diet_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE diet_plan_details (
+    id              CHAR(36)        NOT NULL DEFAULT (UUID()),
+    diet_plan_id    CHAR(36)        NOT NULL,
+    food_id         CHAR(36)        NOT NULL,
+    bua_an          VARCHAR(50)     NOT NULL COMMENT 'Sáng, Trưa, Chiều, Tối, Phụ',
+    ghi_chu         TEXT            DEFAULT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_dpd_plan FOREIGN KEY (diet_plan_id) REFERENCES diet_plans(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dpd_food FOREIGN KEY (food_id) REFERENCES master_foods(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Chi tiết đơn thuốc liên kết master_medications (PrescriptionDAO.createPrescription)
+CREATE TABLE prescription_details (
+    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    prescription_id     CHAR(36)        NOT NULL,
+    medication_id       CHAR(36)        NOT NULL,
+    lieu_luong          VARCHAR(100)    DEFAULT NULL,
+    tan_suat            VARCHAR(100)    DEFAULT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_rxd_rx  FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE,
+    CONSTRAINT fk_rxd_med FOREIGN KEY (medication_id)   REFERENCES master_medications(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================================
 -- 2. KHỞI TẠO VIEW TỔNG HỢP (Dùng cho Dashboard Bác sĩ)
 -- ============================================================
@@ -392,6 +446,10 @@ USE diabcare_db;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 2. Dọn sạch dữ liệu trong toàn bộ các bảng
+TRUNCATE TABLE diet_plan_details;
+TRUNCATE TABLE diet_plans;
+TRUNCATE TABLE patient_assignments;
+TRUNCATE TABLE prescription_details;
 TRUNCATE TABLE medical_documents;
 TRUNCATE TABLE appointments;
 TRUNCATE TABLE notifications;
@@ -404,6 +462,8 @@ TRUNCATE TABLE health_records;
 TRUNCATE TABLE lab_results;
 TRUNCATE TABLE medical_encounters;
 TRUNCATE TABLE patients;
+TRUNCATE TABLE master_medications;
+TRUNCATE TABLE master_foods;
 TRUNCATE TABLE users;
 
 -- 3. Bật lại tính năng kiểm tra khóa ngoại
@@ -416,19 +476,17 @@ USE diabcare_db;
 -- ============================================================
 SET @admin_id = UUID();
 SET @doctor_id = UUID();
-SET @nurse_id = UUID();
 SET @patient_user_id = UUID();
 SET @patient_profile_id = UUID();
 SET @encounter_id = UUID();
 SET @prescription_id = UUID();
 
 -- ============================================================
--- 2. TẠO TÀI KHOẢN NGƯỜI DÙNG (BÁC SĨ & BỆNH NHÂN)
+-- 2. TẠO TÀI KHOẢN NGƯỜI DÙNG (ADMIN, BÁC SĨ & BỆNH NHÂN)
 -- ============================================================
 INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, anh_dai_dien) VALUES
 (@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', 'bac_si', SHA2('doctor123', 256), 'https://ui-avatars.com/api/?name=Bac+Si+Tran+Thi+B&background=0D8ABC&color=fff'),
 (@patient_user_id, 'Đỗ Thị L.', 'dothil@example.com', '0988777666', 'benh_nhan', SHA2('password123', 256), 'https://ui-avatars.com/api/?name=Do+Thi+L&background=0D8ABC&color=fff'),
-(@nurse_id, 'Y tá Lê Văn C', 'yta@example.com', '0923456789', 'y_ta', SHA2('nurse789', 256), 'https://ui-avatars.com/api/?name=Y+Ta+Le+Van+C&background=0D8ABC&color=fff'),
 (@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', 'quan_tri_vien', SHA2('admin2024!', 256), 'https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff');
 
 -- ============================================================
@@ -509,3 +567,28 @@ INSERT INTO medical_documents (id, patient_id, bac_si_id, loai_tai_lieu, trang_t
 (UUID(), @patient_profile_id, @doctor_id, 'Kết quả xét nghiệm máu tổng quát', 'hoan_thanh', 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', DATE_SUB(CURDATE(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 9 DAY)),
 (UUID(), @patient_profile_id, @doctor_id, 'Phiếu siêu âm bụng', 'hoan_thanh', 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', DATE_SUB(CURDATE(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 19 DAY)),
 (UUID(), @patient_profile_id, @doctor_id, 'Kết quả sinh hóa máu', 'can_xu_ly', NULL, DATE_SUB(CURDATE(), INTERVAL 25 DAY), DATE_SUB(NOW(), INTERVAL 24 DAY));
+
+-- ============================================================
+-- 8. PHÂN CÔNG BÁC SĨ + TỪ ĐIỂN THUỐC / THỰC PHẨM (gộp từ them.sql)
+-- ============================================================
+INSERT INTO patient_assignments (id, patient_id, doctor_id, trang_thai)
+VALUES (UUID(), @patient_profile_id, @doctor_id, 1);
+
+INSERT INTO master_foods (id, ten_thuc_pham, don_vi_khau_phan, carbs_g, calo_kcal, chi_so_gi, trang_thai) VALUES
+('f1', 'Cơm trắng', '1 bát vừa (130g)', 36.5, 170.0, 73.0, 1),
+('f2', 'Phở bò', '1 bát', 60.0, 350.0, 65.0, 1),
+('f3', 'Bánh mì thịt', '1 ổ', 45.0, 380.0, 71.0, 1),
+('f4', 'Táo tây', '1 quả vừa (150g)', 20.6, 78.0, 36.0, 1),
+('f5', 'Sữa tươi không đường', '1 hộp (180ml)', 9.0, 110.0, 31.0, 1),
+('f6', 'Cơm gạo lứt', '1 bát con', 30.0, 150.0, 55.0, 1),
+('f7', 'Ức gà luộc', '100g', 0.0, 165.0, 0.0, 1),
+('f8', 'Salad dưa chuột cà chua', '1 đĩa', 8.0, 45.0, 20.0, 1),
+('f9', 'Sữa chua không đường', '1 hộp (100g)', 6.0, 60.0, 35.0, 1),
+('f10', 'Rau muống xào tỏi', '1 đĩa', 6.0, 100.0, 15.0, 1);
+
+INSERT INTO master_medications (id, ten_thuoc, hoat_chat, don_vi_tinh, loai_thuoc, huong_dan_goc, trang_thai) VALUES
+('m1', 'Metformin 500mg', 'Metformin hydrochloride', 'Viên', 'Uống', 'Uống sau bữa ăn, không nhai hoặc nghiền nát.', 1),
+('m2', 'Diamicron MR 30mg', 'Gliclazide', 'Viên', 'Uống', 'Uống 1 lần vào buổi sáng, ngay trước khi ăn.', 1),
+('m3', 'Glucophage XR 750mg', 'Metformin', 'Viên', 'Uống', 'Uống vào buổi tối cùng với bữa ăn.', 1),
+('m4', 'Lantus 100 IU/ml', 'Insulin Glargine', 'Bút tiêm', 'Tiêm dưới da', 'Tiêm 1 lần/ngày vào cùng một thời điểm. Luân phiên vị trí tiêm.', 1),
+('m5', 'Novomix 30 FlexPen', 'Insulin Aspart', 'Bút tiêm', 'Tiêm dưới da', 'Tiêm ngay trước hoặc sau bữa ăn chính.', 1);

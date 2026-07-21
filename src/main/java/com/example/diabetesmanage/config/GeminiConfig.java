@@ -34,7 +34,7 @@ public class GeminiConfig {
             configSource = "none";
         }
 
-        model = props.getProperty("gemini.model", "gemini-3.5-flash").trim();
+        model = props.getProperty("gemini.model", "gemini-flash-lite-latest").trim();
         configured = !apiKey.isBlank() && !apiKey.equals("YOUR_API_KEY_HERE");
     }
 

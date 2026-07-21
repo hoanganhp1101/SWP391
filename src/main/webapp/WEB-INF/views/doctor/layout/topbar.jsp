@@ -9,9 +9,9 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
 <%-- Shell + filter dùng chung cho mọi trang doctor --%>
-<link rel="stylesheet" href="${ctx}/css/doctor-layout.css">
-<link rel="stylesheet" href="${ctx}/css/filters.css">
-<script src="${ctx}/js/filters.js" defer></script>
+<link rel="stylesheet" href="${ctx}/assets/css/doctor-layout.css">
+<link rel="stylesheet" href="${ctx}/assets/css/filters.css">
+<script src="${ctx}/assets/js/filters.js" defer></script>
 
 <header class="topbar">
     <div class="logo">HealthAlert</div>

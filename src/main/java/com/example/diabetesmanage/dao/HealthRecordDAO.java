@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -502,15 +503,6 @@ public class HealthRecordDAO {
                      "(SELECT cholesterol_mmol FROM health_records WHERE patient_id = p.id AND cholesterol_mmol IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as cholesterol_mmol, " +
                      "(SELECT triglyceride_mmol FROM health_records WHERE patient_id = p.id AND triglyceride_mmol IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as triglyceride_mmol " +
                      "FROM (SELECT ? as id) p";
-                "(SELECT duong_huyet_mgdl FROM health_records WHERE patient_id = p.id AND duong_huyet_mgdl IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as duong_huyet_mgdl, " +
-                "(SELECT huyet_ap_tam_thu FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_thu IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_thu, " +
-                "(SELECT huyet_ap_tam_truong FROM health_records WHERE patient_id = p.id AND huyet_ap_tam_truong IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as huyet_ap_tam_truong, " +
-                "(SELECT nhip_tim FROM health_records WHERE patient_id = p.id AND nhip_tim IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as nhip_tim, " +
-                "(SELECT can_nang_kg FROM health_records WHERE patient_id = p.id AND can_nang_kg IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as can_nang_kg, " +
-                "(SELECT bmi FROM health_records WHERE patient_id = p.id AND bmi IS NOT NULL ORDER BY thoi_gian_do DESC LIMIT 1) as bmi, " +
-                "(SELECT thoi_gian_do FROM health_records WHERE patient_id = p.id ORDER BY thoi_gian_do DESC LIMIT 1) as thoi_gian_do, " +
-                "NULL as hba1c_percent, NULL as cholesterol_mmol, NULL as triglyceride_mmol " +
-                "FROM (SELECT ? as id) p";
         HealthRecord hr = null;
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -541,16 +533,13 @@ public class HealthRecordDAO {
                 ps.setString(1, patientId);
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
-                    if (hr.getHba1cPercent() == null && rs.getObject("hba1c") != null) hr.setHba1cPercent(rs.getDouble("hba1c"));
-                    if (hr.getCholesterolMmol() == null && rs.getObject("cholesterol_tp") != null) hr.setCholesterolMmol(rs.getDouble("cholesterol_tp"));
-                    if (hr.getTriglycerideMmol() == null && rs.getObject("triglyceride") != null) hr.setTriglycerideMmol(rs.getDouble("triglyceride"));
-                    if (rs.getObject("hba1c") != null) {
+                    if (hr.getHba1cPercent() == null && rs.getObject("hba1c") != null) {
                         hr.setHba1cPercent(rs.getDouble("hba1c"));
                     }
-                    if (rs.getObject("cholesterol_tp") != null) {
+                    if (hr.getCholesterolMmol() == null && rs.getObject("cholesterol_tp") != null) {
                         hr.setCholesterolMmol(rs.getDouble("cholesterol_tp"));
                     }
-                    if (rs.getObject("triglyceride") != null) {
+                    if (hr.getTriglycerideMmol() == null && rs.getObject("triglyceride") != null) {
                         hr.setTriglycerideMmol(rs.getDouble("triglyceride"));
                     }
                 }

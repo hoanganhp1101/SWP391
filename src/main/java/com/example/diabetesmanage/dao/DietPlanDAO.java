@@ -3,7 +3,7 @@ package com.example.diabetesmanage.dao;
 import com.example.diabetesmanage.model.DietPlan;
 import com.example.diabetesmanage.model.DietPlanDetail;
 import com.example.diabetesmanage.model.MasterFood;
-import com.example.diabetesmanage.util.DBContext;
+import com.example.diabetesmanage.context.DBContext;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,7 +13,34 @@ import java.util.List;
 
 public class DietPlanDAO {
 
-    public void saveDietPlan(DietPlan plan) {
+    public boolean ensureDietTables() {
+        String createPlans = "CREATE TABLE IF NOT EXISTS diet_plans ("
+                + "id VARCHAR(50) PRIMARY KEY, "
+                + "patient_id VARCHAR(50) NOT NULL, "
+                + "doctor_id VARCHAR(50), "
+                + "ngay_tao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "
+                + "ghi_chu TEXT"
+                + ")";
+        String createDetails = "CREATE TABLE IF NOT EXISTS diet_plan_details ("
+                + "id VARCHAR(50) PRIMARY KEY, "
+                + "diet_plan_id VARCHAR(50) NOT NULL, "
+                + "food_id VARCHAR(50) NOT NULL, "
+                + "bua_an VARCHAR(50) NOT NULL, "
+                + "ghi_chu TEXT"
+                + ")";
+        try (Connection conn = DBContext.getConnection();
+             java.sql.Statement st = conn.createStatement()) {
+            st.execute(createPlans);
+            st.execute(createDetails);
+            return true;
+        } catch (Exception e) {
+            System.err.println("[DietPlanDAO] ensureDietTables failed: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean saveDietPlan(DietPlan plan) {
         String insertPlanSql = "INSERT INTO diet_plans (id, patient_id, doctor_id, ngay_tao, ghi_chu) VALUES (?, ?, ?, ?, ?)";
         String insertDetailSql = "INSERT INTO diet_plan_details (id, diet_plan_id, food_id, bua_an, ghi_chu) VALUES (?, ?, ?, ?, ?)";
 
@@ -37,7 +64,7 @@ public class DietPlanDAO {
             }
 
             // Insert details
-            if (plan.getChiTietThucPham() != null) {
+            if (plan.getChiTietThucPham() != null && !plan.getChiTietThucPham().isEmpty()) {
                 try (PreparedStatement ps = conn.prepareStatement(insertDetailSql)) {
                     for (DietPlanDetail detail : plan.getChiTietThucPham()) {
                         ps.setString(1, detail.getId());
@@ -52,11 +79,14 @@ public class DietPlanDAO {
             }
 
             conn.commit();
+            return true;
         } catch (Exception e) {
             if (conn != null) {
                 try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
+            System.err.println("[DietPlanDAO] saveDietPlan failed: " + e.getMessage());
             e.printStackTrace();
+            return false;
         } finally {
             if (conn != null) {
                 try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }

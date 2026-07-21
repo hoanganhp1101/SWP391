@@ -22,9 +22,9 @@ public class DashboardDAO {
         return 0;
     }
 
-    // 2. Đếm số nhân viên y tế (Bác sĩ, y tá, quản trị viên) đang hoạt động
+    // 2. Đếm số nhân viên y tế (Bác sĩ, quản trị viên) đang hoạt động
     public int getActiveStaffCount() {
-        String sql = "SELECT COUNT(id) FROM users WHERE vai_tro IN ('bac_si', 'y_ta', 'quan_tri_vien') AND kich_hoat = 1";
+        String sql = "SELECT COUNT(id) FROM users WHERE vai_tro IN ('bac_si', 'quan_tri_vien') AND kich_hoat = 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

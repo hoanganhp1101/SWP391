@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi tiết hồ sơ khám bệnh - ${detailView.patientName}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/doctor-layout.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/doctor-layout.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
         body{background:#f0f4f8;color:#111827;}

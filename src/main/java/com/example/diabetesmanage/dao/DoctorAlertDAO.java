@@ -1,4 +1,4 @@
-package dal;
+package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
 import java.sql.Connection;
@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import model.Alert;
+import com.example.diabetesmanage.model.DoctorAlert;
 
 public class DoctorAlertDAO {
 
@@ -18,7 +18,7 @@ public class DoctorAlertDAO {
             LEFT JOIN users u ON p.user_id = u.id
             """;
 
-    public List<Alert> getAllAlerts() {
+    public List<DoctorAlert> getAllAlerts() {
         return getAlerts(null, null, null, null, 1, Integer.MAX_VALUE, null);
     }
 
@@ -47,12 +47,12 @@ public class DoctorAlertDAO {
         return 0;
     }
 
-    public List<Alert> getAlerts(String severity, String status, String alertType, String keyword, int page, int pageSize) {
+    public List<DoctorAlert> getAlerts(String severity, String status, String alertType, String keyword, int page, int pageSize) {
         return getAlerts(severity, status, alertType, keyword, page, pageSize, null);
     }
 
-    public List<Alert> getAlerts(String severity, String status, String alertType, String keyword, int page, int pageSize, String doctorId) {
-        List<Alert> list = new ArrayList<>();
+    public List<DoctorAlert> getAlerts(String severity, String status, String alertType, String keyword, int page, int pageSize, String doctorId) {
+        List<DoctorAlert> list = new ArrayList<>();
         FilterQuery filter = buildFilter(severity, status, alertType, keyword, doctorId);
 
         int safePage = Math.max(page, 1);
@@ -117,8 +117,8 @@ public class DoctorAlertDAO {
         }
     }
 
-    private Alert mapAlert(ResultSet rs) throws SQLException {
-        Alert alert = new Alert();
+    private DoctorAlert mapAlert(ResultSet rs) throws SQLException {
+        DoctorAlert alert = new DoctorAlert();
         alert.setId(getUuid(rs, "id"));
         alert.setPatientId(getUuid(rs, "patient_id"));
         alert.setAiAnalysisId(getUuid(rs, "ai_analysis_id"));

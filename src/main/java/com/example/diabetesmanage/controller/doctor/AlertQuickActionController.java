@@ -1,6 +1,6 @@
-package controller.doctor;
+package com.example.diabetesmanage.controller.doctor;
 
-import dal.DoctorAlertDAO;
+import com.example.diabetesmanage.dao.DoctorAlertDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;

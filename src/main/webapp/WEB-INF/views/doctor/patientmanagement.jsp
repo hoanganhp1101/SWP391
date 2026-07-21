@@ -363,7 +363,7 @@
             color:#2563eb;
         }
 
-        /* Filter dùng chung: xem /css/filters.css */
+        /* Filter dùng chung: xem /assets/css/filters.css */
     </style>
 
     <link rel="stylesheet"

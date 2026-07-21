@@ -1,7 +1,7 @@
-package controller.doctor;
+package com.example.diabetesmanage.controller.doctor;
 
-import dal.DoctorAlertDAO;
-import dal.DoctorAnalyticsDAO;
+import com.example.diabetesmanage.dao.DoctorAlertDAO;
+import com.example.diabetesmanage.dao.DoctorAnalyticsDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -39,7 +39,7 @@ public class DoctorAnalyticsServlet extends HttpServlet {
         request.setAttribute("pctHba1c", round(dao.pctHba1cAtTarget(), 1));
         request.setAttribute("unresolvedAlerts", dao.unresolvedAlerts());
 
-        // Action list — đếm TRỰC TIẾP từ bảng alerts bằng đúng hàm của màn Alert,
+        // Action list — đếm TRỰC TIẾP từ bảng alerts bằng đúng hàm của màn DoctorAlert,
         // để con số khớp 100% với số cảnh báo hiển thị khi bấm vào filter tương ứng.
         DoctorAlertDAO alertDao = new DoctorAlertDAO();
         request.setAttribute("alertDanger", alertDao.countAlerts("danger", "all", "all", "", doctorId));
@@ -47,7 +47,7 @@ public class DoctorAnalyticsServlet extends HttpServlet {
         request.setAttribute("alertUnread", alertDao.countAlerts("all", "unread", "all", "", doctorId));
         request.setAttribute("alertProcessing", alertDao.countAlerts("all", "processing", "all", "", doctorId));
 
-        // Theo dõi lâm sàng — chỉ số tổng hợp từ health_records/prescriptions (thông tin, không gắn filter alert)
+        // Theo dõi lâm sàng — chỉ số tổng hợp từ health_records/prescriptions (thông tin, không gắn filter DoctorAlert)
         request.setAttribute("hypoPatients", dao.patientsWithHypo(days));
         request.setAttribute("highHba1c", dao.patientsHighHba1c());
         request.setAttribute("notMeasured", dao.patientsNotMeasured(7));
