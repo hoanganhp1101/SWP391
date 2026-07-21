@@ -191,87 +191,63 @@
     color: #374151;
 }
 
-/* Bộ lọc lịch sử khám bệnh — patient detail (đồng bộ appointments) */
-.history-filter {
-    padding: 0 32px 24px;
+/* Bộ lọc lịch sử khám bệnh — patient detail (2 nút cùng hàng tiêu đề) */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
     position: relative;
     z-index: 2;
 }
 
-.history-filter .filter-dropdown {
-    width: 280px;
+.history-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.history-range-filter,
+.history-custom-filter {
+    width: 220px;
     position: relative;
     z-index: 1;
 }
 
-.history-filter .filter-dropdown.open,
-.history-filter .filter-dropdown:has(.filter-menu.show) {
+.history-range-filter.open,
+.history-custom-filter.open,
+.history-range-filter:has(.filter-menu.show),
+.history-custom-filter:has(.filter-popup.show) {
     z-index: 10050;
 }
 
-.history-filter .filter-menu {
-    min-width: 280px;
-    max-width: 320px;
+.history-range-filter .filter-menu {
+    min-width: 100%;
+    max-width: 280px;
     padding-bottom: 4px;
 }
 
-.history-filter .filter-menu .filter-item {
+.history-range-filter .filter-item {
     cursor: pointer;
     text-decoration: none;
 }
 
-.history-filter .filter-menu .filter-item-heading {
-    cursor: default;
-    border-top: 1px solid #eef2f7;
-    margin-top: 4px;
-    pointer-events: none;
-}
-
-.history-filter .filter-menu .filter-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 0 18px;
-}
-
-.history-filter .filter-menu .filter-fields label {
-    font-size: 14px;
+.history-custom-filter.is-active .filter-button {
+    color: #f97316;
     font-weight: 600;
+    background: #fff7ed;
+    border-color: #fdba74;
 }
 
-.history-filter .filter-menu .filter-fields input[type="date"] {
-    height: 40px;
-    padding: 0 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-    width: 100%;
-    background: #fff;
-    cursor: pointer;
+.history-custom-filter .filter-popup {
+    right: 0;
+    left: auto;
 }
 
-.history-filter .filter-menu .filter-actions {
-    margin-top: 12px;
-    padding: 0 18px 12px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.history-filter .filter-menu .filter-actions button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.history-filter .filter-menu .filter-actions .btn-apply {
-    background: #6c63ff;
-    color: #fff;
-}
-
-.history-filter .filter-menu .filter-error {
-    padding: 0 18px;
+.history-custom-filter .filter-error {
+    margin-top: 8px;
 }
 
 .filter-error {
@@ -286,10 +262,24 @@
 }
 
 @media (max-width: 768px) {
-    .history-filter .filter-dropdown,
-    .history-filter .filter-menu {
+    .history-header {
+        align-items: flex-start;
+    }
+
+    .history-actions {
         width: 100%;
+    }
+
+    .history-range-filter,
+    .history-custom-filter {
+        flex: 1 1 calc(50% - 6px);
         min-width: 0;
-        max-width: none;
+        width: auto;
+    }
+
+    .history-custom-filter .filter-popup {
+        left: 0;
+        right: auto;
+        width: min(320px, calc(100vw - 64px));
     }
 }
