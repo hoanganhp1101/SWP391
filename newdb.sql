@@ -9,6 +9,23 @@ CREATE DATABASE IF NOT EXISTS diabcare_db
 
 USE diabcare_db;
 
+SET FOREIGN_KEY_CHECKS = 0;
+DROP VIEW IF EXISTS v_patient_summary;
+DROP TABLE IF EXISTS medical_documents;
+DROP TABLE IF EXISTS appointments;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS medication_logs;
+DROP TABLE IF EXISTS medications;
+DROP TABLE IF EXISTS prescriptions;
+DROP TABLE IF EXISTS alerts;
+DROP TABLE IF EXISTS ai_analysis;
+DROP TABLE IF EXISTS health_records;
+DROP TABLE IF EXISTS lab_results;
+DROP TABLE IF EXISTS medical_encounters;
+DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS users;
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- ============================================================
 -- 1. CẤU TRÚC BẢNG (TABLE SCHEMA)
 -- ============================================================
@@ -32,6 +49,7 @@ CREATE TABLE users (
 
 CREATE TABLE patients (
                           id                          CHAR(36)        NOT NULL DEFAULT (UUID()),
+                          patient_code                VARCHAR(32)     DEFAULT NULL,
                           user_id                     CHAR(36)        NOT NULL,
                           bac_si_id                   CHAR(36)        DEFAULT NULL,
                           ngay_sinh                   DATE            NOT NULL,
@@ -39,8 +57,10 @@ CREATE TABLE patients (
                           chieu_cao_cm                DECIMAL(5,1)    DEFAULT NULL,
                           can_nang_kg                 DECIMAL(5,1)    DEFAULT NULL, -- Trường bổ sung để tính BMI
                           dia_chi                     TEXT            DEFAULT NULL,
+                          nghe_nghiep                 VARCHAR(100)    DEFAULT NULL,
                           bao_hiem_y_te               VARCHAR(50)     DEFAULT NULL,
                           tien_su_benh                TEXT            DEFAULT NULL,
+                          tien_su_gia_dinh            TEXT            DEFAULT NULL,
                           di_ung                      TEXT            DEFAULT NULL,
                           nhom_mau                    VARCHAR(5)      DEFAULT NULL,
                           ngay_chan_doan_tieu_duong   DATE            DEFAULT NULL,
@@ -48,6 +68,7 @@ CREATE TABLE patients (
                           ngay_tao                    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                           ngay_cap_nhat               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                           PRIMARY KEY (id),
+                          UNIQUE KEY uq_patients_code (patient_code),
                           CONSTRAINT fk_patients_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
                           CONSTRAINT fk_patients_bac_si FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=UTF8MB4_UNICODE_CI;
@@ -55,6 +76,7 @@ CREATE TABLE patients (
 
 CREATE TABLE medical_encounters (
     id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    encounter_code      VARCHAR(32)     DEFAULT NULL,
     patient_id          CHAR(36)        NOT NULL,
     bac_si_id           CHAR(36)        NOT NULL,
     ngay_kham           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -73,6 +95,7 @@ CREATE TABLE medical_encounters (
 
 CREATE TABLE lab_results (
     id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    lab_result_code     VARCHAR(32)     DEFAULT NULL,
     patient_id          CHAR(36)        NOT NULL,
     encounter_id        CHAR(36)        DEFAULT NULL,
     ngay_xet_nghiem     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -110,26 +133,14 @@ CREATE TABLE lab_results (
     CONSTRAINT fk_lab_encounter FOREIGN KEY (encounter_id) REFERENCES medical_encounters(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE medication_logs (
-    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
-    patient_id          CHAR(36)        NOT NULL,
-    medication_id       CHAR(36)        NOT NULL, -- Link với thuốc trong đơn
-    ngay_uong           DATE            NOT NULL, -- Cần uống vào ngày nào
-    thoi_diem_du_kien   TIME            DEFAULT NULL, -- Giờ dự kiến (VD: 08:00 sáng)
-    thoi_gian_thuc_te   DATETIME        DEFAULT NULL, -- Lúc bệnh nhân bấm tick
-    trang_thai          ENUM('da_uong', 'bo_qua', 'chua_uong') NOT NULL DEFAULT 'chua_uong',
-    ghi_chu             TEXT            DEFAULT NULL,
-    ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_ml_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ml_med FOREIGN KEY (medication_id) REFERENCES medications(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 CREATE TABLE health_records (
     id                      CHAR(36)        NOT NULL DEFAULT (UUID()),
     patient_id              CHAR(36)        NOT NULL,
+    encounter_id            CHAR(36)        DEFAULT NULL,
+    last_encounter_id       CHAR(36)        DEFAULT NULL,
+    health_record_code      VARCHAR(32)     DEFAULT NULL,
     nhap_boi                CHAR(36)        DEFAULT NULL,
+    chieu_cao_cm            DECIMAL(5,1)    DEFAULT NULL,
     duong_huyet_mgdl        DECIMAL(6,2)    DEFAULT NULL,
     thoi_diem_do_duong      ENUM('luc_doi','sau_an_1h','sau_an_2h','truoc_ngu') DEFAULT NULL,
     huyet_ap_tam_thu        SMALLINT        DEFAULT NULL,
@@ -142,20 +153,39 @@ CREATE TABLE health_records (
     hba1c_percent           DECIMAL(4,2)    DEFAULT NULL,
     cholesterol_mmol        DECIMAL(5,2)    DEFAULT NULL,
     triglyceride_mmol       DECIMAL(5,2)    DEFAULT NULL,
+    hdl_mmol                DECIMAL(5,2)    DEFAULT NULL,
+    ldl_mmol                DECIMAL(5,2)    DEFAULT NULL,
+    wbc                     DECIMAL(5,2)    DEFAULT NULL,
+    rbc                     DECIMAL(5,2)    DEFAULT NULL,
+    hgb                     DECIMAL(5,2)    DEFAULT NULL,
+    hct                     DECIMAL(5,2)    DEFAULT NULL,
+    plt                     DECIMAL(6,2)    DEFAULT NULL,
+    ast                     DECIMAL(6,2)    DEFAULT NULL,
+    alt                     DECIMAL(6,2)    DEFAULT NULL,
+    ure                     DECIMAL(5,2)    DEFAULT NULL,
+    creatinine              DECIMAL(6,2)    DEFAULT NULL,
     so_buoc_chan            INT             DEFAULT NULL,
     carbs_g                 DECIMAL(5,2)    DEFAULT NULL COMMENT 'Lượng Carbohydrate nạp vào (gram)',
     so_gio_ngu              DECIMAL(3,1)    DEFAULT NULL,
     lieu_luong_insulin_ui   INT             DEFAULT NULL COMMENT 'Liều lượng insulin thực tế tiêm (UI)',
     loai_insulin_tiem       VARCHAR(100)    DEFAULT NULL COMMENT 'Loại insulin tiêm thực tế',
+    trieu_chung             TEXT            DEFAULT NULL,
+    tien_su_benh            TEXT            DEFAULT NULL,
+    kham_lam_sang           JSON            DEFAULT NULL,
+    chan_doan_chinh         VARCHAR(255)    DEFAULT NULL,
+    chan_doan_phu           TEXT            DEFAULT NULL,
+    phan_loai_tieu_duong    VARCHAR(50)     DEFAULT NULL,
     ghi_chu                 TEXT            DEFAULT NULL,
     chest_pain              TINYINT(1)      DEFAULT 0,
     dizziness               TINYINT(1)      DEFAULT 0,
     fatigue                 TINYINT(1)      DEFAULT 0,
     thoi_gian_do            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ngay_tao                DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_hr_patient    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_hr_nhap_boi   FOREIGN KEY (nhap_boi)   REFERENCES users(id)    ON DELETE SET NULL
+    CONSTRAINT fk_hr_nhap_boi   FOREIGN KEY (nhap_boi)   REFERENCES users(id)    ON DELETE SET NULL,
+    CONSTRAINT fk_hr_encounter  FOREIGN KEY (encounter_id) REFERENCES medical_encounters(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -236,6 +266,22 @@ CREATE TABLE medications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE medication_logs (
+    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    patient_id          CHAR(36)        NOT NULL,
+    medication_id       CHAR(36)        NOT NULL, -- Link với thuốc trong đơn
+    ngay_uong           DATE            NOT NULL, -- Cần uống vào ngày nào
+    thoi_diem_du_kien   TIME            DEFAULT NULL, -- Giờ dự kiến (VD: 08:00 sáng)
+    thoi_gian_thuc_te   DATETIME        DEFAULT NULL, -- Lúc bệnh nhân bấm tick
+    trang_thai          ENUM('da_uong', 'bo_qua', 'chua_uong') NOT NULL DEFAULT 'chua_uong',
+    ghi_chu             TEXT            DEFAULT NULL,
+    ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_ml_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ml_med FOREIGN KEY (medication_id) REFERENCES medications(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE notifications (
     id              CHAR(36)        NOT NULL DEFAULT (UUID()),
     alert_id        CHAR(36)        DEFAULT NULL,
@@ -263,6 +309,8 @@ CREATE TABLE appointments (
     trang_thai          ENUM('cho_kham','da_kham','da_huy') NOT NULL DEFAULT 'cho_kham',
     ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    INDEX idx_app_patient_time (patient_id, thoi_gian_hen),
+    INDEX idx_app_patient_status_time (patient_id, trang_thai, thoi_gian_hen),
     CONSTRAINT fk_app_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
     CONSTRAINT fk_app_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -278,6 +326,7 @@ CREATE TABLE medical_documents (
     ngay_thuc_hien      DATE            NOT NULL,
     ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    INDEX idx_doc_patient_created (patient_id, ngay_tao, ngay_thuc_hien),
     CONSTRAINT fk_doc_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
     CONSTRAINT fk_doc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -307,12 +356,6 @@ CREATE TABLE master_foods (
                               ngay_tao        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                               PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-ALTER TABLE health_records
-ADD COLUMN chest_pain TINYINT(1) DEFAULT 0,
-ADD COLUMN dizziness TINYINT(1) DEFAULT 0,
-ADD COLUMN fatigue TINYINT(1) DEFAULT 0;
-
 
 -- ============================================================
 -- 2. KHỞI TẠO VIEW TỔNG HỢP (Dùng cho Dashboard Bác sĩ)
@@ -352,6 +395,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE medical_documents;
 TRUNCATE TABLE appointments;
 TRUNCATE TABLE notifications;
+TRUNCATE TABLE medication_logs;
 TRUNCATE TABLE medications;
 TRUNCATE TABLE prescriptions;
 TRUNCATE TABLE alerts;
@@ -375,23 +419,24 @@ SET @doctor_id = UUID();
 SET @nurse_id = UUID();
 SET @patient_user_id = UUID();
 SET @patient_profile_id = UUID();
+SET @encounter_id = UUID();
 SET @prescription_id = UUID();
 
 -- ============================================================
 -- 2. TẠO TÀI KHOẢN NGƯỜI DÙNG (BÁC SĨ & BỆNH NHÂN)
 -- ============================================================
-INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash) VALUES
-(@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', 'bac_si', SHA2('doctor123', 256)),
-(@patient_user_id, 'Đỗ Thị L.', 'dothil@example.com', '0988777666', 'benh_nhan', SHA2('password123', 256)),
-(@nurse_id, 'Y tá Lê Văn C', 'yta@example.com', '0923456789', 'y_ta', SHA2('nurse789', 256)),
-(@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', 'quan_tri_vien', SHA2('admin2024!', 256));
+INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, anh_dai_dien) VALUES
+(@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', 'bac_si', SHA2('doctor123', 256), 'https://ui-avatars.com/api/?name=Bac+Si+Tran+Thi+B&background=0D8ABC&color=fff'),
+(@patient_user_id, 'Đỗ Thị L.', 'dothil@example.com', '0988777666', 'benh_nhan', SHA2('password123', 256), 'https://ui-avatars.com/api/?name=Do+Thi+L&background=0D8ABC&color=fff'),
+(@nurse_id, 'Y tá Lê Văn C', 'yta@example.com', '0923456789', 'y_ta', SHA2('nurse789', 256), 'https://ui-avatars.com/api/?name=Y+Ta+Le+Van+C&background=0D8ABC&color=fff'),
+(@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', 'quan_tri_vien', SHA2('admin2024!', 256), 'https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff');
 
 -- ============================================================
 -- 3. HỒ SƠ BỆNH NHÂN (Từ Bệnh án PDF)
 -- ============================================================
-INSERT INTO patients (id, user_id, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, dia_chi, nghe_nghiep, tien_su_benh, ngay_chan_doan_tieu_duong, loai_tieu_duong) 
+INSERT INTO patients (id, patient_code, user_id, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, dia_chi, nghe_nghiep, tien_su_benh, ngay_chan_doan_tieu_duong, loai_tieu_duong) 
 VALUES (
-    @patient_profile_id, @patient_user_id, @doctor_id, '1960-01-01', 'nu', 158.0, 
+    @patient_profile_id, 'BN0001', @patient_user_id, @doctor_id, '1960-01-01', 'nu', 158.0, 
     'Thị xã Núi Thành, Quảng Nam', 'Nội trợ', 
     'Đái tháo đường type 2 (3 năm), Tăng huyết áp (1 năm)', '2018-06-01', 'Type 2'
 );
@@ -399,9 +444,9 @@ VALUES (
 -- ============================================================
 -- 4. LỊCH SỬ KHÁM BỆNH & CẬN LÂM SÀNG
 -- ============================================================
-INSERT INTO medical_encounters (id, patient_id, bac_si_id, ngay_kham, ly_do_kham, qua_trinh_benh_ly, chan_doan_chinh, chan_doan_phu, huong_xu_tri)
+INSERT INTO medical_encounters (id, encounter_code, patient_id, bac_si_id, ngay_kham, ly_do_kham, qua_trinh_benh_ly, chan_doan_chinh, chan_doan_phu, huong_xu_tri)
 VALUES (
-    @encounter_id, @patient_profile_id, @doctor_id, '2021-06-21 08:00:00', 
+    @encounter_id, 'ENC0001', @patient_profile_id, @doctor_id, '2021-06-21 08:00:00', 
     'Mệt mỏi, tiểu nhiều', 
     'Cách nhập viện 2 tháng sụt 5kg, khát nhiều, tiểu nhiều.', 
     'Đái tháo đường type 2', 
@@ -439,24 +484,28 @@ INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, thoi_diem_do_duong
 VALUES (UUID(), @patient_profile_id, 313.2, 'luc_doi', 120, 80, 85, 37.0, 20, 61.0, 24.4, 12.2, '2021-06-21 08:00:00');
 
 -- Chuỗi 7 ngày gần nhất để vẽ biểu đồ Dashboard
-INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, thoi_diem_do_duong, lieu_luong_insulin_ui, loai_insulin_tiem, carbs_g, thoi_gian_do) VALUES 
-(UUID(), @patient_profile_id, 210.5, 'luc_doi', 10, 'Insulin Lantus', 180.0, DATE_SUB(CURDATE(), INTERVAL 7 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 195.0, 'luc_doi', 12, 'Insulin Lantus', 170.0, DATE_SUB(CURDATE(), INTERVAL 6 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 180.2, 'luc_doi', 14, 'Insulin Lantus', 165.0, DATE_SUB(CURDATE(), INTERVAL 5 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 165.5, 'luc_doi', 16, 'Insulin Lantus', 150.0, DATE_SUB(CURDATE(), INTERVAL 4 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 145.0, 'luc_doi', 18, 'Insulin Lantus', 145.0, DATE_SUB(CURDATE(), INTERVAL 3 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 125.5, 'luc_doi', 18, 'Insulin Lantus', 140.0, DATE_SUB(CURDATE(), INTERVAL 2 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 110.0, 'luc_doi', 18, 'Insulin Lantus', 135.0, DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 7 HOUR),
-(UUID(), @patient_profile_id, 100.0, 'luc_doi', 18, 'Insulin Lantus', 135.0, CURDATE() + INTERVAL 7 HOUR);
+-- Cần có đủ đường huyết, nhịp tim và huyết áp để biểu đồ hiển thị cả 4 đường.
+INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, thoi_diem_do_duong, lieu_luong_insulin_ui, loai_insulin_tiem, carbs_g, nhip_tim, huyet_ap_tam_thu, huyet_ap_tam_truong, thoi_gian_do) VALUES 
+(UUID(), @patient_profile_id, 210.5, 'luc_doi', 10, 'Insulin Lantus', 180.0, 88, 138, 86, DATE_SUB(CURDATE(), INTERVAL 7 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 195.0, 'luc_doi', 12, 'Insulin Lantus', 170.0, 86, 136, 84, DATE_SUB(CURDATE(), INTERVAL 6 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 180.2, 'luc_doi', 14, 'Insulin Lantus', 165.0, 84, 132, 82, DATE_SUB(CURDATE(), INTERVAL 5 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 165.5, 'luc_doi', 16, 'Insulin Lantus', 150.0, 82, 128, 80, DATE_SUB(CURDATE(), INTERVAL 4 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 145.0, 'luc_doi', 18, 'Insulin Lantus', 145.0, 80, 124, 78, DATE_SUB(CURDATE(), INTERVAL 3 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 125.5, 'luc_doi', 18, 'Insulin Lantus', 140.0, 78, 122, 76, DATE_SUB(CURDATE(), INTERVAL 2 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 110.0, 'luc_doi', 18, 'Insulin Lantus', 135.0, 76, 120, 75, DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 7 HOUR),
+(UUID(), @patient_profile_id, 100.0, 'luc_doi', 18, 'Insulin Lantus', 135.0, 74, 118, 74, CURDATE() + INTERVAL 7 HOUR);
 
 -- ============================================================
 -- 7. LỊCH HẸN KHÁM & TÀI LIỆU Y TẾ
 -- ============================================================
-INSERT INTO appointments (id, patient_id, bac_si_id, tieu_de, thoi_gian_hen, dia_diem, trang_thai) VALUES
-(UUID(), @patient_profile_id, @doctor_id, 'Tái khám Nội tiết', DATE_ADD(CURDATE(), INTERVAL 5 DAY) + INTERVAL '10:30' HOUR_MINUTE, 'Phòng khám Đa khoa', 'cho_kham'),
-(UUID(), @patient_profile_id, @doctor_id, 'Xét nghiệm máu tổng quát', DATE_ADD(CURDATE(), INTERVAL 12 DAY) + INTERVAL '08:00' HOUR_MINUTE, 'Khoa Xét nghiệm', 'cho_kham');
+INSERT INTO appointments (id, patient_id, bac_si_id, tieu_de, thoi_gian_hen, dia_diem, trang_thai, ngay_tao) VALUES
+(UUID(), @patient_profile_id, @doctor_id, 'Tái khám Nội tiết', DATE_ADD(CURDATE(), INTERVAL 5 DAY) + INTERVAL '10:30' HOUR_MINUTE, 'Phòng khám Đa khoa', 'cho_kham', NOW()),
+(UUID(), @patient_profile_id, @doctor_id, 'Xét nghiệm máu tổng quát', DATE_ADD(CURDATE(), INTERVAL 12 DAY) + INTERVAL '08:00' HOUR_MINUTE, 'Khoa Xét nghiệm', 'cho_kham', NOW()),
+(UUID(), @patient_profile_id, @doctor_id, 'Khám kiểm tra biến chứng', DATE_SUB(CURDATE(), INTERVAL 20 DAY) + INTERVAL '09:00' HOUR_MINUTE, 'Phòng Nội tiết 02', 'da_kham', DATE_SUB(NOW(), INTERVAL 25 DAY)),
+(UUID(), @patient_profile_id, @doctor_id, 'Lịch tư vấn dinh dưỡng', DATE_SUB(CURDATE(), INTERVAL 35 DAY) + INTERVAL '14:30' HOUR_MINUTE, 'Phòng Tư vấn dinh dưỡng', 'da_huy', DATE_SUB(NOW(), INTERVAL 40 DAY));
 
-INSERT INTO medical_documents (id, patient_id, bac_si_id, loai_tai_lieu, trang_thai, file_url, ngay_thuc_hien) VALUES
-(UUID(), @patient_profile_id, @doctor_id, 'X-quang ngực thẳng', 'hoan_thanh', '#', DATE_SUB(CURDATE(), INTERVAL 10 DAY)),
-(UUID(), @patient_profile_id, @doctor_id, 'Siêu âm bụng', 'hoan_thanh', '#', DATE_SUB(CURDATE(), INTERVAL 10 DAY)),
-(UUID(), @patient_profile_id, @doctor_id, 'Kết quả sinh hóa máu', 'can_xu_ly', '#', DATE_SUB(CURDATE(), INTERVAL 25 DAY));
+INSERT INTO medical_documents (id, patient_id, bac_si_id, loai_tai_lieu, trang_thai, file_url, ngay_thuc_hien, ngay_tao) VALUES
+(UUID(), @patient_profile_id, @doctor_id, 'Bệnh án tái khám Nội tiết', 'hoan_thanh', 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(UUID(), @patient_profile_id, @doctor_id, 'Kết quả xét nghiệm máu tổng quát', 'hoan_thanh', 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', DATE_SUB(CURDATE(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(UUID(), @patient_profile_id, @doctor_id, 'Phiếu siêu âm bụng', 'hoan_thanh', 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', DATE_SUB(CURDATE(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 19 DAY)),
+(UUID(), @patient_profile_id, @doctor_id, 'Kết quả sinh hóa máu', 'can_xu_ly', NULL, DATE_SUB(CURDATE(), INTERVAL 25 DAY), DATE_SUB(NOW(), INTERVAL 24 DAY));

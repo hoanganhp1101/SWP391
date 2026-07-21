@@ -9,6 +9,7 @@ import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.AIAnalysis;
 import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.service.GeminiService;
+import com.example.diabetesmanage.util.PatientPortalAuth;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.util.UUID;
@@ -61,7 +62,10 @@ public class AddRecordMobileServlet extends HttpServlet {
             
             String patientId = jsonObject.has("patientId") ? jsonObject.get("patientId").getAsString() : null;
             if (patientId == null || patientId.trim().isEmpty()) {
-                patientId = new PatientDAO().getDemoPatientId();
+                patientId = PatientPortalAuth.requirePatientId(request, response);
+                if (patientId == null) {
+                    return;
+                }
             }
 
             HealthRecord record = new HealthRecord();

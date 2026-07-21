@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hồ sơ sức khỏe - DiabCare</title>
+    <title>Hồ sơ sức khỏe - HealthAlert</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
@@ -63,7 +63,7 @@
         .nav-links a.active { color: var(--primary); }
         .nav-links a.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: var(--primary); }
         .nav-right { display: flex; align-items: center; gap: 1.5rem; color: var(--text-muted); }
-        .avatar-small { width: 32px; height: 32px; border-radius: 50%; background-color: #cbd5e1; background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff'); background-size: cover; }
+        .avatar-small { width: 32px; height: 32px; border-radius: 50%; background-color: #cbd5e1; background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff"}'); background-size: cover; background-position: center; }
 
         /* Main Layout */
         .app-container { display: flex; margin-top: 64px; min-height: calc(100vh - 64px); }
@@ -71,7 +71,10 @@
         /* Left Sidebar */
         .sidebar { width: 280px; background-color: var(--bg-white); border-right: 1px solid var(--border); padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 64px; bottom: 0; overflow-y: auto; }
         .profile-card { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem; background-color: #cbd5e1; background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff'); background-size: cover; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem; background-color: #cbd5e1; background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff"}'); background-size: cover; background-position: center; border: 2px solid transparent; transition: border-color 0.2s ease, transform 0.2s ease; }
+        .profile-avatar:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .avatar-link { text-decoration: none; color: inherit; display: inline-block; }
+        .avatar-hint { margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .profile-name { font-weight: 600; font-size: 1.125rem; color: var(--text-dark); }
         .profile-role { font-size: 0.875rem; color: var(--text-muted); }
         .sidebar-menu { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
@@ -199,14 +202,15 @@
             <div class="nav-links">
                 <a href="patient-dashboard">Tổng quan</a>
                 <a href="patient-medical-profile" class="active">Hồ sơ sức khỏe</a>
-                <a href="#">Lịch hẹn</a>
+                <a href="patient-appointments">Lịch hẹn</a>
                 <a href="#">Báo cáo</a>
             </div>
         </div>
         <div class="nav-right">
             <jsp:include page="notifications.jsp" />
-            <i class="fas fa-cog"></i>
-            <div class="avatar-small"></div>
+            <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
+                <div class="avatar-small"></div>
+            </a>
         </div>
     </nav>
 
@@ -214,24 +218,27 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="profile-card">
-                <div class="profile-avatar"></div>
+                <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
+                    <div class="profile-avatar"></div>
+                </a>
                 <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
                 <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : 'Type 2'}</div>
+                <div class="avatar-hint">Nhấn ảnh đại diện để chỉnh sửa hồ sơ</div>
             </div>
 
             <nav class="sidebar-menu">
                 <a href="patient-dashboard" class="menu-btn"><i class="fas fa-chart-pie"></i> Tổng quan</a>
                 <a href="patient-medical-profile" class="menu-btn active"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
-                <a href="#" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
+                <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
                 <a href="patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
                 <a href="patient-diet" class="menu-btn"><i class="fas fa-utensils"></i> Thực đơn AI</a>
                 <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
-                <a href="#" class="menu-btn"><i class="fas fa-history"></i> Lịch sử cảnh báo</a>
+                <a href="patient-medical-history" class="menu-btn"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
             </nav>
 
             <div class="sidebar-bottom">
                 <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
-                <a href="#" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                <a href="${pageContext.request.contextPath}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
             </div>
         </aside>
 
@@ -637,6 +644,9 @@
         </div>
     </div>
 
+    <jsp:include page="profile-modal.jsp">
+        <jsp:param name="profileReturnUrl" value="patient-medical-profile" />
+    </jsp:include>
     <jsp:include page="chatbot.jsp" />
 
     <script>

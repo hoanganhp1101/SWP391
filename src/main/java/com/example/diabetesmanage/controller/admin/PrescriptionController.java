@@ -51,8 +51,24 @@ public class PrescriptionController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        HttpSession session = request.getSession();
-        User loginUser = (User) session.getAttribute("loginUser"); // Lấy admin/bác sĩ đang đăng nhập
+        HttpSession session = request.getSession(false);
+        User loginUser = null;
+        if (session != null) {
+            Object value = session.getAttribute("loginUser");
+            if (!(value instanceof User)) {
+                value = session.getAttribute("adminUser");
+            }
+            if (!(value instanceof User)) {
+                value = session.getAttribute("user");
+            }
+            if (value instanceof User) {
+                loginUser = (User) value;
+            }
+        }
+        if (loginUser == null) {
+            response.sendRedirect(request.getContextPath() + "/admin/login");
+            return;
+        }
 
         String patientId = request.getParameter("patientId");
         String ghiChu = request.getParameter("ghiChu");
@@ -65,7 +81,7 @@ public class PrescriptionController extends HttpServlet {
         if (medicationIds != null && medicationIds.length > 0) {
             Prescription prescription = new Prescription();
             prescription.setPatientId(patientId);
-            prescription.setBacSiId(loginUser != null ? loginUser.getId() : "admin-id");
+            prescription.setBacSiId(loginUser.getId());
 
             List<PrescriptionDetail> details = new ArrayList<>();
             for (int i = 0; i < medicationIds.length; i++) {
