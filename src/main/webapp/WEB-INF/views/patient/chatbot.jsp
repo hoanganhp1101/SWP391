@@ -252,6 +252,28 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.chatbot-disclaimer {
+    padding: 0.5rem 1rem;
+    font-size: 0.65rem;
+    color: #64748b;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    line-height: 1.4;
+}
+
+.chat-msg.emergency {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fecaca;
+}
+
+.chat-msg.blocked,
+.chat-msg.out-of-scope {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fde68a;
+}
 </style>
 
 <!-- Chatbot Toggle Button -->
@@ -271,8 +293,10 @@
         <button class="chatbot-close" id="chatbotClose"><i class="fas fa-times"></i></button>
     </div>
     <div class="chatbot-messages" id="chatbotMessages">
-        <div class="chat-msg bot">Xin chào! Tôi là trợ lý AI DiabCare. Tôi có thể giúp bạn tìm hiểu về bệnh tiểu đường, chế độ ăn, thuốc, và các chỉ số sức khỏe. Hãy hỏi tôi bất cứ điều gì! 😊</div>
+        <div class="chat-msg bot">Xin chào! Tôi là trợ lý AI DiabCare. Bạn có thể trò chuyện <strong>bất kỳ chủ đề nào</strong> — tôi sẽ trả lời và cùng bạn quay lại theo dõi <strong>bệnh án, tiểu đường và sức khỏe</strong>.</div>
+        <div class="chat-msg bot">Tôi <strong>không</strong> chẩn đoán bệnh hay kê/đổi liều thuốc. Mọi quyết định điều trị cần được bác sĩ tư vấn.</div>
     </div>
+    <div class="chatbot-disclaimer">Thông tin chỉ mang tính tham khảo — không thay thế ý kiến bác sĩ.</div>
     <div class="chatbot-input">
         <input type="text" id="chatInput" placeholder="Nhập câu hỏi..." autocomplete="off">
         <button id="chatSendBtn" title="Gửi"><i class="fas fa-paper-plane"></i></button>
@@ -316,23 +340,23 @@
         chatSendBtn.addEventListener('click', sendChat);
     }
 
+    let chatSending = false;
+
     function sendChat() {
         const msg = chatInput.value.trim();
-        if (!msg) return;
+        if (!msg || chatSending) return;
 
-        // Add user message
+        chatSending = true;
         addMessage(msg, 'user');
         chatInput.value = '';
         chatSendBtn.disabled = true;
 
-        // Show typing indicator
         const typingEl = document.createElement('div');
         typingEl.className = 'chat-typing';
         typingEl.innerHTML = '<span></span><span></span><span></span>';
         chatMessages.appendChild(typingEl);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // Call AI API
         fetch('${pageContext.request.contextPath}/ai-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
@@ -341,7 +365,12 @@
             .then(res => res.json())
             .then(data => {
                 typingEl.remove();
-                addMessage(data.reply || 'Xin lỗi, tôi không thể trả lời lúc này.', 'bot');
+                const status = data.status || 'answered';
+                const botType = status === 'emergency' ? 'emergency'
+                    : status === 'blocked' ? 'blocked'
+                    : status === 'out_of_scope' ? 'out-of-scope'
+                    : 'bot';
+                addMessage(data.reply || 'Xin lỗi, tôi không thể trả lời lúc này.', botType);
             })
             .catch(err => {
                 typingEl.remove();
@@ -349,6 +378,7 @@
                 console.error('Chat error:', err);
             })
             .finally(() => {
+                chatSending = false;
                 chatSendBtn.disabled = false;
                 chatInput.focus();
             });
@@ -357,8 +387,7 @@
     function addMessage(text, type) {
         const msgEl = document.createElement('div');
         msgEl.className = 'chat-msg ' + type;
-        // Format text: replace newlines with <br>
-        msgEl.innerHTML = text.replace(/\n/g, '<br>');
+        msgEl.textContent = text;
         chatMessages.appendChild(msgEl);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }

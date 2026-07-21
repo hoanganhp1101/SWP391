@@ -57,8 +57,8 @@
                     <select class="form-select form-select-sm shadow-none border-light-subtle text-muted" style="width: 150px;">
                         <option value="all">Tất cả vai trò</option>
                         <option value="bac_si">Bác sĩ</option>
-                        <option value="y_ta">Y tá</option>
                         <option value="quan_tri_vien">Quản trị viên</option>
+                        <option value="benh_nhan">Bệnh nhân</option>
                     </select>
                     <div class="input-group input-group-sm" style="width: 250px;">
                         <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
@@ -103,9 +103,6 @@
                                     </c:when>
                                     <c:when test="${u.vaiTro == 'bac_si'}">
                                         <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-2" style="font-size: 0.7rem;">Bác sĩ</span>
-                                    </c:when>
-                                    <c:when test="${u.vaiTro == 'y_ta'}">
-                                        <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle rounded-pill px-2" style="font-size: 0.7rem;">Y tá</span>
                                     </c:when>
                                     <c:otherwise>
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-2" style="font-size: 0.7rem;">Bệnh nhân</span>
@@ -252,7 +249,6 @@
                         <label class="form-label small fw-bold">Vai trò</label>
                         <select name="vaiTro" class="form-select form-select-sm" required>
                             <option value="bac_si">Bác sĩ</option>
-                            <option value="y_ta">Y tá</option>
                             <option value="quan_tri_vien">Quản trị viên</option>
                         </select>
                     </div>
@@ -298,7 +294,6 @@
                         <label class="form-label small fw-bold">Vai trò</label>
                         <select name="vaiTro" id="edit-vaitro" class="form-select form-select-sm" required>
                             <option value="bac_si">Bác sĩ</option>
-                            <option value="y_ta">Y tá</option>
                             <option value="quan_tri_vien">Quản trị viên</option>
                         </select>
                     </div>

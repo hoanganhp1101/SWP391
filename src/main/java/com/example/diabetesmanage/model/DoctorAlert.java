@@ -1,9 +1,9 @@
-package model;
+package com.example.diabetesmanage.model;
 
 import java.sql.Timestamp;
 import java.util.UUID;
 
-public class Alert {
+public class DoctorAlert {
     private UUID id;
     private UUID patientId;
     private UUID aiAnalysisId;
@@ -22,10 +22,10 @@ public class Alert {
     private String soDienThoaiBenhNhan;
     private Double duongHuyet;
 
-    public Alert() {
+    public DoctorAlert() {
     }
 
-    public Alert(UUID id, UUID patientId, UUID aiAnalysisId, String loaiCanhBao, String mucDo,
+    public DoctorAlert(UUID id, UUID patientId, UUID aiAnalysisId, String loaiCanhBao, String mucDo,
                  String tieuDe, String noiDung, boolean daDocBn, boolean daDocBs, UUID xuLyBoi,
                  String ghiChuXuLy, Timestamp thoiGianTao, Timestamp thoiGianXuLy) {
         this.id = id;

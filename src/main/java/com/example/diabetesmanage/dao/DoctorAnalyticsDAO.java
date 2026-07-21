@@ -1,4 +1,4 @@
-package dal;
+package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.context.DBContext;
 import java.sql.Connection;

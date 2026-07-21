@@ -1,6 +1,6 @@
-package controller.doctor;
+package com.example.diabetesmanage.controller.doctor;
 
-import dal.DoctorAlertDAO;
+import com.example.diabetesmanage.dao.DoctorAlertDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
-import model.Alert;
+import com.example.diabetesmanage.model.DoctorAlert;
 import com.example.diabetesmanage.model.User;
 
 @WebServlet(
@@ -46,7 +46,7 @@ public class DoctorAlertsController extends HttpServlet {
             page = totalPages;
         }
 
-        List<Alert> alerts = dao.getAlerts(severity, status, type, keyword, page, PAGE_SIZE, doctorId);
+        List<DoctorAlert> alerts = dao.getAlerts(severity, status, type, keyword, page, PAGE_SIZE, doctorId);
 
         int fromIndex = totalAlerts == 0 ? 0 : ((page - 1) * PAGE_SIZE) + 1;
         int toIndex = Math.min(page * PAGE_SIZE, totalAlerts);
@@ -63,7 +63,7 @@ public class DoctorAlertsController extends HttpServlet {
         request.setAttribute("fromIndex", fromIndex);
         request.setAttribute("toIndex", toIndex);
 
-        request.getRequestDispatcher("/WEB-INF/views/doctor/alert.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/doctor/DoctorAlert.jsp").forward(request, response);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.service;
 
+import com.example.diabetesmanage.config.GeminiConfig;
 import com.example.diabetesmanage.model.AIAnalysis;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
@@ -38,31 +39,40 @@ public class GeminiService {
     }
 
     private void loadConfig() {
+        GeminiConfig config = GeminiConfig.load();
+        if (config.isConfigured()) {
+            this.apiKey = config.getApiKey();
+            this.model = config.getModel();
+            this.maxTokens = 2048;
+            System.out.println("[GeminiService] Loaded API key from " + config.getConfigSource()
+                    + ", model=" + this.model);
+            return;
+        }
+
+        // Fallback: legacy config.properties
         Properties props = new Properties();
         try {
             InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties");
             if (is == null) {
                 is = GeminiService.class.getResourceAsStream("/config.properties");
             }
-            if (is == null) {
-                File f = new File("f:/FULearning/Project/Diabetes-Manage/SWP391/src/main/resources/config.properties");
-                if (f.exists()) is = new java.io.FileInputStream(f);
-            }
             if (is != null) {
                 props.load(is);
                 this.apiKey = props.getProperty("gemini.api.key", "");
-                this.model = props.getProperty("gemini.model", "gemini-flash-latest");
+                this.model = props.getProperty("gemini.model", "gemini-flash-lite-latest");
                 this.maxTokens = Integer.parseInt(props.getProperty("gemini.max.tokens", "2048"));
                 is.close();
-            } else {
-                System.err.println("[GeminiService] config.properties not found in classpath!");
-                this.apiKey = "";
-                this.model = "gemini-flash-latest";
-                this.maxTokens = 2048;
+                System.out.println("[GeminiService] Loaded API key from config.properties, model=" + this.model);
+                return;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        System.err.println("[GeminiService] No Gemini API key found. Set GEMINI_API_KEY or gemini.properties.");
+        this.apiKey = "";
+        this.model = "gemini-flash-lite-latest";
+        this.maxTokens = 2048;
     }
 
     // ==================== CHỨC NĂNG 1: PHÂN TÍCH SỨC KHỎE ====================
@@ -280,42 +290,52 @@ public class GeminiService {
     // ==================== CHỨC NĂNG 2: CHATBOT ====================
 
     /**
-     * Chatbot AI hỗ trợ bệnh nhân hỏi đáp về tiểu đường.
-     * Luôn kèm disclaimer rằng đây chỉ là tham khảo.
+     * Chatbot AI hỗ trợ bệnh nhân — ủy quyền cho {@link HealthChatService}.
      */
     public String chat(String userMessage, String patientContext) {
-        String prompt = buildChatPrompt(userMessage, patientContext);
-        String response = callGeminiAPI(prompt, false);
-
-        if (response == null || response.isEmpty()) {
-            return "Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại sau hoặc liên hệ bác sĩ nếu có vấn đề khẩn cấp.";
+        PatientHealthContext ctx = new PatientHealthContext();
+        if (patientContext != null && !patientContext.isBlank()) {
+            ctx.setLoaiTieuDuong(extractLineValue(patientContext, "Loại tiểu đường:"));
+            ctx.setTienSuBenhTomTat(extractLineValue(patientContext, "Tiền sử bệnh:"));
+            ctx.setDuongHuyetMgdl(parseDouble(extractLineValue(patientContext, "Đường huyết gần nhất:")));
+            String bp = extractLineValue(patientContext, "Huyết áp gần nhất:");
+            if (bp != null && bp.contains("/")) {
+                String[] parts = bp.replace(" mmHg", "").split("/");
+                if (parts.length == 2) {
+                    ctx.setHuyetApTamThu(parseInt(parts[0].trim()));
+                    ctx.setHuyetApTamTruong(parseInt(parts[1].trim()));
+                }
+            }
         }
-
-        return response;
+        HealthChatResponse response = new HealthChatService(this).process(userMessage, ctx);
+        return response.getReply();
     }
 
-    private String buildChatPrompt(String userMessage, String patientContext) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Bạn là DiabCare AI — trợ lý sức khỏe chuyên về bệnh tiểu đường. ");
-        sb.append("Hãy trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu.\n\n");
-
-        sb.append("=== QUY TẮC BẮT BUỘC ===\n");
-        sb.append("1. KHÔNG BAO GIỜ tự kê đơn thuốc hoặc thay đổi liều lượng thuốc.\n");
-        sb.append("2. KHÔNG BAO GIỜ chẩn đoán bệnh. Chỉ đưa thông tin tham khảo.\n");
-        sb.append("3. LUÔN LUÔN khuyên bệnh nhân hỏi ý kiến bác sĩ cho mọi quyết định y tế.\n");
-        sb.append("4. Nếu phát hiện tình huống khẩn cấp (đường huyết <54 hoặc >400, mất ý thức...), ");
-        sb.append("khuyên gọi cấp cứu NGAY LẬP TỨC.\n");
-        sb.append("5. Cuối mỗi câu trả lời, thêm dòng: \"⚠️ Lưu ý: Thông tin chỉ mang tính tham khảo. Vui lòng tham khảo ý kiến bác sĩ.\"\n\n");
-
-        if (patientContext != null && !patientContext.isEmpty()) {
-            sb.append("=== BỐI CẢNH BỆNH NHÂN ===\n");
-            sb.append(patientContext).append("\n\n");
+    private static String extractLineValue(String block, String prefix) {
+        for (String line : block.split("\n")) {
+            if (line.startsWith(prefix)) {
+                return line.substring(prefix.length()).trim();
+            }
         }
+        return null;
+    }
 
-        sb.append("=== CÂU HỎI CỦA BỆNH NHÂN ===\n");
-        sb.append(userMessage);
+    private static Double parseDouble(String value) {
+        if (value == null) return null;
+        try {
+            return Double.parseDouble(value.replace(" mg/dL", "").replace("%", "").trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 
-        return sb.toString();
+    private static Integer parseInt(String value) {
+        if (value == null) return null;
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     // ==================== CHỨC NĂNG 3: BÁO CÁO CHO BÁC SĨ ====================
@@ -438,23 +458,99 @@ public class GeminiService {
      * Gọi Google Gemini API và trả về text response.
      */
     protected String callGeminiAPI(String prompt, boolean forceJson) {
+        return callGeminiAPI(prompt, forceJson, 0.3, maxTokens);
+    }
+
+    /**
+     * Gọi Gemini với cấu hình riêng cho chat sức khỏe (temperature thấp, token giới hạn).
+     */
+    public String callHealthChatAPI(String prompt) {
+        return callHealthChatAPI(null, prompt);
+    }
+
+    /**
+     * Gọi Gemini cho chat sức khỏe với systemInstruction (luật y tế) tách riêng khỏi câu hỏi.
+     * Cách này giúp model trả lời TỰ NHIÊN mà vẫn tuân thủ luật.
+     */
+    public String callHealthChatAPI(String systemInstruction, String userPrompt) {
+        // Temperature cao hơn để hội thoại tự nhiên, vẫn an toàn nhờ systemInstruction + safetySettings
+        return callGeminiAPI(systemInstruction, userPrompt, false, 0.6, Math.min(maxTokens, 1024));
+    }
+
+    /**
+     * Gọi Google Gemini API với temperature và maxTokens tùy chỉnh.
+     */
+    protected String callGeminiAPI(String prompt, boolean forceJson, double temperature, int tokenLimit) {
+        return callGeminiAPI(null, prompt, forceJson, temperature, tokenLimit);
+    }
+
+    /**
+     * Gọi Google Gemini API — hỗ trợ systemInstruction tùy chọn.
+     */
+    protected String callGeminiAPI(String systemInstruction, String prompt, boolean forceJson,
+                                   double temperature, int tokenLimit) {
         if (apiKey == null || apiKey.isEmpty()) {
             System.err.println("[GeminiService] API key is not configured!");
-            return null;
+            return "ERROR:API_KEY_MISSING";
         }
 
+        String[] modelsToTry = buildModelCandidates();
+        String lastError = "ERROR:Unknown";
+
+        for (String candidateModel : modelsToTry) {
+            for (int attempt = 1; attempt <= 2; attempt++) {
+                String result = invokeGeminiOnce(candidateModel, systemInstruction, prompt,
+                        forceJson, temperature, tokenLimit);
+                if (result != null && !result.startsWith("ERROR:")) {
+                    if (!candidateModel.equals(this.model)) {
+                        System.out.println("[GeminiService] Fallback model succeeded: " + candidateModel);
+                    }
+                    return result;
+                }
+                lastError = result != null ? result : "ERROR:Unknown";
+                if (lastError.contains("429") || lastError.contains("RATE_LIMIT")) {
+                    try {
+                        Thread.sleep(1200L * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return "ERROR:RATE_LIMIT";
+                    }
+                    continue;
+                }
+                // Non-rate-limit errors: try next model
+                break;
+            }
+        }
+        return lastError;
+    }
+
+    private String[] buildModelCandidates() {
+        java.util.LinkedHashSet<String> models = new java.util.LinkedHashSet<>();
+        if (model != null && !model.isBlank()) {
+            models.add(model.trim());
+        }
+        // Ưu tiên model còn free-tier quota (2.0-flash thường hết hạn mức sớm)
+        models.add("gemini-flash-lite-latest");
+        models.add("gemini-3.1-flash-lite");
+        models.add("gemini-3.5-flash-lite");
+        models.add("gemini-flash-latest");
+        models.add("gemini-2.0-flash");
+        return models.toArray(new String[0]);
+    }
+
+    private String invokeGeminiOnce(String modelName, String systemInstruction, String prompt,
+                                    boolean forceJson, double temperature, int tokenLimit) {
         HttpURLConnection conn = null;
         try {
-            String urlStr = API_BASE_URL + model + ":generateContent?key=" + apiKey;
+            String urlStr = API_BASE_URL + modelName + ":generateContent?key=" + apiKey;
             URL url = new URL(urlStr);
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setDoOutput(true);
-            conn.setConnectTimeout(30000); // 30s
-            conn.setReadTimeout(60000);    // 60s
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(60000);
 
-            // Build request body
             JsonObject requestBody = new JsonObject();
             JsonArray contents = new JsonArray();
             JsonObject content = new JsonObject();
@@ -466,16 +562,41 @@ public class GeminiService {
             contents.add(content);
             requestBody.add("contents", contents);
 
-            // Generation config
+            // System instruction: đặt luật y tế cho model (áp dụng xuyên suốt, tự nhiên hơn)
+            if (systemInstruction != null && !systemInstruction.isBlank()) {
+                JsonObject sysContent = new JsonObject();
+                JsonArray sysParts = new JsonArray();
+                JsonObject sysPart = new JsonObject();
+                sysPart.addProperty("text", systemInstruction);
+                sysParts.add(sysPart);
+                sysContent.add("parts", sysParts);
+                requestBody.add("system_instruction", sysContent);
+            }
+
+            // Safety settings: chặn nội dung nguy hiểm ở tầng model
+            JsonArray safetySettings = new JsonArray();
+            String[] categories = {
+                    "HARM_CATEGORY_HARASSMENT",
+                    "HARM_CATEGORY_HATE_SPEECH",
+                    "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "HARM_CATEGORY_DANGEROUS_CONTENT"
+            };
+            for (String category : categories) {
+                JsonObject setting = new JsonObject();
+                setting.addProperty("category", category);
+                setting.addProperty("threshold", "BLOCK_MEDIUM_AND_ABOVE");
+                safetySettings.add(setting);
+            }
+            requestBody.add("safetySettings", safetySettings);
+
             JsonObject genConfig = new JsonObject();
-            genConfig.addProperty("maxOutputTokens", maxTokens);
-            genConfig.addProperty("temperature", 0.3); // Thấp hơn = chính xác hơn cho y tế
+            genConfig.addProperty("maxOutputTokens", tokenLimit);
+            genConfig.addProperty("temperature", temperature);
             if (forceJson) {
                 genConfig.addProperty("responseMimeType", "application/json");
             }
             requestBody.add("generationConfig", genConfig);
 
-            // Send request
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = requestBody.toString().getBytes(StandardCharsets.UTF_8);
                 os.write(input);
@@ -486,19 +607,16 @@ public class GeminiService {
                     ? conn.getInputStream() : conn.getErrorStream();
 
             StringBuilder responseBuilder = new StringBuilder();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    responseBuilder.append(line);
+            if (inputStream != null) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        responseBuilder.append(line);
+                    }
                 }
             }
 
             if (responseCode >= 200 && responseCode < 300) {
-                try {
-                    java.nio.file.Files.write(java.nio.file.Paths.get("f:/FULearning/Project/Diabetes-Manage/SWP391/gemini-full-response.txt"), responseBuilder.toString().getBytes());
-                } catch(Exception ex) {}
-                
-                // Parse Gemini response to extract text
                 JsonObject responseJson = JsonParser.parseString(responseBuilder.toString()).getAsJsonObject();
                 JsonArray candidates = responseJson.getAsJsonArray("candidates");
                 if (candidates != null && candidates.size() > 0) {
@@ -509,19 +627,37 @@ public class GeminiService {
                         return partsArr.get(0).getAsJsonObject().get("text").getAsString();
                     }
                 }
-            } else {
-                System.err.println("[GeminiService] API Error (" + responseCode + "): " + responseBuilder.toString());
+                return "ERROR:EmptyCandidates";
             }
+
+            System.err.println("[GeminiService] API Error model=" + modelName
+                    + " (" + responseCode + "): " + truncate(responseBuilder.toString(), 400));
+            if (responseCode == 429) {
+                return "ERROR:RATE_LIMIT:429";
+            }
+            if (responseCode == 503) {
+                return "ERROR:UNAVAILABLE:503";
+            }
+            if (responseCode == 404) {
+                return "ERROR:MODEL_NOT_FOUND:" + modelName;
+            }
+            return "ERROR:HTTP_" + responseCode;
 
         } catch (Exception e) {
             System.err.println("[GeminiService] Exception calling Gemini API: " + e.getMessage());
-            e.printStackTrace();
-            return "ERROR: " + e.getMessage();
+            return "ERROR:" + e.getMessage();
         } finally {
-            if (conn != null) conn.disconnect();
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
+    }
 
-        return "ERROR: Unknown";
+    private static String truncate(String value, int max) {
+        if (value == null) {
+            return "";
+        }
+        return value.length() <= max ? value : value.substring(0, max);
     }
 
     public String extractMedicalDataFromText(String pdfText) {
@@ -569,43 +705,47 @@ public class GeminiService {
      * Dựa trên hồ sơ sức khỏe và danh sách thực phẩm, xin AI đề xuất thực đơn
      */
     public String generateDailyDietPlan(Patient patient, HealthRecord record, List<MasterFood> foods) {
+        if (foods == null || foods.isEmpty()) {
+            return "[]";
+        }
+
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Bạn là một chuyên gia dinh dưỡng cho bệnh nhân tiểu đường. ");
+        prompt.append("Bạn là chuyên gia dinh dưỡng cho bệnh nhân tiểu đường. ");
+        prompt.append("Hãy gợi ý thực đơn 1 ngày (Sáng, Trưa, Tối) chỉ từ danh sách món có sẵn.\n");
         prompt.append("Thông tin bệnh nhân:\n");
         if (patient != null) {
-            prompt.append("- Cân nặng: ").append(record != null && record.getCanNangKg() != null ? record.getCanNangKg() : "Không rõ").append(" kg\n");
             prompt.append("- Chiều cao: ").append(patient.getChieuCaoCm()).append(" cm\n");
         }
         if (record != null) {
+            prompt.append("- Cân nặng: ").append(record.getCanNangKg() != null ? record.getCanNangKg() : "Không rõ").append(" kg\n");
             prompt.append("- Đường huyết gần nhất: ").append(record.getDuongHuyetMgdl() != null ? record.getDuongHuyetMgdl() : "Không rõ").append(" mg/dL\n");
             prompt.append("- HbA1c: ").append(record.getHba1cPercent() != null ? record.getHba1cPercent() : "Không rõ").append(" %\n");
+            prompt.append("- BMI: ").append(record.getBmi() != null ? record.getBmi() : "Không rõ").append("\n");
         }
-        
-        prompt.append("\nDanh sách thực phẩm có sẵn:\n");
+
+        prompt.append("\nDanh sách thực phẩm (CHỈ dùng đúng id bên dưới):\n");
         for (MasterFood f : foods) {
-            prompt.append(f.getId()).append(": ").append(f.getTenThucPham())
-                  .append(" (Carbs: ").append(f.getCarbsG()).append("g, Calo: ").append(f.getCaloKcal()).append(")\n");
+            prompt.append("- id=\"").append(f.getId()).append("\": ").append(f.getTenThucPham())
+                    .append(" | Carbs=").append(f.getCarbsG()).append("g")
+                    .append(" | Calo=").append(f.getCaloKcal())
+                    .append(" | GI=").append(f.getChiSoGI()).append("\n");
         }
-        
-        prompt.append("\nTUYỆT ĐỐI TUÂN THỦ CÁC QUY TẮC SAU:\n");
-        prompt.append("1. CHỈ ĐƯỢC PHÉP CHỌN CÁC MÓN ĂN TỪ DANH SÁCH TRÊN.\n");
-        prompt.append("2. TUYỆT ĐỐI KHÔNG TỰ BỊA RA MÓN ĂN MỚI HOẶC ID MỚI (chỉ dùng các ID như f1, f2...).\n");
-        prompt.append("3. Hãy chọn ra các món ăn cho 3 bữa: 'Sáng', 'Trưa', 'Tối' từ danh sách trên để đảm bảo dinh dưỡng và ổn định đường huyết.\n");
-        prompt.append("Chỉ trả về JSON theo định dạng mảng (không chứa markdown), ví dụ:\n");
-        prompt.append("[\n");
-        prompt.append("  {\"foodId\": \"id1\", \"buaAn\": \"Sáng\", \"ghiChu\": \"Ăn kèm rau\"},\n");
-        prompt.append("  {\"foodId\": \"id2\", \"buaAn\": \"Trưa\", \"ghiChu\": \"Ít cơm\"}\n");
-        prompt.append("]");
+
+        prompt.append("\nQUY TẮC:\n");
+        prompt.append("1. Chỉ chọn foodId nằm trong danh sách trên. Không bịa id mới.\n");
+        prompt.append("2. Mỗi bữa (Sáng/Trưa/Tối) chọn 1–2 món, ưu tiên GI thấp, cân bằng carbs.\n");
+        prompt.append("3. Trả về DUY NHẤT một mảng JSON (không markdown, không giải thích):\n");
+        prompt.append("[{\"foodId\":\"").append(foods.get(0).getId())
+                .append("\",\"buaAn\":\"Sáng\",\"ghiChu\":\"Gợi ý\"}]\n");
 
         String rawResponse = callGeminiAPI(prompt.toString(), true);
-        try {
-            java.nio.file.Files.write(java.nio.file.Paths.get("f:/FULearning/Project/Diabetes-Manage/SWP391/gemini-log.txt"), ("Raw response: " + rawResponse).getBytes());
-        } catch(Exception ex) {}
+        System.out.println("[GeminiService] generateDailyDietPlan raw="
+                + (rawResponse == null ? "null" : rawResponse.substring(0, Math.min(200, rawResponse.length()))));
 
         if (rawResponse == null || rawResponse.startsWith("ERROR")) {
             return "[]";
         }
-        
+
         String cleaned = rawResponse.trim();
         if (cleaned.startsWith("```json")) {
             cleaned = cleaned.substring(7);

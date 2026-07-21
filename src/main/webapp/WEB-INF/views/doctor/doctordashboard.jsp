@@ -604,7 +604,7 @@
             border:2px solid #1d4ed8;
             border-radius:12px;
         }
-            /* Filter dùng chung: xem /css/filters.css */
+            /* Filter dùng chung: xem /assets/css/filters.css */
 
     </style>
 

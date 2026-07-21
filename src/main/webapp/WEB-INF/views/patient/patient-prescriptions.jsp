@@ -57,6 +57,9 @@
         .menu-btn:hover { background-color: var(--bg-body); }
         .menu-btn.active { background-color: var(--primary); color: var(--bg-white); }
         .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .profile-help-text { margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
+        .btn-new { background-color: var(--primary); color: white; border: none; border-radius: 8px; padding: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; transition: background-color 0.2s; }
+        .btn-new:hover { background-color: #083c8a; color: white; }
 
         /* Content */
         .content { margin-left: 280px; padding: 2rem; flex-grow: 1; width: calc(100% - 280px); }
@@ -147,34 +150,9 @@
     </nav>
 
     <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="profile-card">
-                <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
-                    <div class="profile-avatar"></div>
-                </a>
-                <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
-                <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : 'Type 2'}</div>
-                <div class="avatar-hint">Nhấn ảnh đại diện để chỉnh sửa hồ sơ</div>
-            </div>
-            <nav class="sidebar-menu">
-                <a href="patient-dashboard" class="menu-btn"><i class="fas fa-chart-pie"></i> Tổng quan</a>
-                <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
-                <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
-                <a href="patient-prescriptions" class="menu-btn active"><i class="fas fa-pills"></i> Đơn thuốc</a>
-                <a href="patient-diet" class="menu-btn"><i class="fas fa-utensils"></i> Thực đơn AI</a>
-                <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
-                <a href="patient-medical-history" class="menu-btn"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
-            </nav>
-
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
-                <a href="#" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
-                <a href="${pageContext.request.contextPath}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
-            </div>
-        </aside>
+        <jsp:include page="layout/sidebar.jsp">
+            <jsp:param name="activeMenu" value="prescriptions"/>
+        </jsp:include>
 
         <!-- Content -->
         <main class="content">

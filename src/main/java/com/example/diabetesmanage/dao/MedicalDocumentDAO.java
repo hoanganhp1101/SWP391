@@ -53,6 +53,8 @@ public class MedicalDocumentDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
     public List<MedicalDocument> getAllDocumentsByPatient(String patientId) {
         String sql = "SELECT d.*, u.ho_ten AS bac_si_name " +
                 "FROM medical_documents d LEFT JOIN users u ON d.bac_si_id = u.id " +

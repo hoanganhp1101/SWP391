@@ -415,7 +415,7 @@
         .btn-complete{ background:#059669; color:#fff; }
         .btn-cancel{ background:#fef2f2; color:#dc2626; }
 
-        /* Filter dùng chung: xem /css/filters.css */
+        /* Filter dùng chung: xem /assets/css/filters.css */
 
     </style>
 

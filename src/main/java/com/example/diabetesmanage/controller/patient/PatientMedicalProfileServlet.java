@@ -33,58 +33,30 @@ public class PatientMedicalProfileServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        PatientDAO patientDAO = new PatientDAO();
-        // Lấy ID thật từ CSDL cho bản demo
-        String patientId = patientDAO.getDemoPatientId();
-
-        if (patientId != null) {
-            // 1. Thông tin Hành chính & Tiền sử
-            Patient patientInfo = patientDAO.getPatientById(patientId);
-            request.setAttribute("patientInfo", patientInfo);
-
-            // 2 & 3. Chỉ số sinh tồn & Kết quả cận lâm sàng
-            HealthRecordDAO recordDAO = new HealthRecordDAO();
-            HealthRecord latestRecord = recordDAO.getLatestComprehensiveRecord(patientId);
-            request.setAttribute("latestRecord", latestRecord);
-
-            // 4. Kế hoạch điều trị & Đơn thuốc
-            PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
-            Prescription latestPrescription = prescriptionDAO.getLatestPrescription(patientId);
-            request.setAttribute("latestPrescription", latestPrescription);
-
-            // 5. Nhật ký y khoa & Tiến triển (Lấy Alerts)
-            AlertDAO alertDAO = new AlertDAO();
-            List<Alert> recentAlerts = alertDAO.getRecentAlerts(patientId);
-            request.setAttribute("alerts", recentAlerts);
-
-            // 6. Tài liệu y khoa
-            MedicalDocumentDAO docDAO = new MedicalDocumentDAO();
-            List<MedicalDocument> documents = docDAO.getRecentDocuments(patientId);
-            request.setAttribute("medicalDocuments", documents);
         String patientId = PatientPortalAuth.requirePatientId(request, response);
         if (patientId == null) {
             return;
         }
 
         PatientDAO patientDAO = new PatientDAO();
-        // 1. Thông tin Hành chính & Tiền sử
         Patient patientInfo = patientDAO.getPatientById(patientId);
         request.setAttribute("patientInfo", patientInfo);
 
-        // 2 & 3. Chỉ số sinh tồn & Kết quả cận lâm sàng
         HealthRecordDAO recordDAO = new HealthRecordDAO();
         HealthRecord latestRecord = recordDAO.getLatestComprehensiveRecord(patientId);
         request.setAttribute("latestRecord", latestRecord);
 
-        // 4. Kế hoạch điều trị & Đơn thuốc
         PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
         Prescription latestPrescription = prescriptionDAO.getLatestPrescription(patientId);
         request.setAttribute("latestPrescription", latestPrescription);
 
-        // 5. Nhật ký y khoa & Tiến triển (Lấy Alerts)
         AlertDAO alertDAO = new AlertDAO();
         List<Alert> recentAlerts = alertDAO.getRecentAlerts(patientId);
         request.setAttribute("alerts", recentAlerts);
+
+        MedicalDocumentDAO docDAO = new MedicalDocumentDAO();
+        List<MedicalDocument> documents = docDAO.getRecentDocuments(patientId);
+        request.setAttribute("medicalDocuments", documents);
 
         request.getRequestDispatcher("/WEB-INF/views/patient/patient-medical-profile.jsp").forward(request, response);
     }
@@ -92,15 +64,13 @@ public class PatientMedicalProfileServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
+
+        String patientId = PatientPortalAuth.requirePatientId(request, response);
         if (patientId == null) {
-            response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=true");
             return;
         }
 
-        // 1. Cập nhật thông tin y khoa cơ bản
+        PatientDAO patientDAO = new PatientDAO();
         Patient p = patientDAO.getPatientById(patientId);
         if (p != null) {
             p.setGioiTinh(request.getParameter("gioiTinh"));
@@ -114,14 +84,14 @@ public class PatientMedicalProfileServlet extends HttpServlet {
             p.setTienSuGiaDinh(request.getParameter("tienSuGiaDinh"));
             p.setDiUng(request.getParameter("diUng"));
             p.setNhomMau(request.getParameter("nhomMau"));
-            
+
             String ngayChanDoanStr = request.getParameter("ngayChanDoanTieuDuong");
             if (ngayChanDoanStr != null && !ngayChanDoanStr.isEmpty()) {
                 p.setNgayChanDoanTieuDuong(Date.valueOf(ngayChanDoanStr));
             }
 
             patientDAO.updatePatientMedicalProfile(p);
-            // Xử lý Cân nặng và các chỉ số sức khỏe khác (Weight & Vitals)
+
             String canNangStr = request.getParameter("canNangKg");
             String systoleStr = request.getParameter("huyetApTamThu");
             String diastoleStr = request.getParameter("huyetApTamTruong");
@@ -130,14 +100,14 @@ public class PatientMedicalProfileServlet extends HttpServlet {
             String hba1cStr = request.getParameter("hba1c");
             String cholesterolStr = request.getParameter("cholesterol");
             String triglycerideStr = request.getParameter("triglyceride");
-            
+
             boolean hasVitals = (canNangStr != null && !canNangStr.isEmpty()) ||
-                                (systoleStr != null && !systoleStr.isEmpty()) ||
-                                (heartRateStr != null && !heartRateStr.isEmpty()) ||
-                                (glucoseStr != null && !glucoseStr.isEmpty()) ||
-                                (hba1cStr != null && !hba1cStr.isEmpty()) ||
-                                (cholesterolStr != null && !cholesterolStr.isEmpty()) ||
-                                (triglycerideStr != null && !triglycerideStr.isEmpty());
+                    (systoleStr != null && !systoleStr.isEmpty()) ||
+                    (heartRateStr != null && !heartRateStr.isEmpty()) ||
+                    (glucoseStr != null && !glucoseStr.isEmpty()) ||
+                    (hba1cStr != null && !hba1cStr.isEmpty()) ||
+                    (cholesterolStr != null && !cholesterolStr.isEmpty()) ||
+                    (triglycerideStr != null && !triglycerideStr.isEmpty());
 
             if (hasVitals) {
                 Double weight = (canNangStr != null && !canNangStr.isEmpty()) ? Double.parseDouble(canNangStr) : null;
@@ -148,7 +118,7 @@ public class PatientMedicalProfileServlet extends HttpServlet {
                 Double hba1c = (hba1cStr != null && !hba1cStr.isEmpty()) ? Double.parseDouble(hba1cStr) : null;
                 Double cholesterol = (cholesterolStr != null && !cholesterolStr.isEmpty()) ? Double.parseDouble(cholesterolStr) : null;
                 Double triglyceride = (triglycerideStr != null && !triglycerideStr.isEmpty()) ? Double.parseDouble(triglycerideStr) : null;
-                
+
                 Double bmi = null;
                 if (weight != null && p.getChieuCaoCm() != null && p.getChieuCaoCm() > 0) {
                     double heightM = p.getChieuCaoCm() / 100.0;
@@ -160,21 +130,22 @@ public class PatientMedicalProfileServlet extends HttpServlet {
             }
         }
 
-        // 2. Xử lý File Upload (PDF)
         Part filePart = request.getPart("pdfFile");
-        if (filePart != null && filePart.getSize() > 0) {
+        if (filePart != null && filePart.getSize() > 0 && p != null) {
             String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
             if (fileName.toLowerCase().endsWith(".pdf")) {
                 String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "documents";
                 File uploadDir = new File(uploadPath);
-                if (!uploadDir.exists()) uploadDir.mkdirs();
+                if (!uploadDir.exists()) {
+                    uploadDir.mkdirs();
+                }
 
                 String newFileName = System.currentTimeMillis() + "_" + fileName;
                 filePart.write(uploadPath + File.separator + newFileName);
 
                 MedicalDocument doc = new MedicalDocument();
                 doc.setPatientId(patientId);
-                doc.setBacSiId(p.getBacSiId()); // Gán bác sĩ hiện tại
+                doc.setBacSiId(p.getBacSiId());
                 doc.setLoaiTaiLieu(request.getParameter("loaiTaiLieu") != null ? request.getParameter("loaiTaiLieu") : "Bệnh án ngoài");
                 doc.setTrangThai("Hoàn thành");
                 doc.setFileUrl("uploads/documents/" + newFileName);
