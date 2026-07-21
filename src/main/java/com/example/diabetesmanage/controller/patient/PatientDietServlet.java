@@ -100,9 +100,13 @@ public class PatientDietServlet extends HttpServlet {
                         } catch (Exception e) {}
 
                         planDAO.saveDietPlan(plan);
+                        request.getSession().setAttribute("msgSuccess", "Đã gợi ý thực đơn AI thành công!");
+                    } else {
+                        request.getSession().setAttribute("msgError", "Hệ thống AI hiện đang bận hoặc quá tải. Vui lòng thử lại sau.");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
+                    request.getSession().setAttribute("msgError", "Hệ thống AI hiện đang bận hoặc quá tải. Vui lòng thử lại sau.");
                 }
             }
         }

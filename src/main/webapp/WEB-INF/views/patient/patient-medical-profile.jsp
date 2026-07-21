@@ -151,6 +151,43 @@
         .spinner-overlay.active { opacity: 1; pointer-events: auto; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Print Styles (Mock Medical Record) --- */
+        @media print {
+            body { background-color: white !important; color: black !important; font-family: 'Times New Roman', serif; }
+            .top-nav, .sidebar, .page-header, .modal-overlay, .spinner-overlay, #chatbot, .chatbot-container { display: none !important; }
+            .app-container { margin: 0; min-height: auto; }
+            .content { margin: 0; padding: 0; width: 100%; border: none; }
+            .card { border: none; box-shadow: none; margin-bottom: 1.5rem; padding: 0; background: transparent; break-inside: avoid; }
+            .section-title { font-size: 1.25rem; font-weight: bold; color: black; border-bottom: 2px solid black; padding-bottom: 0.5rem; margin-bottom: 1rem; text-transform: uppercase; }
+            .section-title i { display: none; }
+            .info-label { color: black; font-size: 0.85rem; font-weight: bold; }
+            .info-value, .info-value span { color: black !important; font-size: 1rem !important; font-weight: normal !important; }
+            .badge { border: 1px solid black; background: transparent !important; color: black !important; padding: 2px 5px; font-weight: normal; }
+            table th, table td { border: 1px solid black !important; padding: 0.5rem !important; }
+            
+            /* Custom Header for Print */
+            .content::before {
+                content: "BỘ Y TẾ\000A BỆNH VIỆN ĐA KHOA DIABCARE\000A \000A BỆNH ÁN ĐIỆN TỬ (MẪU)";
+                display: block;
+                text-align: center;
+                white-space: pre;
+                font-weight: bold;
+                font-size: 1.3rem;
+                margin-bottom: 2rem;
+                line-height: 1.5;
+            }
+            .grid-2, .grid-3, .grid-4 { display: flex; flex-wrap: wrap; gap: 1rem; }
+            .info-group { flex: 1 1 45%; border-bottom: 1px dotted #ccc; padding-bottom: 0.25rem; }
+            .info-group .info-label { display: inline-block; width: 160px; text-transform: none; }
+            .info-group .info-value { display: inline; }
+            
+            /* Hide non-printable messages */
+            .alert-item { border-left: 3px solid black; padding-left: 1rem; border-bottom: none; margin-bottom: 0.5rem; }
+            .alert-icon { display: none; }
+            a.btn-print, i.fa-external-link-alt { display: none !important; }
+            .info-value i { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -492,6 +529,11 @@
                 <button class="close-btn" onclick="closeUpdateModal()"><i class="fas fa-times"></i></button>
             </div>
             <form action="${pageContext.request.contextPath}/patient-medical-profile" method="POST" enctype="multipart/form-data">
+                <h3 style="font-size: 1rem; margin: 0 0 1rem; color: var(--primary);">Tải lên tài liệu y khoa mới (PDF)</h3>
+                <div class="form-group" style="padding: 1rem; background-color: var(--primary-light); border-radius: 8px; margin-bottom: 1.5rem; border: 1px dashed var(--primary);">
+                    <label style="color: var(--primary);"><i class="fas fa-magic"></i> AI Tự động trích xuất thông tin từ Bệnh án (.pdf)</label>
+                    <input type="file" name="pdfFile" id="pdfFile" class="form-control" accept="application/pdf" style="padding: 0.5rem 1rem; background: white;" onchange="handlePDFUpload(this)">
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Giới tính</label>
@@ -515,21 +557,21 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Huyết áp tâm thu</label>
-                        <input type="number" name="huyetApTamThu" id="huyetApTamThu" class="form-control" placeholder="VD: 120">
+                        <input type="number" name="huyetApTamThu" id="huyetApTamThu" class="form-control" placeholder="VD: 120" value="${latestRecord.huyetApTamThu}">
                     </div>
                     <div class="form-group">
                         <label>Huyết áp tâm trương</label>
-                        <input type="number" name="huyetApTamTruong" id="huyetApTamTruong" class="form-control" placeholder="VD: 80">
+                        <input type="number" name="huyetApTamTruong" id="huyetApTamTruong" class="form-control" placeholder="VD: 80" value="${latestRecord.huyetApTamTruong}">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nhịp tim (BPM)</label>
-                        <input type="number" name="nhipTim" id="nhipTim" class="form-control" placeholder="VD: 75">
+                        <input type="number" name="nhipTim" id="nhipTim" class="form-control" placeholder="VD: 75" value="${latestRecord.nhipTim}">
                     </div>
                     <div class="form-group">
                         <label>Đường huyết (mg/dL)</label>
-                        <input type="number" step="0.1" name="duongHuyetMgdl" id="duongHuyetMgdl" class="form-control" placeholder="VD: 90.0">
+                        <input type="number" step="0.1" name="duongHuyetMgdl" id="duongHuyetMgdl" class="form-control" placeholder="VD: 90.0" value="${latestRecord.duongHuyetMgdl}">
                     </div>
                 </div>
 
@@ -585,15 +627,7 @@
                     <input type="text" name="diUng" class="form-control" value="${patientInfo.diUng}">
                 </div>
                 
-                <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--primary);">Tải lên tài liệu y khoa mới (PDF)</h3>
-                <div class="form-group">
-                    <label>Loại tài liệu</label>
-                    <input type="text" name="loaiTaiLieu" class="form-control" placeholder="VD: Kết quả xét nghiệm máu 15/07">
-                </div>
-                <div class="form-group">
-                    <label>Tệp đính kèm (.pdf)</label>
-                    <input type="file" name="pdfFile" id="pdfFile" class="form-control" accept="application/pdf" style="padding: 0.5rem 1rem;" onchange="handlePDFUpload(this)">
-                </div>
+
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-cancel" onclick="closeUpdateModal()">Hủy</button>
