@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -50,22 +51,37 @@
             </div>
         </div>
 
+        <c:if test="${not empty flashMessage}">
+            <div class="alert alert-${flashType} alert-dismissible fade show py-2 small" role="alert">
+                <c:out value="${flashMessage}"/>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+            </div>
+        </c:if>
+
         <div class="custom-card flex-grow-1">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="h6 mb-0 fw-bold text-dark">Người dùng hệ thống</h5>
 
-                <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm shadow-none border-light-subtle text-muted" style="width: 150px;">
-                        <option value="all">Tất cả vai trò</option>
-                        <option value="bac_si">Bác sĩ</option>
-                        <option value="y_ta">Y tá</option>
-                        <option value="quan_tri_vien">Quản trị viên</option>
+                <form action="${pageContext.request.contextPath}/admin/users" method="get" class="d-flex gap-2">
+                    <select name="role" class="form-select form-select-sm shadow-none border-light-subtle text-muted" style="width: 150px;">
+                        <option value="">Tất cả vai trò</option>
+                        <option value="bac_si" ${selectedRole == 'bac_si' ? 'selected' : ''}>Bác sĩ</option>
+                        <option value="y_ta" ${selectedRole == 'y_ta' ? 'selected' : ''}>Y tá</option>
+                        <option value="quan_tri_vien" ${selectedRole == 'quan_tri_vien' ? 'selected' : ''}>Quản trị viên</option>
+                        <option value="benh_nhan" ${selectedRole == 'benh_nhan' ? 'selected' : ''}>Bệnh nhân</option>
+                    </select>
+                    <select name="status" class="form-select form-select-sm shadow-none border-light-subtle text-muted" style="width: 140px;">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="1" ${selectedStatus == '1' ? 'selected' : ''}>Hoạt động</option>
+                        <option value="0" ${selectedStatus == '0' ? 'selected' : ''}>Đã khóa</option>
                     </select>
                     <div class="input-group input-group-sm" style="width: 250px;">
                         <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0 shadow-none" placeholder="Tìm kiếm người dùng...">
+                        <input type="text" name="keyword" value="${fn:escapeXml(searchKeyword)}" class="form-control border-start-0 ps-0 shadow-none" placeholder="Tìm kiếm người dùng...">
                     </div>
-                </div>
+                    <button type="submit" class="btn btn-sm btn-primary px-3">Lọc</button>
+                    <a href="${pageContext.request.contextPath}/admin/users" class="btn btn-sm btn-light border px-3">Reset</a>
+                </form>
             </div>
 
             <div class="table-responsive">

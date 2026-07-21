@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.controller.admin;
 
+import com.example.diabetesmanage.model.User;
 import java.io.IOException;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -11,7 +12,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebFilter(urlPatterns = {"/dashboard", "/patient-manager", "/admin/users"})
+@WebFilter(urlPatterns = {
+        "/dashboard",
+        "/admin-dashboard",
+        "/patient-manager",
+        "/ai-report",
+        "/api/patient/health-records",
+        "/admin/*"
+})
 public class AdminSecurityFilter implements Filter {
 
     @Override
@@ -20,15 +28,24 @@ public class AdminSecurityFilter implements Filter {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        HttpSession session = httpRequest.getSession(false);
+        String path = httpRequest.getServletPath();
 
-        boolean isLoggedInAdmin = (session != null && session.getAttribute("adminUser") != null);
+        if ("/admin/login".equals(path)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        HttpSession session = httpRequest.getSession(false);
+        Object sessionUser = session == null ? null : session.getAttribute("adminUser");
+        boolean isLoggedInAdmin = sessionUser instanceof User
+                && "quan_tri_vien".equals(((User) sessionUser).getVaiTro())
+                && ((User) sessionUser).getKichHoat() == 1;
 
         if (isLoggedInAdmin) {
             chain.doFilter(request, response);
-        } else {
-            httpRequest.setAttribute("errorMessage", "Vui lòng đăng nhập tài khoản Quản trị để truy cập khu vực này.");
-            httpRequest.getRequestDispatcher("/WEB-INF/views/admin/admin-login.jsp").forward(httpRequest, httpResponse);
+            return;
         }
+
+        httpResponse.sendRedirect(httpRequest.getContextPath() + "/admin/login?required=1");
     }
 }

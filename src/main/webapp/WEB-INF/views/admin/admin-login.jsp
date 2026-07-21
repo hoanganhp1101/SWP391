@@ -6,6 +6,7 @@
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -70,7 +71,7 @@
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-envelope"></i></span>
                     <input type="text" name="email" class="form-control border-start-0 ps-0 shadow-none bg-light"
-                           placeholder="admin@healthalert.vn" value="${cookie.adminEmail.value}" required>
+                           placeholder="admin@healthalert.vn" value="${fn:escapeXml(not empty loginEmail ? loginEmail : cookie.adminEmail.value)}" required>
                 </div>
             </div>
 
@@ -81,7 +82,7 @@
 
                     <%-- Thêm id="loginPassword" và bỏ border-end để liền mạch với nút mắt --%>
                     <input type="password" name="password" id="loginPassword" class="form-control border-start-0 border-end-0 ps-0 shadow-none bg-light"
-                           placeholder="••••••••" value="${cookie.adminPass.value}" required>
+                           placeholder="********" autocomplete="current-password" required>
 
                     <button class="btn bg-light border border-start-0 text-muted" type="button" id="togglePassword" style="z-index: 10;">
                         <i class="fas fa-eye" id="eyeIcon"></i>
