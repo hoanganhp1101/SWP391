@@ -51,9 +51,9 @@ public class ExtractMedicalPDFServlet extends HttpServlet {
                 return;
             }
 
-            // Limit text size to avoid Gemini token limits (e.g. max 5000 chars)
-            if (pdfText.length() > 5000) {
-                pdfText = pdfText.substring(0, 5000);
+            // Limit text size to avoid Gemini token limits (e.g. max 20000 chars)
+            if (pdfText.length() > 20000) {
+                pdfText = pdfText.substring(0, 20000);
             }
 
             // Call Gemini API

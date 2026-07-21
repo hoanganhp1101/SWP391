@@ -169,19 +169,11 @@
             justify-content: center;
             gap: 0.5rem;
             cursor: pointer;
-            text-decoration: none;
             transition: background-color 0.2s;
         }
 
         .btn-new:hover {
             background-color: #2563eb;
-            color: var(--bg-white);
-        }
-
-        .profile-help-text {
-            margin-top: 0.25rem;
-            font-size: 0.75rem;
-            color: var(--text-muted);
         }
         
         .main-content {
@@ -298,23 +290,6 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .loading-text { margin-top: 1rem; font-weight: 600; color: var(--text-dark); }
-        .alert-box {
-            padding: 0.85rem 1rem;
-            border-radius: 10px;
-            margin-bottom: 1.25rem;
-            font-size: 0.92rem;
-            font-weight: 500;
-        }
-        .alert-box.success {
-            background: #ecfdf5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-        .alert-box.error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
         
     </style>
 </head>
@@ -337,9 +312,32 @@
     </nav>
 
     <div class="app-container">
-        <jsp:include page="layout/sidebar.jsp">
-            <jsp:param name="activeMenu" value="diet"/>
-        </jsp:include>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="profile-card">
+                <div class="profile-avatar"></div>
+                <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
+                <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ?
+                    patientInfo.loaiTieuDuong : 'Type 2'}</div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="${pageContext.request.contextPath}/patient-dashboard" class="menu-btn"><i class="fas fa-chart-pie"></i> Tổng
+                    quan</a>
+                <a href="${pageContext.request.contextPath}/patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh
+                    án cá nhân</a>
+                <a href="#" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
+                <a href="${pageContext.request.contextPath}/patient-prescriptions" class="menu-btn"><i class="fas fa-pills"></i> Đơn thuốc</a>
+                <a href="${pageContext.request.contextPath}/patient-diet" class="menu-btn active"><i class="fas fa-utensils"></i> Thực đơn AI</a>
+                <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
+                <a href="#" class="menu-btn"><i class="fas fa-history"></i> Lịch sử cảnh báo</a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
+                <a href="#" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+            </div>
+        </aside>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -352,13 +350,6 @@
                     </button>
                 </form>
             </div>
-
-            <c:if test="${not empty dietFlash}">
-                <div class="alert-box success">${dietFlash}</div>
-            </c:if>
-            <c:if test="${not empty dietError}">
-                <div class="alert-box error">${dietError}</div>
-            </c:if>
             
             <c:choose>
                 <c:when test="${empty todayPlan}">
