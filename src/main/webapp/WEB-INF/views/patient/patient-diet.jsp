@@ -292,24 +292,13 @@
         .loading-text { margin-top: 1rem; font-weight: 600; color: var(--text-dark); }
         
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/patient-layout.css">
 </head>
 
-<body>
-    <!-- Top Navigation -->
-    <nav class="top-nav">
-        <div class="nav-left">
-            <div class="logo">DiabCare</div>
-            <div class="nav-links">
-                <a href="${pageContext.request.contextPath}/patient-dashboard">Bảng điều khiển</a>
-                <a href="${pageContext.request.contextPath}/patient-medical-profile">Hồ sơ y tế</a>
-                <a href="${pageContext.request.contextPath}/patient-diet" class="active">Thực đơn</a>
-            </div>
-        </div>
-        <div class="nav-right">
-            <i class="fa-regular fa-bell"></i>
-            <i class="fa-solid fa-user-circle"></i>
-        </div>
-    </nav>
+<body class="patient-app">
+    <jsp:include page="layout/topnav.jsp">
+        <jsp:param name="activeTop" value="diet"/>
+    </jsp:include>
 
     <div class="app-container">
         <!-- Sidebar -->

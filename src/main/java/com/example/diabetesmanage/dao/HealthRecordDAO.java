@@ -608,6 +608,44 @@ public class HealthRecordDAO {
         return list;
     }
 
+    /**
+     * Lịch sử đo chỉ số gần đây (IoT và/hoặc thủ công), mới nhất trước.
+     *
+     * @param iotOnly true = chỉ bản ghi mô phỏng IoT
+     */
+    public List<HealthRecord> getMeasurementHistory(String patientId, int limit, boolean iotOnly) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        String sql = "SELECT id, thoi_gian_do, duong_huyet_mgdl, thoi_diem_do_duong, nhip_tim, "
+                + "huyet_ap_tam_thu, huyet_ap_tam_truong, ghi_chu "
+                + "FROM health_records WHERE patient_id = ? "
+                + (iotOnly ? "AND ghi_chu LIKE '%mô phỏng IoT%' " : "")
+                + "AND (duong_huyet_mgdl IS NOT NULL OR nhip_tim IS NOT NULL "
+                + "OR huyet_ap_tam_thu IS NOT NULL OR huyet_ap_tam_truong IS NOT NULL) "
+                + "ORDER BY thoi_gian_do DESC LIMIT ?";
+        List<HealthRecord> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientId);
+            ps.setInt(2, safeLimit);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                HealthRecord hr = new HealthRecord();
+                hr.setId(optionalString(rs, "id"));
+                hr.setThoiGianDo(rs.getTimestamp("thoi_gian_do"));
+                hr.setDuongHuyetMgdl(optionalDouble(rs, "duong_huyet_mgdl"));
+                hr.setThoiDiemDoDuong(optionalString(rs, "thoi_diem_do_duong"));
+                hr.setNhipTim(optionalInt(rs, "nhip_tim"));
+                hr.setHuyetApTamThu(optionalInt(rs, "huyet_ap_tam_thu"));
+                hr.setHuyetApTamTruong(optionalInt(rs, "huyet_ap_tam_truong"));
+                hr.setGhiChu(optionalString(rs, "ghi_chu"));
+                list.add(hr);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public int getDailyCarbsToday(String patientId) {
         String sql = "SELECT SUM(carbs_g) as total_carbs FROM health_records WHERE patient_id = ? AND DATE(thoi_gian_do) = CURRENT_DATE";
         try (Connection conn = DBContext.getConnection();

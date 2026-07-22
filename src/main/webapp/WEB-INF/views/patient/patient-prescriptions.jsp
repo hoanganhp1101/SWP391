@@ -126,25 +126,12 @@
         .notif-time { font-size: 0.75rem; color: #94a3b8; }
         .notif-empty { padding: 2rem; text-align: center; color: var(--text-muted, #64748b); font-size: 0.875rem; }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/patient-layout.css">
 </head>
-<body>
-    <nav class="top-nav">
-        <div class="nav-left">
-            <div class="logo">HealthAlert</div>
-            <div class="nav-links">
-                <a href="patient-dashboard">Tổng quan</a>
-                <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
-                <a href="patient-appointments">Lịch hẹn</a>
-                <a href="#">Báo cáo</a>
-            </div>
-        </div>
-        <div class="nav-right">
-                <jsp:include page="notifications.jsp" />
-            <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
-                <div class="avatar-small"></div>
-            </a>
-        </div>
-    </nav>
+<body class="patient-app">
+    <jsp:include page="layout/topnav.jsp">
+        <jsp:param name="activeTop" value="dashboard"/>
+    </jsp:include>
 
     <div class="app-container">
         <!-- Sidebar -->

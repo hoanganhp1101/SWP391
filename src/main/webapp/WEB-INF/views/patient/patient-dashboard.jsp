@@ -1219,26 +1219,14 @@
                     }
                 }
             </style>
+            <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/patient-layout.css">
         </head>
 
-        <body>
+        <body class="patient-app">
 
-            <!-- Top Navigation -->
-            <nav class="top-nav">
-                <div class="nav-left">
-                    <div class="logo">DiabCare</div>
-                    <div class="nav-links">
-                        <a href="patient-dashboard" class="active">Tổng quan</a>
-                        <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
-                        <a href="patient-appointments">Lịch hẹn</a>
-                        <a href="#">Báo cáo</a>
-                    </div>
-                </div>
-                <div class="nav-right">
-                    <jsp:include page="notifications.jsp" />
-                    <div class="avatar-small editable" title="Chỉnh sửa hồ sơ" data-open-profile-modal></div>
-                </div>
-            </nav>
+            <jsp:include page="layout/topnav.jsp">
+                <jsp:param name="activeTop" value="dashboard"/>
+            </jsp:include>
 
             <div class="app-container">
                 <jsp:include page="layout/sidebar.jsp">

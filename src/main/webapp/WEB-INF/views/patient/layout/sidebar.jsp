@@ -2,10 +2,14 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="active" value="${param.activeMenu}"/>
+<c:set var="avatarUrl" value="${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : 'https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff'}"/>
 
 <aside class="sidebar">
     <div class="profile-card">
-        <div class="profile-avatar editable" title="Nhấn để cập nhật hồ sơ" data-open-profile-modal></div>
+        <div class="profile-avatar editable"
+             title="Nhấn để cập nhật hồ sơ"
+             data-open-profile-modal
+             style="background-image:url('${avatarUrl}')"></div>
         <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
         <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : 'Type 2'}</div>
         <div class="profile-help-text">Nhấn vào ảnh đại diện để chỉnh sửa hồ sơ</div>
@@ -32,6 +36,10 @@
            class="menu-btn ${active == 'diet' ? 'active' : ''}">
             <i class="fas fa-utensils"></i> Thực đơn AI
         </a>
+        <a href="${ctx}/patient-iot"
+           class="menu-btn ${active == 'iot' ? 'active' : ''}">
+            <i class="fas fa-microchip"></i> Mô phỏng IoT
+        </a>
         <a href="${ctx}/patient-dashboard#charts"
            class="menu-btn ${active == 'charts' ? 'active' : ''}">
             <i class="fas fa-chart-line"></i> Biểu đồ tiến triển
@@ -51,7 +59,7 @@
                 <a href="${ctx}/patient-dashboard" class="btn-new"><i class="fas fa-plus"></i> Thêm bản ghi mới</a>
             </c:otherwise>
         </c:choose>
-        <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
+        <a href="${ctx}/ai-chat" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ AI</a>
         <a href="${ctx}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
     </div>
 </aside>

@@ -195,27 +195,13 @@
             .info-value i { display: none !important; }
         }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/patient-layout.css">
 </head>
-<body>
+<body class="patient-app">
 
-    <!-- Top Navigation -->
-    <nav class="top-nav">
-        <div class="nav-left">
-            <div class="logo">HealthAlert</div>
-            <div class="nav-links">
-                <a href="patient-dashboard">Tổng quan</a>
-                <a href="patient-medical-profile" class="active">Hồ sơ sức khỏe</a>
-                <a href="patient-appointments">Lịch hẹn</a>
-                <a href="#">Báo cáo</a>
-            </div>
-        </div>
-        <div class="nav-right">
-            <jsp:include page="notifications.jsp" />
-            <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
-                <div class="avatar-small"></div>
-            </a>
-        </div>
-    </nav>
+    <jsp:include page="layout/topnav.jsp">
+        <jsp:param name="activeTop" value="profile"/>
+    </jsp:include>
 
     <div class="app-container">
         <jsp:include page="layout/sidebar.jsp">

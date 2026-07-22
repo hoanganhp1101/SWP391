@@ -8,59 +8,11 @@
     <title>Lịch khám - HealthAlert</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/patient-layout.css">
 
     <style>
-        :root {
-            --primary: #0a4aa8;
-            --primary-light: #e6effc;
-            --text-dark: #1e293b;
-            --text-muted: #64748b;
-            --bg-body: #f8fafc;
-            --bg-white: #ffffff;
-            --border: #e2e8f0;
-            --danger: #ef4444;
-            --danger-light: #fee2e2;
-            --success: #10b981;
-            --success-light: #d1fae5;
-            --warning: #f59e0b;
-            --warning-light: #fef3c7;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-dark); }
-
-        .top-nav { display: flex; align-items: center; justify-content: space-between; background-color: var(--bg-white); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
-        .nav-left { display: flex; align-items: center; gap: 2rem; }
-        .logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
-        .nav-links { display: flex; gap: 1.5rem; }
-        .nav-links a { text-decoration: none; color: var(--text-muted); font-weight: 500; font-size: 0.875rem; padding: 1.25rem 0; position: relative; }
-        .nav-links a.active { color: var(--primary); }
-        .nav-links a.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: var(--primary); }
-        .nav-right { display: flex; align-items: center; gap: 1.5rem; color: var(--text-muted); }
-        .avatar-small { width: 32px; height: 32px; border-radius: 50%; background-color: #cbd5e1; background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff"}'); background-size: cover; background-position: center; }
-        .avatar-link { text-decoration: none; color: inherit; display: inline-block; }
-
-        .app-container { display: flex; margin-top: 64px; min-height: calc(100vh - 64px); }
-        .sidebar { width: 280px; background-color: var(--bg-white); border-right: 1px solid var(--border); padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 64px; bottom: 0; overflow-y: auto; }
-        .profile-card { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem; background-color: #cbd5e1; background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=Benh+Nhan&background=0D8ABC&color=fff"}'); background-size: cover; background-position: center; border: 2px solid transparent; transition: border-color 0.2s ease, transform 0.2s ease; }
-        .profile-avatar:hover { border-color: var(--primary); transform: translateY(-1px); }
-        .avatar-hint { margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
-        .profile-name { font-weight: 600; font-size: 1.125rem; color: var(--text-dark); }
-        .profile-role { font-size: 0.875rem; color: var(--text-muted); }
-        .sidebar-menu { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
-        .menu-btn { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 8px; color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: all 0.2s; border: none; background: none; width: 100%; cursor: pointer; text-align: left; }
-        .menu-btn i { width: 20px; text-align: center; font-size: 1rem; }
-        .menu-btn:hover { background-color: var(--bg-body); }
-        .menu-btn.active { background-color: var(--primary); color: var(--bg-white); }
-        .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-        .profile-help-text { margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
-        .btn-new { background-color: var(--primary); color: white; border: none; border-radius: 8px; padding: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; transition: background-color 0.2s; }
-        .btn-new:hover { background-color: #083c8a; color: white; }
-
-        .content { margin-left: 280px; padding: 2rem; flex-grow: 1; width: calc(100% - 280px); }
+        /* Page-specific only — layout/menu from patient-layout.css */
         .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
-        .page-title { font-size: 1.5rem; font-weight: 700; }
         .section-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
         .grid-2 { display: grid; grid-template-columns: 0.9fr 1.4fr; gap: 1.5rem; align-items: start; }
         .card { background-color: var(--bg-white); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -71,10 +23,6 @@
         .form-control:focus { border-color: var(--primary); }
         .btn-primary { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 0.8rem 1.25rem; font-weight: 700; cursor: pointer; width: 100%; }
         .btn-primary:hover { background: #083c8a; }
-
-        .profile-message { padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem; font-weight: 500; }
-        .profile-message.success { background: var(--success-light); color: var(--success); border: 1px solid #86efac; }
-        .profile-message.error { background: var(--danger-light); color: var(--danger); border: 1px solid #fca5a5; }
 
         .appointment-item { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); }
         .appointment-item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -92,26 +40,13 @@
         .btn-edit { border: 1px solid var(--primary); background: var(--primary-light); color: var(--primary); border-radius: 8px; padding: 0.45rem 0.75rem; font-weight: 700; cursor: pointer; font-size: 0.8125rem; }
         .btn-secondary { border: 1px solid var(--border); background: var(--bg-white); color: var(--text-muted); border-radius: 8px; padding: 0.8rem 1.25rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 0.75rem; display: none; }
         .empty-state { color: var(--text-muted); text-align: center; padding: 2rem 1rem; }
+        @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body>
-    <nav class="top-nav">
-        <div class="nav-left">
-            <div class="logo">HealthAlert</div>
-            <div class="nav-links">
-                <a href="patient-dashboard">Tổng quan</a>
-                <a href="patient-medical-profile">Hồ sơ sức khỏe</a>
-                <a href="patient-appointments" class="active">Lịch hẹn</a>
-                <a href="#">Báo cáo</a>
-            </div>
-        </div>
-        <div class="nav-right">
-            <jsp:include page="notifications.jsp" />
-            <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
-                <div class="avatar-small"></div>
-            </a>
-        </div>
-    </nav>
+<body class="patient-app">
+    <jsp:include page="layout/topnav.jsp">
+        <jsp:param name="activeTop" value="appointments"/>
+    </jsp:include>
 
     <div class="app-container">
         <jsp:include page="layout/sidebar.jsp">
