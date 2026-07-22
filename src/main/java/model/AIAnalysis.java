@@ -1,16 +1,8 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package model;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 import java.util.UUID;
 
-/**
- *
- * @author iac26
- */
 public class AIAnalysis {
     private UUID id;
     private UUID patientId;
@@ -21,33 +13,23 @@ public class AIAnalysis {
     private Double doTinCay;
 
     private String phanTichChiTiet;
-
     private String yeuToNguyCo;
     private String khuyenNghi;
     private String duLieuDauVao;
 
     private String modelVersion;
-
     private Timestamp thoiGianPhanTich;
     private Integer tokensSuDung;
 
-    public AIAnalysis() {
-    }
+    /** chua_xem | da_xem | da_ap_dung | bo_qua */
+    private String trangThai;
+    private String ghiChuBs;
+    private UUID xuLyBoi;
 
-    public AIAnalysis(UUID id, UUID patientId, UUID healthRecordId, Double diemNguyCo, String mucCanhBao, Double doTinCay, String phanTichChiTiet, String yeuToNguyCo, String khuyenNghi, String duLieuDauVao, String modelVersion, Timestamp thoiGianPhanTich, Integer tokensSuDung) {
-        this.id = id;
-        this.patientId = patientId;
-        this.healthRecordId = healthRecordId;
-        this.diemNguyCo = diemNguyCo;
-        this.mucCanhBao = mucCanhBao;
-        this.doTinCay = doTinCay;
-        this.phanTichChiTiet = phanTichChiTiet;
-        this.yeuToNguyCo = yeuToNguyCo;
-        this.khuyenNghi = khuyenNghi;
-        this.duLieuDauVao = duLieuDauVao;
-        this.modelVersion = modelVersion;
-        this.thoiGianPhanTich = thoiGianPhanTich;
-        this.tokensSuDung = tokensSuDung;
+    // JOIN hiển thị
+    private String hoTenBenhNhan;
+
+    public AIAnalysis() {
     }
 
     public UUID getId() {
@@ -130,6 +112,16 @@ public class AIAnalysis {
         this.duLieuDauVao = duLieuDauVao;
     }
 
+    /** Ẩn mã [SYNC:…] — chỉ hiện phần metrics tóm tắt cho bác sĩ. */
+    public String getDuLieuDauVaoDisplay() {
+        if (duLieuDauVao == null || duLieuDauVao.isBlank()) {
+            return "—";
+        }
+        String cleaned = duLieuDauVao.replaceAll("(?i)\\[SYNC:[^\\]]+\\]", "").trim();
+        cleaned = cleaned.replaceAll("^;\\s*", "").replaceAll("\\s*;\\s*", " · ").trim();
+        return cleaned.isEmpty() ? "—" : cleaned;
+    }
+
     public String getModelVersion() {
         return modelVersion;
     }
@@ -153,5 +145,90 @@ public class AIAnalysis {
     public void setTokensSuDung(Integer tokensSuDung) {
         this.tokensSuDung = tokensSuDung;
     }
-    
+
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public String getGhiChuBs() {
+        return ghiChuBs;
+    }
+
+    public void setGhiChuBs(String ghiChuBs) {
+        this.ghiChuBs = ghiChuBs;
+    }
+
+    public UUID getXuLyBoi() {
+        return xuLyBoi;
+    }
+
+    public void setXuLyBoi(UUID xuLyBoi) {
+        this.xuLyBoi = xuLyBoi;
+    }
+
+    public String getHoTenBenhNhan() {
+        return hoTenBenhNhan;
+    }
+
+    public void setHoTenBenhNhan(String hoTenBenhNhan) {
+        this.hoTenBenhNhan = hoTenBenhNhan;
+    }
+
+    public String getTrangThaiLabel() {
+        if (trangThai == null) {
+            return "Chưa xem";
+        }
+        return switch (trangThai) {
+            case "da_xem" -> "Đã xem";
+            case "da_ap_dung" -> "Đã áp dụng";
+            case "bo_qua" -> "Bỏ qua";
+            default -> "Chưa xem";
+        };
+    }
+
+    public String getMucCanhBaoLabel() {
+        if (mucCanhBao == null || mucCanhBao.isBlank()) {
+            return "Trung bình";
+        }
+        String m = mucCanhBao.trim().toLowerCase();
+        if (m.contains("nguy") || "nguy_hiem".equals(m)) {
+            return "Nguy hiểm";
+        }
+        if ("cao".equals(m) || m.contains("high")) {
+            return "Cao";
+        }
+        if (m.contains("thap") || m.contains("thấp") || "low".equals(m)) {
+            return "Thấp";
+        }
+        if ("trung_binh".equals(m) || m.contains("trung") || m.contains("medium")) {
+            return "Trung bình";
+        }
+        return mucCanhBao;
+    }
+
+    public String getMucCanhBaoCss() {
+        if (mucCanhBao == null) {
+            return "level-medium";
+        }
+        String m = mucCanhBao.toLowerCase();
+        if (m.contains("cao") || m.contains("nguy") || m.contains("high")) {
+            return "level-high";
+        }
+        if (m.contains("thap") || m.contains("thấp") || m.contains("low")) {
+            return "level-low";
+        }
+        return "level-medium";
+    }
+
+    public String getKhuyenNghiShort() {
+        if (khuyenNghi == null || khuyenNghi.isBlank()) {
+            return "";
+        }
+        String text = khuyenNghi.trim().replace('\n', ' ');
+        return text.length() <= 120 ? text : text.substring(0, 117) + "...";
+    }
 }

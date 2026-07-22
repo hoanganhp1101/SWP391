@@ -150,7 +150,7 @@
             <input type="text" placeholder="Search medical records...">
         </div>
         <i class="fa-regular fa-bell top-icon"></i>
-        <i class="fa-solid fa-gear top-icon"></i>
+        <a href="${pageContext.request.contextPath}/doctor/threshold-settings" title="Cấu hình ngưỡng"><i class="fa-solid fa-gear top-icon"></i></a>
         <img class="avatar" src="https://i.pravatar.cc/40" alt="">
     </div>
 </header>
@@ -167,6 +167,8 @@
             <a href="${pageContext.request.contextPath}/doctor/alerts" class="menu-item"><i class="fa-regular fa-bell"></i><span>Emergency Alerts</span></a>
             <a href="${pageContext.request.contextPath}/doctor/patient-records" class="menu-item"><i class="fa-regular fa-clipboard"></i><span>Medical History</span></a>
             <a href="${pageContext.request.contextPath}/doctor/analytics" class="menu-item active"><i class="fa-solid fa-chart-column"></i><span>Analytics</span></a>
+            <a href="${pageContext.request.contextPath}/doctor/ai-recommendations" class="menu-item"><i class="fa-solid fa-robot"></i><span>AI Recommendations</span></a>
+            <a href="${pageContext.request.contextPath}/doctor/threshold-settings" class="menu-item"><i class="fa-solid fa-sliders"></i><span>Threshold Settings</span></a>
         </nav>
         <div class="sidebar-bottom">
             <button class="new-record"><i class="fa-solid fa-plus"></i> New Record</button>
@@ -199,11 +201,11 @@
                 <div class="value">${avgGlucose}<span class="unit"> mg/dL</span></div>
             </div>
             <div class="kpi-card ${timeInRange >= 70 ? 'good' : 'warn'}">
-                <div class="label">Time in Range (70–180)</div>
+                <div class="label">Time in Range (${glucoseLow}–${glucoseHigh})</div>
                 <div class="value">${timeInRange}<span class="unit"> %</span></div>
             </div>
             <div class="kpi-card ${pctHba1c >= 50 ? 'good' : 'warn'}">
-                <div class="label">Đạt HbA1c &lt; 7%</div>
+                <div class="label">Đạt HbA1c &lt; ${hba1cTarget}%</div>
                 <div class="value">${pctHba1c}<span class="unit"> %</span></div>
             </div>
             <div class="kpi-card ${unresolvedAlerts > 0 ? 'bad' : 'good'}">
@@ -238,15 +240,15 @@
         <div class="action-grid">
             <div class="action-card info red">
                 <div class="num">${hypoPatients}</div>
-                <div class="desc">Bệnh nhân có hạ đường huyết (&lt;70 mg/dL)</div>
+                <div class="desc">Bệnh nhân có hạ đường huyết (&lt;${glucoseLow} mg/dL)</div>
             </div>
             <div class="action-card info orange">
                 <div class="num">${highHba1c}</div>
-                <div class="desc">Bệnh nhân HbA1c ≥ 8% (kiểm soát kém)</div>
+                <div class="desc">Bệnh nhân HbA1c ≥ ${hba1cPoor}% (kiểm soát kém)</div>
             </div>
             <div class="action-card info yellow">
                 <div class="num">${notMeasured}</div>
-                <div class="desc">Bệnh nhân không đo chỉ số &gt; 7 ngày</div>
+                <div class="desc">Bệnh nhân không đo chỉ số &gt; ${daysNoMeasure} ngày</div>
             </div>
             <div class="action-card info blue">
                 <div class="num">${overdueFollowups}</div>

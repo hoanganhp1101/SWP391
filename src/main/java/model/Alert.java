@@ -110,22 +110,4 @@ public class Alert {
     public void setSoDienThoaiBenhNhan(String soDienThoaiBenhNhan) { this.soDienThoaiBenhNhan = soDienThoaiBenhNhan; }
     public Double getDuongHuyet() { return duongHuyet; }
     public void setDuongHuyet(Double duongHuyet) { this.duongHuyet = duongHuyet; }
-
-    public String getZaloPhone() {
-        if (soDienThoaiBenhNhan == null || soDienThoaiBenhNhan.isBlank()) {
-            return null;
-        }
-
-        String digits = soDienThoaiBenhNhan.replaceAll("[^0-9]", "");
-        if (digits.isEmpty()) {
-            return null;
-        }
-        if (digits.startsWith("0")) {
-            return "84" + digits.substring(1);
-        }
-        if (digits.startsWith("84")) {
-            return digits;
-        }
-        return digits;
-    }
 }

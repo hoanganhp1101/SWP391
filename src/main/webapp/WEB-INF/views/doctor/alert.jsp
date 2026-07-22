@@ -236,7 +236,8 @@
         .alert-item.severity-high { border-left-color: var(--warning); }
         .alert-item.severity-medium { border-left-color: var(--success); }
 
-        .item-name { font-weight: 800; font-size: 14px; }
+        .item-name { font-weight: 800; font-size: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+        .item-phone { font-weight: 600; font-size: 12px; color: #1d4ed8; }
         .item-title { color: #4b5563; font-size: 13px; margin: 4px 0 8px; line-height: 1.35; }
         .item-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
@@ -282,25 +283,14 @@
 
         .detail-patient { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
         .detail-patient .name { font-size: 20px; font-weight: 800; }
-        .patient-code { color: var(--muted); font-size: 13px; }
-
-        .contact-icons { display: flex; gap: 6px; margin-left: auto; }
-
-        .icon-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            border-radius: 999px;
-            border: 1px solid #cfd8e3;
-            background: #fff;
-            text-decoration: none;
+        .patient-phone {
             font-size: 15px;
-            color: #374151;
+            font-weight: 600;
+            color: #1d4ed8;
+            white-space: nowrap;
         }
-
-        .icon-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+        .patient-phone.muted { color: var(--muted); font-weight: 500; }
+        .patient-code { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
 
         .detail-title { font-size: 18px; font-weight: 800; margin: 14px 0 8px; }
         .detail-content { color: #4b5563; line-height: 1.55; margin-bottom: 14px; }
@@ -467,6 +457,12 @@
             <a href="${pageContext.request.contextPath}/doctor/analytics" class="menu-item">
                 <i class="fa-solid fa-chart-column"></i><span>Analytics</span>
             </a>
+            <a href="${pageContext.request.contextPath}/doctor/threshold-settings" class="menu-item">
+                <i class="fa-solid fa-sliders"></i><span>Threshold Settings</span>
+            </a>
+            <a href="${pageContext.request.contextPath}/doctor/ai-recommendations" class="menu-item">
+                <i class="fa-solid fa-robot"></i><span>AI Recommendations</span>
+            </a>
         </nav>
         <div class="sidebar-bottom">
             <button class="new-record"><i class="fa-solid fa-plus"></i> New Record</button>
@@ -551,16 +547,18 @@
                                                 <c:otherwise>Chưa có tên bệnh nhân</c:otherwise>
                                             </c:choose>
                                         </span>
-                                        <c:if test="${not empty a.soDienThoaiBenhNhan}">
-                                            <span class="contact-icons">
-                                                <a href="tel:${a.soDienThoaiBenhNhan}" class="icon-btn" title="Gọi điện" aria-label="Gọi bệnh nhân"><i class="fa-solid fa-phone"></i></a>
-                                                <c:if test="${not empty a.zaloPhone}">
-                                                    <a href="https://zalo.me/${a.zaloPhone}" target="_blank" rel="noopener noreferrer" class="icon-btn" title="Nhắn Zalo" aria-label="Nhắn Zalo"><i class="fa-regular fa-comment-dots"></i></a>
-                                                </c:if>
-                                            </span>
-                                        </c:if>
+                                        <c:choose>
+                                            <c:when test="${not empty a.soDienThoaiBenhNhan}">
+                                                <span class="patient-phone"><c:out value="${a.soDienThoaiBenhNhan}" /></span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="patient-phone muted">Chưa có SĐT</span>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
-                                    <div class="patient-code">Mã bệnh nhân: <c:out value="${a.patientId}" /></div>
+                                    <c:if test="${not empty a.patientId}">
+                                        <div class="patient-code">Mã bệnh nhân: <c:out value="${a.patientId}" /></div>
+                                    </c:if>
 
                                     <div class="detail-title"><c:out value="${a.tieuDe}" /></div>
                                     <div class="detail-content"><c:out value="${a.noiDung}" /></div>
@@ -632,6 +630,9 @@
                                             <c:when test="${not empty a.hoTenBenhNhan}"><c:out value="${a.hoTenBenhNhan}" /></c:when>
                                             <c:otherwise>Chưa có tên bệnh nhân</c:otherwise>
                                         </c:choose>
+                                        <c:if test="${not empty a.soDienThoaiBenhNhan}">
+                                            <span class="item-phone"><c:out value="${a.soDienThoaiBenhNhan}" /></span>
+                                        </c:if>
                                     </div>
                                     <div class="item-title"><c:out value="${a.tieuDe}" /></div>
                                     <div class="item-meta">

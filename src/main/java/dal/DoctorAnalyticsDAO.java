@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import model.ThresholdSettings;
 
 /**
  * Tổng hợp số liệu cho màn Analytics của bác sĩ.
@@ -19,10 +20,8 @@ import java.util.List;
  */
 public class DoctorAnalyticsDAO {
 
-    public static final int GLUCOSE_LOW = 70;
-    public static final int GLUCOSE_HIGH = 180;
-
     private final String doctorId;
+    private final ThresholdSettings thresholds;
 
     public DoctorAnalyticsDAO() {
         this(null);
@@ -30,6 +29,11 @@ public class DoctorAnalyticsDAO {
 
     public DoctorAnalyticsDAO(String doctorId) {
         this.doctorId = (doctorId == null || doctorId.isBlank()) ? null : doctorId.trim();
+        this.thresholds = new ThresholdSettingsDAO().getForDoctor(this.doctorId);
+    }
+
+    public ThresholdSettings getThresholds() {
+        return thresholds;
     }
 
     private boolean scoped() {
@@ -65,8 +69,8 @@ public class DoctorAnalyticsDAO {
 
     public double timeInRange(int days) {
         List<Object> p = new ArrayList<>();
-        p.add(GLUCOSE_LOW);
-        p.add(GLUCOSE_HIGH);
+        p.add(thresholds.getGlucoseLow());
+        p.add(thresholds.getGlucoseHigh());
         p.add(-days);
         String sql = "SELECT CAST(SUM(CASE WHEN hr.duong_huyet_mgdl BETWEEN ? AND ? THEN 1 ELSE 0 END) AS FLOAT) "
                 + "* 100.0 / NULLIF(COUNT(*), 0) "
@@ -84,8 +88,9 @@ public class DoctorAnalyticsDAO {
                 + "  FROM health_records hr JOIN patients p ON hr.patient_id = p.id "
                 + "  WHERE hr.hba1c_percent IS NOT NULL" + doctorClause("p", p)
                 + ") "
-                + "SELECT CAST(SUM(CASE WHEN hba1c_percent < 7 THEN 1 ELSE 0 END) AS FLOAT) "
+                + "SELECT CAST(SUM(CASE WHEN hba1c_percent < ? THEN 1 ELSE 0 END) AS FLOAT) "
                 + "* 100.0 / NULLIF(COUNT(*), 0) FROM latest WHERE rn = 1";
+        p.add(thresholds.getHba1cTarget());
         return queryDouble(sql, p.toArray());
     }
 
@@ -93,7 +98,7 @@ public class DoctorAnalyticsDAO {
 
     public int patientsWithHypo(int days) {
         List<Object> p = new ArrayList<>();
-        p.add(GLUCOSE_LOW);
+        p.add(thresholds.getGlucoseLow());
         p.add(-days);
         String sql = "SELECT COUNT(DISTINCT hr.patient_id) FROM health_records hr "
                 + "JOIN patients p ON hr.patient_id = p.id "
@@ -110,11 +115,13 @@ public class DoctorAnalyticsDAO {
                 + "  FROM health_records hr JOIN patients p ON hr.patient_id = p.id "
                 + "  WHERE hr.hba1c_percent IS NOT NULL" + doctorClause("p", p)
                 + ") "
-                + "SELECT COUNT(*) FROM latest WHERE rn = 1 AND hba1c_percent >= 8";
+                + "SELECT COUNT(*) FROM latest WHERE rn = 1 AND hba1c_percent >= ?";
+        p.add(thresholds.getHba1cPoor());
         return queryInt(sql, p.toArray());
     }
 
-    public int patientsNotMeasured(int days) {
+    public int patientsNotMeasured() {
+        int days = thresholds.getDaysNoMeasure();
         List<Object> p = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM patients p WHERE 1 = 1");
         sql.append(doctorClause("p", p));
@@ -173,11 +180,13 @@ public class DoctorAnalyticsDAO {
                 + "  WHERE hr.hba1c_percent IS NOT NULL" + doctorClause("p", p)
                 + ") "
                 + "SELECT nhom, COUNT(*) FROM ("
-                + "  SELECT CASE WHEN hba1c_percent < 7 THEN N'Tốt (<7%)' "
-                + "              WHEN hba1c_percent < 8 THEN N'Khá (7-8%)' "
-                + "              ELSE N'Kém (>=8%)' END AS nhom "
+                + "  SELECT CASE WHEN hba1c_percent < ? THEN N'Tốt' "
+                + "              WHEN hba1c_percent < ? THEN N'Khá' "
+                + "              ELSE N'Kém' END AS nhom "
                 + "  FROM latest WHERE rn = 1"
                 + ") t GROUP BY nhom";
+        p.add(thresholds.getHba1cTarget());
+        p.add(thresholds.getHba1cPoor());
         return queryList(sql, p.toArray());
     }
 

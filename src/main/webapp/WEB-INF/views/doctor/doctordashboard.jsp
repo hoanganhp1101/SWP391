@@ -549,6 +549,16 @@
                 <span>Analytics</span>
             </a>
 
+            <a href="${pageContext.request.contextPath}/doctor/threshold-settings" class="menu-item">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Threshold Settings</span>
+            </a>
+
+            <a href="${pageContext.request.contextPath}/doctor/ai-recommendations" class="menu-item">
+                <i class="fa-solid fa-robot"></i>
+                <span>AI Recommendations</span>
+            </a>
+
         </nav>
 
         <div class="sidebar-bottom">

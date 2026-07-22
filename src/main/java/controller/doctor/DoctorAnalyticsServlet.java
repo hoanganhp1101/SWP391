@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
+import model.ThresholdSettings;
 import model.User;
 
 @WebServlet(name = "DoctorAnalyticsServlet", urlPatterns = {"/doctor/analytics"})
@@ -50,7 +51,14 @@ public class DoctorAnalyticsServlet extends HttpServlet {
         // Theo dõi lâm sàng — chỉ số tổng hợp từ health_records/prescriptions (thông tin, không gắn filter alert)
         request.setAttribute("hypoPatients", dao.patientsWithHypo(days));
         request.setAttribute("highHba1c", dao.patientsHighHba1c());
-        request.setAttribute("notMeasured", dao.patientsNotMeasured(7));
+        request.setAttribute("notMeasured", dao.patientsNotMeasured());
+
+        ThresholdSettings thresholds = dao.getThresholds();
+        request.setAttribute("glucoseLow", thresholds.getGlucoseLow());
+        request.setAttribute("glucoseHigh", thresholds.getGlucoseHigh());
+        request.setAttribute("hba1cTarget", thresholds.getHba1cTarget());
+        request.setAttribute("hba1cPoor", thresholds.getHba1cPoor());
+        request.setAttribute("daysNoMeasure", thresholds.getDaysNoMeasure());
         request.setAttribute("overdueFollowups", dao.overdueFollowups());
 
         // Charts (JSON)

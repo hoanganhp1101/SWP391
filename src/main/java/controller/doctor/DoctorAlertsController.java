@@ -1,6 +1,8 @@
 package controller.doctor;
 
+import dal.AlertScanDAO;
 import dal.DoctorAlertDAO;
+import dal.ThresholdSettingsDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 import model.Alert;
+import model.ThresholdSettings;
 import model.User;
 
 @WebServlet(
@@ -31,6 +34,10 @@ public class DoctorAlertsController extends HttpServlet {
             return;
         }
         String doctorId = user.getId().toString();
+
+        // Đồng bộ: health_records + threshold_settings → ghi alerts (không trùng), rồi mới đọc UI.
+        ThresholdSettings thresholds = new ThresholdSettingsDAO().getForDoctor(doctorId);
+        new AlertScanDAO().scanAndCreateAlerts(doctorId, thresholds);
 
         String severity = getFilterValue(request, "severity");
         String status = getFilterValue(request, "status");
