@@ -72,4 +72,27 @@ class UserManagementServletTest {
         verify(dao).addUser(argThat(user -> "Bác sĩ A".equals(user.getHoTen())
                 && "bac_si".equals(user.getVaiTro()) && "secret".equals(user.getMatKhauHash())));
     }
+
+    @Test
+    void administratorCanCreatePatientUser() throws Exception {
+        UserDAO dao = mock(UserDAO.class);
+        UserManagementServlet servlet = new UserManagementServlet(dao);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getSession()).thenReturn(mock(HttpSession.class));
+        when(request.getContextPath()).thenReturn("");
+        when(request.getParameter("action")).thenReturn("create");
+        when(request.getParameter("hoTen")).thenReturn("Patient A");
+        when(request.getParameter("email")).thenReturn("patient@example.com");
+        when(request.getParameter("vaiTro")).thenReturn("benh_nhan");
+        when(request.getParameter("matKhau")).thenReturn("secret");
+        when(dao.addUser(any())).thenReturn(true);
+
+        servlet.doPost(request, response);
+
+        verify(dao).addUser(argThat(user -> "Patient A".equals(user.getHoTen())
+                && "benh_nhan".equals(user.getVaiTro())
+                && "secret".equals(user.getMatKhauHash())));
+        verify(response).sendRedirect("/admin/users");
+    }
 }

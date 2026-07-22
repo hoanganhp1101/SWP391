@@ -80,7 +80,6 @@
                         <input type="text" name="keyword" value="${fn:escapeXml(searchKeyword)}" class="form-control border-start-0 ps-0 shadow-none" placeholder="Tìm kiếm người dùng...">
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary px-3">Lọc</button>
-                    <a href="${pageContext.request.contextPath}/admin/users" class="btn btn-sm btn-light border px-3">Reset</a>
                 </form>
             </div>
 
@@ -268,6 +267,7 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Vai trò</label>
                         <select name="vaiTro" class="form-select form-select-sm" required>
+                            <option value="benh_nhan">Bệnh nhân</option>
                             <option value="bac_si">Bác sĩ</option>
                             <option value="y_ta">Y tá</option>
                             <option value="quan_tri_vien">Quản trị viên</option>
@@ -314,6 +314,7 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Vai trò</label>
                         <select name="vaiTro" id="edit-vaitro" class="form-select form-select-sm" required>
+                            <option value="benh_nhan">Bệnh nhân</option>
                             <option value="bac_si">Bác sĩ</option>
                             <option value="y_ta">Y tá</option>
                             <option value="quan_tri_vien">Quản trị viên</option>
