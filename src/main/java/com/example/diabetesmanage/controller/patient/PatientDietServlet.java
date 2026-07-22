@@ -31,7 +31,7 @@ public class PatientDietServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
+        String patientId = com.example.diabetesmanage.util.PatientPortalAuth.requirePatientId(request, response);
         
         if (patientId == null) {
             response.sendRedirect(request.getContextPath() + "/patient-dashboard");
@@ -54,7 +54,7 @@ public class PatientDietServlet extends HttpServlet {
         String action = request.getParameter("action");
         if ("generate".equals(action)) {
             PatientDAO patientDAO = new PatientDAO();
-            String patientId = patientDAO.getDemoPatientId();
+            String patientId = com.example.diabetesmanage.util.PatientPortalAuth.requirePatientId(request, response);
             
             if (patientId != null) {
                 Patient patient = patientDAO.getPatientById(patientId);
@@ -93,7 +93,7 @@ public class PatientDietServlet extends HttpServlet {
                         DietPlanDAO planDAO = new DietPlanDAO();
                         
                         // Xóa các thực đơn cũ trong ngày của AI để tránh trùng lặp
-                        try (java.sql.Connection conn = com.example.diabetesmanage.util.DBContext.getConnection();
+                        try (java.sql.Connection conn = com.example.diabetesmanage.context.DBContext.getConnection();
                              java.sql.PreparedStatement ps = conn.prepareStatement("DELETE FROM diet_plans WHERE patient_id = ? AND DATE(ngay_tao) = CURDATE() AND doctor_id = 'AI_SYSTEM'")) {
                             ps.setString(1, patientId);
                             ps.executeUpdate();

@@ -14,9 +14,9 @@ public class AlertDAO {
 
     public void insertAlert(Alert alert) {
         String sql = "INSERT INTO alerts (id, patient_id, ai_analysis_id, loai_canh_bao, muc_do, tieu_de, noi_dung) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, alert.getId() != null ? alert.getId() : UUID.randomUUID().toString());
             ps.setString(2, alert.getPatientId());
             ps.setString(3, alert.getAiAnalysisId());
@@ -34,7 +34,30 @@ public class AlertDAO {
         String sql = "SELECT * FROM alerts WHERE patient_id = ? ORDER BY thoi_gian_tao DESC LIMIT 3";
         List<Alert> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Alert a = new Alert();
+                a.setId(rs.getString("id"));
+                a.setPatientId(rs.getString("patient_id"));
+                a.setLoaiCanhBao(rs.getString("loai_canh_bao"));
+                a.setMucDo(rs.getString("muc_do"));
+                a.setTieuDe(rs.getString("tieu_de"));
+                a.setNoiDung(rs.getString("noi_dung"));
+                a.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
+                list.add(a);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+    public List<Alert> getAllAlerts(String patientId) {
+        String sql = "SELECT * FROM alerts WHERE patient_id = ? ORDER BY thoi_gian_tao DESC";
+        List<Alert> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, patientId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
