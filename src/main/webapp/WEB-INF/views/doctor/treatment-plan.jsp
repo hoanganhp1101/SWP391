@@ -48,14 +48,70 @@
         .info-field label { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
         .info-field span { font-weight: 600; color: #1e293b; }
         .ai-summary {
-            background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px;
-            white-space: pre-wrap; font-size: 14px; color: #334155; line-height: 1.7; min-height: 80px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px 22px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.7;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 160px;
+        }
+        .ai-summary-empty {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            min-height: 160px;
+            height: 160px;
+            padding: 24px 28px;
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 8px;
+        }
+        .ai-summary-empty .ai-empty-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: #eef2ff;
+            color: #4338ca;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .ai-summary-empty .ai-empty-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+        .ai-summary-empty .ai-empty-desc {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+            max-width: 420px;
         }
         .ai-badge {
             display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
             padding: 4px 10px; border-radius: 999px; background: #eef2ff; color: #4338ca;
         }
-        .ai-note { margin-top: 12px; font-size: 12px; color: #94a3b8; }
+        .ai-note {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
         .alert-error {
             background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b;
             padding: 14px 20px; border-radius: 12px; margin-bottom: 20px;
@@ -113,21 +169,6 @@
                         <div class="info-field"><label>Loại tiểu đường</label><span><c:out value="${patient.loaiTieuDuong eq 'Type 1' ? 'Tiểu đường týp 1' : (patient.loaiTieuDuong eq 'Type 2' ? 'Tiểu đường týp 2' : (not empty patient.loaiTieuDuong ? patient.loaiTieuDuong : '—'))}"/></span></div>
                         <div class="info-field"><label>Triệu chứng</label><span><c:out value="${not empty encounter.lyDoKham ? encounter.lyDoKham : '—'}"/></span></div>
                     </div>
-                </div>
-            </div>
-
-            <!-- AI Summary (readonly) -->
-            <div class="card">
-                <div class="card-top">
-                    <span><i class="fa-solid fa-robot"></i> Tóm tắt phân tích AI</span>
-                    <span class="ai-badge"><i class="fa-solid fa-circle-info"></i> Chỉ tham khảo</span>
-                </div>
-                <div class="card-body">
-                    <div class="ai-summary"><c:choose>
-                        <c:when test="${not empty aiSummary}"><c:out value="${aiSummary}"/></c:when>
-                        <c:otherwise>Không có dữ liệu phân tích AI cho lần khám này (phiên có thể đã hết hạn). Bác sĩ tự đánh giá lâm sàng.</c:otherwise>
-                    </c:choose></div>
-                    <p class="ai-note">AI chỉ hỗ trợ, không kê đơn và không đưa quyết định cuối cùng. Bác sĩ chịu trách nhiệm chẩn đoán và điều trị.</p>
                 </div>
             </div>
 

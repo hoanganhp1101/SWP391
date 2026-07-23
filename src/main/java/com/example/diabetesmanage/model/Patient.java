@@ -38,6 +38,10 @@ public class Patient {
     private Double duongHuyetGanNhat;
     private Double bmiGanNhat;
     private Double hba1cGanNhat;
+
+    private Integer huyetApTamThu;
+    private Integer huyetApTamTruong;
+
     private String mucNguyCo;
     private Double diemNguyCo;
     private Timestamp lanDoCuoi;
@@ -304,6 +308,22 @@ public class Patient {
 
     public void setHba1cGanNhat(Double hba1cGanNhat) {
         this.hba1cGanNhat = hba1cGanNhat;
+    }
+
+    public Integer getHuyetApTamThu() {
+        return huyetApTamThu;
+    }
+
+    public void setHuyetApTamThu(Integer huyetApTamThu) {
+        this.huyetApTamThu = huyetApTamThu;
+    }
+
+    public Integer getHuyetApTamTruong() {
+        return huyetApTamTruong;
+    }
+
+    public void setHuyetApTamTruong(Integer huyetApTamTruong) {
+        this.huyetApTamTruong = huyetApTamTruong;
     }
 
     public String getMucNguyCo() {

@@ -90,13 +90,22 @@
 .filter-popup {
     width: 320px;
     padding: 20px;
+    transform: translateY(-6px) scale(0.96);
+}
+
+.filter-dropdown.open > .filter-menu,
+.filter-dropdown.open > .filter-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
 .filter-menu.show,
 .filter-popup.show {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 /* Item trong menu */
@@ -180,4 +189,97 @@
 .filter-popup .filter-actions .btn-clear {
     background: #f3f4f6;
     color: #374151;
+}
+
+/* Bộ lọc lịch sử khám bệnh — patient detail (2 nút cùng hàng tiêu đề) */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+}
+
+.history-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.history-range-filter,
+.history-custom-filter {
+    width: 220px;
+    position: relative;
+    z-index: 1;
+}
+
+.history-range-filter.open,
+.history-custom-filter.open,
+.history-range-filter:has(.filter-menu.show),
+.history-custom-filter:has(.filter-popup.show) {
+    z-index: 10050;
+}
+
+.history-range-filter .filter-menu {
+    min-width: 100%;
+    max-width: 280px;
+    padding-bottom: 4px;
+}
+
+.history-range-filter .filter-item {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.history-custom-filter.is-active .filter-button {
+    color: #f97316;
+    font-weight: 600;
+    background: #fff7ed;
+    border-color: #fdba74;
+}
+
+.history-custom-filter .filter-popup {
+    right: 0;
+    left: auto;
+}
+
+.history-custom-filter .filter-error {
+    margin-top: 8px;
+}
+
+.filter-error {
+    display: none;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #dc2626;
+}
+
+.filter-error.show {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .history-header {
+        align-items: flex-start;
+    }
+
+    .history-actions {
+        width: 100%;
+    }
+
+    .history-range-filter,
+    .history-custom-filter {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+        width: auto;
+    }
+
+    .history-custom-filter .filter-popup {
+        left: 0;
+        right: auto;
+        width: min(320px, calc(100vw - 64px));
+    }
 }

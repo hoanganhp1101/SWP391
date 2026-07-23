@@ -13,6 +13,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.example.diabetesmanage.util.GeminiJsonUtil;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -777,11 +779,19 @@ public class DangerousPatientService {
         try {
             String prompt = buildGeminiPrompt(candidates);
             String jsonResponse = generateGeminiJsonResponse(prompt);
-            parseGeminiResponse(jsonResponse, candidates, result);
-            result.setUsed(true);
+            GeminiJsonUtil.ParseResult parseResult = GeminiJsonUtil.parse(jsonResponse, false);
+            if (parseResult.isSuccess()) {
+                parseGeminiResponse(parseResult, candidates, result);
+                result.setUsed(true);
+            } else {
+                applyRuleBasedGeminiAnalysis(candidates, result);
+                result.setError("Gemini JSON không hợp lệ — dùng phân tích theo quy tắc: "
+                        + parseResult.getError());
+            }
         } catch (Exception e) {
             String message = e.getMessage() != null ? e.getMessage() : e.toString();
-            result.setError(message);
+            applyRuleBasedGeminiAnalysis(candidates, result);
+            result.setError(message + " — dùng phân tích theo quy tắc.");
             System.err.println("Gemini phân tích thất bại: " + message);
             e.printStackTrace();
         }
@@ -802,22 +812,53 @@ public class DangerousPatientService {
         try {
             String prompt = buildDetailPrompt(profile);
             String jsonResponse = generateGeminiJsonResponse(prompt);
-            parseDetailResponse(jsonResponse, result);
-            result.setUsed(true);
+            GeminiJsonUtil.ParseResult parseResult = GeminiJsonUtil.parse(jsonResponse, false);
+            if (parseResult.isSuccess()) {
+                parseDetailResponse(parseResult, result);
+                result.setUsed(true);
+            } else {
+                result.setError("Gemini JSON không hợp lệ — dùng phân tích theo quy tắc: "
+                        + parseResult.getError());
+            }
         } catch (Exception e) {
             String message = e.getMessage() != null ? e.getMessage() : e.toString();
-            result.setError(message);
+            result.setError(message + " — dùng phân tích theo quy tắc.");
             System.err.println("Gemini phân tích chi tiết thất bại: " + message);
         }
 
         return result;
     }
 
+    private void applyRuleBasedGeminiAnalysis(List<HighRiskPatientDTO> candidates, GeminiAnalysis result) {
+        result.setOverallSummary(
+                "Hệ thống phát hiện " + candidates.size()
+                        + " bệnh nhân có nguy cơ cao cần theo dõi (phân tích theo quy tắc y khoa)."
+        );
+        List<String> insights = new ArrayList<>();
+        Map<String, PatientGeminiInsight> patientMap = new HashMap<>();
+        for (HighRiskPatientDTO profile : candidates) {
+            if (!profile.getRiskReasons().isEmpty()) {
+                insights.add(profile.getPatientName() + ": " + profile.getRiskReasons().get(0));
+            }
+            PatientGeminiInsight insight = new PatientGeminiInsight();
+            insight.setSummary(buildFallbackSummary(profile));
+            insight.setRiskLevel(resolveRiskLevel(profile));
+            insight.setPriorityScore(profile.getRiskScore());
+            patientMap.put(profile.getPatientCode(), insight);
+        }
+        result.setInsights(insights);
+        result.setPatientInsights(patientMap);
+    }
+
     private String buildDetailPrompt(HighRiskPatientDTO profile) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Bạn là bác sĩ nội tiết chuyên tiểu đường. ");
-        sb.append("Phân tích chi tiết hồ sơ bệnh nhân nguy hiểm và trả về JSON thuần (không markdown).\n\n");
+        sb.append("Bạn là bác sĩ nội tiết chuyên tiểu đường.\n\n");
+        sb.append("ONLY RETURN VALID JSON.\n");
+        sb.append("DO NOT RETURN MARKDOWN.\n");
+        sb.append("DO NOT RETURN EXPLANATION.\n");
+        sb.append("DO NOT RETURN ANY TEXT.\n");
+        sb.append("Return ONLY one JSON object.\n\n");
         sb.append("Schema JSON:\n");
         sb.append("{\n");
         sb.append("  \"summary\": \"tóm tắt ngắn 1-2 câu\",\n");
@@ -849,36 +890,27 @@ public class DangerousPatientService {
         return sb.toString();
     }
 
-    private void parseDetailResponse(String jsonResponse, PatientDetailGeminiAnalysis result) {
-        JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
-
-        if (root.has("summary")) {
-            result.setSummary(root.get("summary").getAsString());
+    private void parseDetailResponse(GeminiJsonUtil.ParseResult parseResult, PatientDetailGeminiAnalysis result) {
+        JsonNode root = parseResult.getJsonNode();
+        if (root == null) {
+            return;
         }
-        if (root.has("detailAnalysis")) {
-            result.setDetailAnalysis(root.get("detailAnalysis").getAsString());
-        }
-        if (root.has("riskLevel")) {
-            result.setRiskLevel(root.get("riskLevel").getAsString());
-        }
-        if (root.has("priorityScore")) {
-            result.setPriorityScore(root.get("priorityScore").getAsInt());
-        }
-        if (root.has("recommendations")) {
-            JsonArray recommendations = root.getAsJsonArray("recommendations");
-            List<String> list = new ArrayList<>();
-            for (JsonElement element : recommendations) {
-                list.add(element.getAsString());
-            }
-            result.setRecommendations(list);
-        }
+        result.setSummary(readNodeString(root, "summary", ""));
+        result.setDetailAnalysis(readNodeString(root, "detailAnalysis", ""));
+        result.setRiskLevel(readNodeString(root, "riskLevel", null));
+        result.setPriorityScore(readNodeInt(root, "priorityScore", 0));
+        result.setRecommendations(readNodeStringList(root, "recommendations"));
     }
 
     private String buildGeminiPrompt(List<HighRiskPatientDTO> candidates) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Bạn là bác sĩ nội tiết chuyên về tiểu đường. ");
-        sb.append("Phân tích các hồ sơ bệnh nhân nguy hiểm sau và trả về JSON thuần (không markdown).\n\n");
+        sb.append("Bạn là bác sĩ nội tiết chuyên về tiểu đường.\n\n");
+        sb.append("ONLY RETURN VALID JSON.\n");
+        sb.append("DO NOT RETURN MARKDOWN.\n");
+        sb.append("DO NOT RETURN EXPLANATION.\n");
+        sb.append("DO NOT RETURN ANY TEXT.\n");
+        sb.append("Return ONLY one JSON object.\n\n");
         sb.append("Tiêu chí nguy hiểm: đường huyết quá cao/thấp, HbA1c cao, huyết áp cao, BMI cao, ");
         sb.append("đường huyết tăng liên tục, insulin tăng nhưng đường huyết không cải thiện, ");
         sb.append("không theo dõi sức khỏe đều đặn.\n\n");
@@ -925,44 +957,105 @@ public class DangerousPatientService {
     }
 
     private void parseGeminiResponse(
-            String jsonResponse,
+            GeminiJsonUtil.ParseResult parseResult,
             List<HighRiskPatientDTO> candidates,
             GeminiAnalysis result) {
 
-        JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
-
-        if (root.has("overallSummary")) {
-            result.setOverallSummary(root.get("overallSummary").getAsString());
+        JsonNode root = parseResult.getJsonNode();
+        if (root == null) {
+            return;
         }
 
-        if (root.has("insights")) {
-            JsonArray insights = root.getAsJsonArray("insights");
-            List<String> insightList = new ArrayList<>();
-            for (JsonElement element : insights) {
-                insightList.add(element.getAsString());
-            }
+        result.setOverallSummary(readNodeString(root, "overallSummary", ""));
+
+        List<String> insightList = readNodeStringList(root, "insights");
+        if (!insightList.isEmpty()) {
             result.setInsights(insightList);
         }
 
         Map<String, PatientGeminiInsight> patientMap = new HashMap<>();
-        if (root.has("patients")) {
-            JsonArray patients = root.getAsJsonArray("patients");
-            for (JsonElement element : patients) {
-                JsonObject patient = element.getAsJsonObject();
-                String code = patient.get("patientCode").getAsString();
+        JsonNode patients = root.get("patients");
+        if (patients != null && patients.isArray()) {
+            for (JsonNode patient : patients) {
+                if (patient == null || !patient.isObject()) {
+                    continue;
+                }
+                String code = readNodeString(patient, "patientCode", null);
+                if (code == null || code.isBlank()) {
+                    continue;
+                }
                 PatientGeminiInsight insight = new PatientGeminiInsight();
-                insight.setSummary(patient.get("summary").getAsString());
-                if (patient.has("riskLevel")) {
-                    insight.setRiskLevel(patient.get("riskLevel").getAsString());
-                }
-                if (patient.has("priorityScore")) {
-                    insight.setPriorityScore(patient.get("priorityScore").getAsInt());
-                }
+                insight.setSummary(readNodeString(patient, "summary", ""));
+                insight.setRiskLevel(readNodeString(patient, "riskLevel", null));
+                insight.setPriorityScore(readNodeInt(patient, "priorityScore", 0));
                 patientMap.put(code, insight);
             }
         }
 
         result.setPatientInsights(patientMap);
+    }
+
+    private static String readNodeString(JsonNode root, String key, String defaultValue) {
+        try {
+            if (root == null || !root.has(key) || root.get(key).isNull()) {
+                return defaultValue;
+            }
+            JsonNode node = root.get(key);
+            if (node.isTextual()) {
+                return node.asText();
+            }
+            if (node.isNumber() || node.isBoolean()) {
+                return node.asText();
+            }
+            return defaultValue;
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private static int readNodeInt(JsonNode root, String key, int defaultValue) {
+        try {
+            if (root == null || !root.has(key) || root.get(key).isNull()) {
+                return defaultValue;
+            }
+            JsonNode node = root.get(key);
+            if (node.isInt() || node.isLong()) {
+                return node.asInt();
+            }
+            if (node.isFloatingPointNumber()) {
+                return (int) Math.round(node.asDouble());
+            }
+            if (node.isTextual()) {
+                String raw = node.asText().trim();
+                if (!raw.isEmpty()) {
+                    return (int) Math.round(Double.parseDouble(raw));
+                }
+            }
+            return defaultValue;
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private static List<String> readNodeStringList(JsonNode root, String key) {
+        List<String> list = new ArrayList<>();
+        try {
+            if (root == null || !root.has(key) || root.get(key).isNull()) {
+                return list;
+            }
+            JsonNode array = root.get(key);
+            if (!array.isArray()) {
+                return list;
+            }
+            for (JsonNode element : array) {
+                if (element != null && !element.isNull()) {
+                    list.add(element.asText());
+                }
+            }
+        } catch (Exception ignored) {
+            // return partial or empty list
+        }
+        return list;
     }
 
     private String nullToDash(String value) {
@@ -1000,21 +1093,63 @@ public class DangerousPatientService {
 
         List<String> modelsToTry = buildModelList();
         List<String> errors = new ArrayList<>();
+        String lastRawGeminiText = null;
 
         for (String model : modelsToTry) {
-            try {
-                return callGeminiModel(model, prompt);
-            } catch (Exception e) {
-                String message = e.getMessage() != null ? e.getMessage() : e.toString();
-                errors.add(model + ": " + message);
-                System.err.println("Gemini model " + model + " thất bại: " + message);
+            // Retry logic only for incomplete JSON truncation.
+            for (int retry = 1; retry <= 3; retry++) {
+                try {
+                    String rawText = callGeminiModel(model, prompt);
+                    lastRawGeminiText = rawText;
+
+                    GeminiJsonUtil.ParseResult parseResult = GeminiJsonUtil.parse(rawText, true);
+                    if (parseResult.isSuccess()) {
+                        return parseResult.getExtractedJson();
+                    }
+                    String message = parseResult.getError() != null ? parseResult.getError() : "JSON không hợp lệ";
+                    errors.add(model + " (json retry " + retry + "/3) failed: " + message);
+                    System.err.println("Gemini JSON không hợp lệ (" + model + "): " + message);
+
+                    if (retry < 3) {
+                        try {
+                            Thread.sleep(1000L);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                        continue;
+                    }
+                } catch (Exception ex) {
+                    String message = ex.getMessage() != null ? ex.getMessage() : ex.toString();
+                    errors.add(model + ": " + message);
+                    System.err.println("Gemini model " + model + " thất bại: " + message);
+                }
+                break;
             }
         }
 
         String discoveredModel = discoverGenerateContentModel();
         if (discoveredModel != null && !modelsToTry.contains(discoveredModel)) {
             try {
-                return callGeminiModel(discoveredModel, prompt);
+                for (int retry = 1; retry <= 3; retry++) {
+                    String rawText = callGeminiModel(discoveredModel, prompt);
+                    lastRawGeminiText = rawText;
+                    GeminiJsonUtil.ParseResult parseResult = GeminiJsonUtil.parse(rawText, true);
+                    if (parseResult.isSuccess()) {
+                        return parseResult.getExtractedJson();
+                    }
+                    String message = parseResult.getError() != null ? parseResult.getError() : "JSON không hợp lệ";
+                    errors.add(discoveredModel + " (json retry " + retry + "/3) failed: " + message);
+                    System.err.println("Gemini JSON không hợp lệ (" + discoveredModel + "): " + message);
+
+                    if (retry < 3) {
+                        try {
+                            Thread.sleep(1000L);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                        continue;
+                    }
+                }
             } catch (Exception e) {
                 String message = e.getMessage() != null ? e.getMessage() : e.toString();
                 errors.add(discoveredModel + ": " + message);
@@ -1025,6 +1160,7 @@ public class DangerousPatientService {
                 "Tất cả model Gemini đều thất bại. "
                         + "Hãy đổi gemini.model trong gemini.properties (gợi ý: gemini-3.5-flash). "
                         + "Chi tiết: " + String.join(" | ", errors)
+                        + (lastRawGeminiText != null ? ("\n\nLast raw Gemini response:\n" + lastRawGeminiText) : "")
         );
     }
 
@@ -1144,16 +1280,59 @@ public class DangerousPatientService {
 
     private String extractTextFromGeminiResponse(String responseBody) {
         JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+
+        if (root.has("promptFeedback")) {
+            JsonObject feedback = root.getAsJsonObject("promptFeedback");
+            if (feedback != null && feedback.has("blockReason") && !feedback.get("blockReason").isJsonNull()) {
+                throw new RuntimeException("Gemini bị block safety: "
+                        + feedback.get("blockReason").getAsString());
+            }
+        }
+
         JsonArray candidates = root.getAsJsonArray("candidates");
         if (candidates == null || candidates.isEmpty()) {
-            throw new RuntimeException("Gemini không trả về kết quả: " + shortenGeminiResponse(responseBody));
+            throw new RuntimeException("Gemini không trả về candidates (có thể bị block safety hoặc timeout): "
+                    + shortenGeminiResponse(responseBody));
         }
 
         JsonObject firstCandidate = candidates.get(0).getAsJsonObject();
+        if (firstCandidate.has("finishReason") && !firstCandidate.get("finishReason").isJsonNull()) {
+            String finishReason = firstCandidate.get("finishReason").getAsString();
+            if ("SAFETY".equalsIgnoreCase(finishReason)
+                    || "RECITATION".equalsIgnoreCase(finishReason)
+                    || "BLOCKLIST".equalsIgnoreCase(finishReason)) {
+                throw new RuntimeException("Gemini bị block (" + finishReason + ")");
+            }
+        }
+
         JsonObject content = firstCandidate.getAsJsonObject("content");
+        if (content == null || !content.has("parts") || content.get("parts").isJsonNull()) {
+            throw new RuntimeException("Gemini không trả về content/parts: "
+                    + shortenGeminiResponse(responseBody));
+        }
+
         JsonArray parts = content.getAsJsonArray("parts");
-        JsonObject firstPart = parts.get(0).getAsJsonObject();
-        return firstPart.get("text").getAsString();
+        if (parts == null || parts.isEmpty()) {
+            throw new RuntimeException("Gemini không trả về text part: "
+                    + shortenGeminiResponse(responseBody));
+        }
+
+        StringBuilder textBuilder = new StringBuilder();
+        for (JsonElement partElement : parts) {
+            if (partElement == null || !partElement.isJsonObject()) {
+                continue;
+            }
+            JsonObject part = partElement.getAsJsonObject();
+            if (part.has("text") && !part.get("text").isJsonNull()) {
+                textBuilder.append(part.get("text").getAsString());
+            }
+        }
+
+        String text = textBuilder.toString();
+        if (text.isBlank()) {
+            throw new RuntimeException("Gemini trả text rỗng hoặc null");
+        }
+        return text;
     }
 
     private String shortenGeminiResponse(String text) {

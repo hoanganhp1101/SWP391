@@ -572,14 +572,48 @@
         }
 
         .danger-view-link{
-            color:#2563eb;
-            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+
+            height:44px;
+            padding:0 20px;
+            border:none;
+            border-radius:14px;
+
+            background: linear-gradient(135deg,#2563eb,#3b82f6);
+            color:#fff;
+
             font-weight:600;
             font-size:14px;
+
+            cursor:pointer;
+            text-decoration:none;
+            white-space:nowrap;
+
+            box-shadow: 0 6px 16px rgba(37,99,235,.18);
+            transition: .25s ease;
         }
 
         .danger-view-link:hover{
-            text-decoration:underline;
+            background: linear-gradient(135deg,#2b6fe8,#4f8df8);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(37,99,235,.25);
+            text-decoration:none;
+        }
+
+        .danger-view-link:active{
+            transform: translateY(0);
+            box-shadow: 0 6px 14px rgba(37,99,235,.18);
+        }
+
+        .danger-view-link i{
+            transition: transform .25s ease;
+        }
+
+        .danger-view-link:hover i{
+            transform: translateX(3px);
         }
 
         .empty-danger{
@@ -612,8 +646,6 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -693,7 +725,7 @@
                 <div class="stat-card">
                     <div class="card-top">
                         <div>
-                            <span class="card-title">Hồ sơ khám bệnh hôm nay </span>
+                            <span class="card-title">Hồ sơ khám bệnh </span>
                             <div class="risk-filter">
 
                                 <form action="${pageContext.request.contextPath}/doctor-dashboard"
@@ -891,7 +923,7 @@
                                                 <input type="hidden" name="id" value="${alert.patientId}">
 
                                                 <button type="submit" class="danger-view-link">
-                                                    Xem hồ sơ <i class="fa-solid fa-chevron-right"></i>
+                                                    Xem hồ sơ <i class="fa-solid fa-file-medical"></i>
                                                 </button>
                                             </form>
                                         </div>

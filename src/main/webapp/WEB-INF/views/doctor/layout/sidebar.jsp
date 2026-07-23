@@ -53,13 +53,6 @@
     </nav>
 
     <div class="sidebar-bottom">
-        <form method="post" action="${ctx}/doctor/patient-records" style="margin:0;">
-            <input type="hidden" name="action" value="add">
-            <button type="submit" class="new-record">
-                <i class="fa-solid fa-plus"></i>
-                Tạo hồ sơ mới
-            </button>
-        </form>
 
         <a class="bottom-link" href="#">
             <i class="fa-regular fa-circle-question"></i>

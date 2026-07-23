@@ -74,8 +74,6 @@
     </style>
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -190,6 +188,7 @@
                 <div class="med-card">
                     <h3><i class="fa-solid fa-heart-pulse"></i> C. Chỉ số sức khỏe</h3>
                     <c:forEach items="${detailView.internalMedicine.healthMetrics}" var="field">
+                        <c:if test="${field.label ne 'Liều insulin' and field.label ne 'Ghi chú sức khỏe'}">
                         <div class="field-row">
                             <span class="field-label">${field.label}</span>
                             <span class="field-value ${field.abnormal ? 'abnormal' : ''}">
@@ -199,6 +198,7 @@
                                 </c:if>
                             </span>
                         </div>
+                        </c:if>
                     </c:forEach>
                 </div>
             </c:when>

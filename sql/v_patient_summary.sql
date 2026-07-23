@@ -1,0 +1,42 @@
+-- =============================================================================
+-- View: v_patient_summary
+-- Bổ sung huyết áp từ health_records mới nhất (không đổi cột khác).
+--
+-- Trong phần SELECT từ health_records, thêm:
+--   hr.huyet_ap_tam_thu     AS huyet_ap_tam_thu,
+--   hr.huyet_ap_tam_truong  AS huyet_ap_tam_truong
+--
+-- Giữ nguyên cách lấy bản ghi Health Record mới nhất:
+--   LEFT JOIN health_records hr ON hr.id = (
+--       SELECT id
+--       FROM health_records
+--       WHERE patient_id = p.id
+--       ORDER BY thoi_gian_do DESC
+--       LIMIT 1
+--   )
+--
+-- Cách áp dụng:
+--   1. SHOW CREATE VIEW v_patient_summary;
+--   2. CREATE OR REPLACE VIEW v_patient_summary AS
+--      ... (toàn bộ định nghĩa hiện tại + 2 cột huyết áp ở trên)
+-- =============================================================================
+
+-- Ví dụ vị trí chèn trong SELECT (minh họa, giữ nguyên các cột khác của view):
+--
+-- SELECT
+--     ...
+--     hr.duong_huyet_mgdl    AS duong_huyet_gan_nhat,
+--     hr.bmi                 AS bmi_gan_nhat,
+--     hr.hba1c_percent       AS hba1c_gan_nhat,
+--     hr.huyet_ap_tam_thu    AS huyet_ap_tam_thu,
+--     hr.huyet_ap_tam_truong AS huyet_ap_tam_truong,
+--     ...
+-- FROM patients p
+-- ...
+-- LEFT JOIN health_records hr ON hr.id = (
+--     SELECT id
+--     FROM health_records
+--     WHERE patient_id = p.id
+--     ORDER BY thoi_gian_do DESC
+--     LIMIT 1
+-- );

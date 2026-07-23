@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi tiết bệnh nhân - HealthAlert</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/filters.css">
     <style>
         *{ margin:0; padding:0; box-sizing:border-box; font-family:Inter, sans-serif; }
         body{ background:#f5f6fa; }
@@ -63,13 +64,58 @@
         .avatar{ width:38px; height:38px; border-radius:50%; object-fit:cover; }
         .page-content{ padding:32px; }
         .page-header{ margin-bottom:24px; }
+        .page-header-row{
+            display:flex; align-items:flex-start; justify-content:space-between;
+            gap:20px; flex-wrap:wrap;
+        }
         .page-header h1{
             font-size:32px; font-weight:700; color:#111827; margin-bottom:8px;
         }
         .page-header p{ color:#6b7280; }
+        .btn-export-pdf{
+            display:inline-flex; align-items:center; gap:8px;
+            padding:12px 20px; border-radius:12px; border:1px solid #dbe2ea;
+            background:#fff; color:#1557d5; font-size:15px; font-weight:600;
+            text-decoration:none; cursor:pointer; white-space:nowrap;
+        }
+        .btn-export-pdf:hover{ background:#f8fafc; }
+        .table-wrapper{ overflow-x:auto; padding:0 32px 32px; }
+        .record-table{
+            width:100%; border-collapse:collapse;
+        }
+        .record-table th{
+            text-align:left; padding:16px 20px; font-size:13px;
+            color:#64748b; background:#f8fafc;
+        }
+        .record-table td{
+            padding:16px 20px; border-bottom:1px solid #eef2f7; font-size:14px;
+        }
+        .record-table tbody tr:hover{ background:#f8fafc; }
+        .table-icon-btn{
+            display:inline-flex; align-items:center; justify-content:center;
+            width:40px; height:40px; border:none; border-radius:12px;
+            background:#eff6ff; color:#2563eb; cursor:pointer; text-decoration:none;
+        }
+        .table-icon-btn:hover{ background:#dbeafe; }
+        .history-empty{
+            padding:40px 32px; text-align:center; color:#6b7280;
+        }
         .patient-card{
             background:white; border-radius:20px;
             border:1px solid #e5e7eb; overflow:hidden; margin-top:24px;
+        }
+        /* Card lịch sử khám: cho phép popup date picker hiển thị đầy đủ */
+        .patient-card.patient-card-history{
+            overflow: visible;
+        }
+        .patient-card.patient-card-history .card-header,
+        .patient-card.patient-card-history .history-header,
+        .patient-card.patient-card-history .history-actions{
+            overflow: visible;
+        }
+        .patient-card.patient-card-history .table-wrapper{
+            overflow-x: auto;
+            overflow-y: visible;
         }
         .patient-card:first-of-type{ margin-top:0; }
         .card-header{
@@ -130,8 +176,24 @@
         <div class="page-content">
 
             <div class="page-header">
-                <h1>Chi tiết bệnh nhân</h1>
-                <p>${patient.user.hoTen} · ${patient.patientCode}</p>
+                <div class="page-header-row">
+                    <div>
+                        <h1>Chi tiết bệnh nhân</h1>
+                        <p>${patient.user.hoTen} · ${patient.patientCode}</p>
+                    </div>
+                    <c:if test="${not empty patient.id}">
+                        <c:url var="exportPdfUrl" value="/doctor/export-patient-pdf">
+                            <c:param name="id" value="${patient.id}"/>
+                            <c:if test="${not empty fromDate && not empty toDate}">
+                                <c:param name="fromDate" value="${fromDate}"/>
+                                <c:param name="toDate" value="${toDate}"/>
+                            </c:if>
+                        </c:url>
+                        <a class="btn-export-pdf" href="${exportPdfUrl}">
+                            <i class="fa-solid fa-file-pdf"></i> Xuất PDF
+                        </a>
+                    </c:if>
+                </div>
             </div>
 
             <c:if test="${param.success eq '1'}">
@@ -480,8 +542,240 @@
                 </c:choose>
             </div>
 
+            <div class="patient-card patient-card-history">
+                <c:set var="historyBase" value="${pageContext.request.contextPath}/doctor/patient-list"/>
+                <div class="card-header history-header">
+                    <h2>Lịch sử khám bệnh</h2>
+
+                    <c:if test="${not empty patient.id}">
+                        <div class="history-actions">
+                            <%-- Nút 1: Khoảng thời gian (quick range) --%>
+                            <div class="filter-dropdown history-range-filter">
+                                <button type="button" class="filter-button">
+                                    <span class="filter-label">
+                                        <c:choose>
+                                            <c:when test="${activeQuickRange eq '5'}">5 ngày gần nhất</c:when>
+                                            <c:when test="${activeQuickRange eq '10'}">10 ngày gần nhất</c:when>
+                                            <c:when test="${activeQuickRange eq '30'}">30 ngày gần nhất</c:when>
+                                            <c:when test="${activeQuickRange eq 'all'}">Tất cả lịch sử</c:when>
+                                            <c:otherwise>Khoảng thời gian</c:otherwise>
+                                        </c:choose>
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="filter-menu">
+                                    <c:url var="historyAllUrl" value="/doctor/patient-list">
+                                        <c:param name="id" value="${patient.id}"/>
+                                    </c:url>
+                                    <a class="filter-item${activeQuickRange eq 'all' ? ' active' : ''}"
+                                       href="${historyAllUrl}">
+                                        <i class="fa-solid fa-check filter-check"></i> Tất cả lịch sử
+                                    </a>
+
+                                    <c:url var="history5Url" value="/doctor/patient-list">
+                                        <c:param name="id" value="${patient.id}"/>
+                                        <c:param name="fromDate" value="${historyQuick5From}"/>
+                                        <c:param name="toDate" value="${historyToday}"/>
+                                    </c:url>
+                                    <a class="filter-item${activeQuickRange eq '5' ? ' active' : ''}"
+                                       href="${history5Url}">
+                                        <i class="fa-solid fa-check filter-check"></i> 5 ngày gần nhất
+                                    </a>
+
+                                    <c:url var="history10Url" value="/doctor/patient-list">
+                                        <c:param name="id" value="${patient.id}"/>
+                                        <c:param name="fromDate" value="${historyQuick10From}"/>
+                                        <c:param name="toDate" value="${historyToday}"/>
+                                    </c:url>
+                                    <a class="filter-item${activeQuickRange eq '10' ? ' active' : ''}"
+                                       href="${history10Url}">
+                                        <i class="fa-solid fa-check filter-check"></i> 10 ngày gần nhất
+                                    </a>
+
+                                    <c:url var="history30Url" value="/doctor/patient-list">
+                                        <c:param name="id" value="${patient.id}"/>
+                                        <c:param name="fromDate" value="${historyQuick30From}"/>
+                                        <c:param name="toDate" value="${historyToday}"/>
+                                    </c:url>
+                                    <a class="filter-item${activeQuickRange eq '30' ? ' active' : ''}"
+                                       href="${history30Url}">
+                                        <i class="fa-solid fa-check filter-check"></i> 30 ngày gần nhất
+                                    </a>
+                                </div>
+                            </div>
+
+                            <%-- Nút 2: Chọn ngày (custom date) --%>
+                            <div class="filter-dropdown history-custom-filter${activeQuickRange eq 'custom' ? ' is-active' : ''}">
+                                <button type="button" class="filter-button">
+                                    <span class="filter-label">
+                                        <c:choose>
+                                            <c:when test="${activeQuickRange eq 'custom' and not empty fromDate and not empty toDate}">
+                                                <c:out value="${fromDate}"/> → <c:out value="${toDate}"/>
+                                            </c:when>
+                                            <c:otherwise>Chọn ngày</c:otherwise>
+                                        </c:choose>
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                                <div class="filter-popup">
+                                    <form id="historyFilterForm"
+                                          method="get"
+                                          action="${historyBase}">
+                                        <input type="hidden" name="id" value="${patient.id}">
+                                        <div class="filter-fields">
+                                            <label for="historyFromDate">Từ ngày</label>
+                                            <input type="date" id="historyFromDate" name="fromDate"
+                                                   value="${fromDate}">
+                                            <label for="historyToDate">Đến ngày</label>
+                                            <input type="date" id="historyToDate" name="toDate"
+                                                   value="${toDate}">
+                                        </div>
+                                        <p id="historyFilterError"
+                                           class="filter-error${not empty historyFilterError ? ' show' : ''}"
+                                           role="alert">
+                                            <c:out value="${historyFilterError}"/>
+                                        </p>
+                                        <div class="filter-actions">
+                                            <button type="submit" class="btn-apply">Áp dụng</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </c:if>
+                </div>
+
+                <c:choose>
+                    <c:when test="${empty history}">
+                        <div class="history-empty">
+                            <c:choose>
+                                <c:when test="${activeQuickRange ne 'all'}">
+                                    Không có lần khám trong khoảng thời gian đã chọn.
+                                </c:when>
+                                <c:otherwise>Chưa có lịch sử khám bệnh.</c:otherwise>
+                            </c:choose>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="table-wrapper">
+                            <table class="record-table">
+                                <thead>
+                                <tr>
+                                    <th>Ngày khám</th>
+                                    <th>Bác sĩ</th>
+                                    <th>Loại hồ sơ</th>
+                                    <th>Chẩn đoán chính</th>
+                                    <th>Đường huyết</th>
+                                    <th>HbA1c</th>
+                                    <th>Hành động</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <c:forEach var="item" items="${history}">
+                                    <tr>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${item.ngayKham != null}">
+                                                    ${item.ngayKham.dayOfMonth}/${item.ngayKham.monthValue}/${item.ngayKham.year}
+                                                </c:when>
+                                                <c:otherwise>—</c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td><c:out value="${not empty item.doctorName ? item.doctorName : '—'}"/></td>
+                                        <td><c:out value="${item.shortEncounterTypeLabel}"/></td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${not empty item.historyDiagnosisDisplay}">
+                                                    <c:out value="${item.historyDiagnosisDisplay}"/>
+                                                </c:when>
+                                                <c:otherwise>—</c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${item.duongHuyetMgdl != null}">
+                                                    <c:out value="${item.duongHuyetMgdl}"/>
+                                                </c:when>
+                                                <c:otherwise>—</c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${item.hba1cPercent != null}">
+                                                    <c:out value="${item.hba1cPercent}"/>
+                                                </c:when>
+                                                <c:otherwise>—</c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/doctor/patient-records"
+                                                  style="display:inline;">
+                                                <input type="hidden" name="action" value="detail">
+                                                <input type="hidden" name="id" value="${item.id}">
+                                                <button type="submit" class="table-icon-btn" title="Xem chi tiết">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                                </tbody>
+                            </table>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+
         </div>
     </main>
 </div>
+<script>
+(function () {
+    var form = document.getElementById('historyFilterForm');
+    if (!form) {
+        return;
+    }
+    var errorEl = document.getElementById('historyFilterError');
+    var fromInput = form.querySelector('[name="fromDate"]');
+    var toInput = form.querySelector('[name="toDate"]');
+    var dropdown = form.closest('.history-custom-filter');
+
+    function openCustomDateDropdown() {
+        if (!dropdown) {
+            return;
+        }
+        var panel = dropdown.querySelector('.filter-popup');
+        dropdown.classList.add('open');
+        if (panel) {
+            panel.classList.add('show');
+        }
+    }
+
+    form.addEventListener('submit', function (e) {
+        var from = fromInput ? fromInput.value : '';
+        var to = toInput ? toInput.value : '';
+        errorEl.textContent = '';
+        errorEl.classList.remove('show');
+        if (!from || !to) {
+            e.preventDefault();
+            errorEl.textContent = 'Vui lòng chọn đủ từ ngày và đến ngày.';
+            errorEl.classList.add('show');
+            openCustomDateDropdown();
+            return;
+        }
+        if (from > to) {
+            e.preventDefault();
+            errorEl.textContent = 'Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.';
+            errorEl.classList.add('show');
+            openCustomDateDropdown();
+        }
+    });
+
+    if (errorEl && errorEl.classList.contains('show')) {
+        openCustomDateDropdown();
+    }
+})();
+</script>
 </body>
 </html>

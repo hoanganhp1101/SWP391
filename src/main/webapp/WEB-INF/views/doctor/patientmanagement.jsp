@@ -370,8 +370,6 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -408,6 +406,10 @@
                             <input type="hidden" name="glucose" value="${param.glucose}">
                             <input type="hidden" name="hba1c" value="${param.hba1c}">
                             <input type="hidden" name="bmi" value="${param.bmi}">
+                            <input type="hidden" name="bloodPressure" value="${param.bloodPressure}">
+                            <input type="hidden" name="age" value="${param.age}">
+                            <input type="hidden" name="gender" value="${param.gender}">
+                            <input type="hidden" name="diabetesType" value="${param.diabetesType}">
                             <input type="hidden" name="action" value="${param.action}">
                         </form>
                     </div>
@@ -441,6 +443,33 @@
                     <c:when test="${param.action eq 'no-followup'}"><c:set var="actionLabel" value="Chưa tái khám 30 ngày"/></c:when>
                     <c:otherwise><c:set var="actionLabel" value="Hành động"/></c:otherwise>
                 </c:choose>
+                <c:choose>
+                    <c:when test="${param.bloodPressure eq 'normal'}"><c:set var="bloodPressureLabel" value="Bình thường"/></c:when>
+                    <c:when test="${param.bloodPressure eq 'high'}"><c:set var="bloodPressureLabel" value="Tăng huyết áp"/></c:when>
+                    <c:when test="${param.bloodPressure eq 'low'}"><c:set var="bloodPressureLabel" value="Hạ huyết áp"/></c:when>
+                    <c:when test="${param.bloodPressure eq 'missing'}"><c:set var="bloodPressureLabel" value="Chưa đo"/></c:when>
+                    <c:otherwise><c:set var="bloodPressureLabel" value="Huyết áp"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${param.age eq 'child'}"><c:set var="ageLabel" value="Dưới 18 tuổi"/></c:when>
+                    <c:when test="${param.age eq 'adult'}"><c:set var="ageLabel" value="18–39 tuổi"/></c:when>
+                    <c:when test="${param.age eq 'middle'}"><c:set var="ageLabel" value="40–59 tuổi"/></c:when>
+                    <c:when test="${param.age eq 'senior'}"><c:set var="ageLabel" value="Từ 60 tuổi"/></c:when>
+                    <c:otherwise><c:set var="ageLabel" value="Tuổi"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${param.gender eq 'nam'}"><c:set var="genderLabel" value="Nam"/></c:when>
+                    <c:when test="${param.gender eq 'nu'}"><c:set var="genderLabel" value="Nữ"/></c:when>
+                    <c:when test="${param.gender eq 'khac'}"><c:set var="genderLabel" value="Khác"/></c:when>
+                    <c:otherwise><c:set var="genderLabel" value="Giới tính"/></c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${param.diabetesType eq 'Type 1'}"><c:set var="diabetesTypeLabel" value="Tiểu đường týp 1"/></c:when>
+                    <c:when test="${param.diabetesType eq 'Type 2'}"><c:set var="diabetesTypeLabel" value="Tiểu đường týp 2"/></c:when>
+                    <c:when test="${param.diabetesType eq 'Thai kỳ'}"><c:set var="diabetesTypeLabel" value="Thai kỳ"/></c:when>
+                    <c:when test="${param.diabetesType eq 'Khác'}"><c:set var="diabetesTypeLabel" value="Khác"/></c:when>
+                    <c:otherwise><c:set var="diabetesTypeLabel" value="Loại tiểu đường"/></c:otherwise>
+                </c:choose>
 
                 <div class="filter-bar">
 
@@ -450,11 +479,11 @@
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="filter-menu">
-                            <a class="filter-item ${empty param.glucose ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
-                            <a class="filter-item ${param.glucose eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=normal&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
-                            <a class="filter-item ${param.glucose eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=high&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Cao</a>
-                            <a class="filter-item ${param.glucose eq 'critical' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=critical&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Rất cao</a>
-                            <a class="filter-item ${param.glucose eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=missing&hba1c=${param.hba1c}&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
+                            <a class="filter-item ${empty param.glucose ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.glucose eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=normal&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.glucose eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=high&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Cao</a>
+                            <a class="filter-item ${param.glucose eq 'critical' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=critical&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Rất cao</a>
+                            <a class="filter-item ${param.glucose eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=missing&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
                         </div>
                     </div>
 
@@ -464,11 +493,11 @@
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="filter-menu">
-                            <a class="filter-item ${empty param.hba1c ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
-                            <a class="filter-item ${param.hba1c eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=normal&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
-                            <a class="filter-item ${param.hba1c eq 'prediabetes' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=prediabetes&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tiền tiểu đường</a>
-                            <a class="filter-item ${param.hba1c eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=high&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Cao</a>
-                            <a class="filter-item ${param.hba1c eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=missing&bmi=${param.bmi}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa làm</a>
+                            <a class="filter-item ${empty param.hba1c ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.hba1c eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=normal&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.hba1c eq 'prediabetes' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=prediabetes&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tiền tiểu đường</a>
+                            <a class="filter-item ${param.hba1c eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=high&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Cao</a>
+                            <a class="filter-item ${param.hba1c eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=missing&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa làm</a>
                         </div>
                     </div>
 
@@ -478,11 +507,66 @@
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="filter-menu">
-                            <a class="filter-item ${empty param.bmi ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
-                            <a class="filter-item ${param.bmi eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=normal&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
-                            <a class="filter-item ${param.bmi eq 'overweight' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=overweight&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Thừa cân</a>
-                            <a class="filter-item ${param.bmi eq 'obese' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=obese&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Béo phì</a>
-                            <a class="filter-item ${param.bmi eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=missing&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
+                            <a class="filter-item ${empty param.bmi ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.bmi eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=normal&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.bmi eq 'overweight' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=overweight&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Thừa cân</a>
+                            <a class="filter-item ${param.bmi eq 'obese' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=obese&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Béo phì</a>
+                            <a class="filter-item ${param.bmi eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=missing&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
+                        </div>
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${bloodPressureLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.bloodPressure ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.bloodPressure eq 'normal' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=normal&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Bình thường</a>
+                            <a class="filter-item ${param.bloodPressure eq 'high' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=high&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tăng huyết áp</a>
+                            <a class="filter-item ${param.bloodPressure eq 'low' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=low&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Hạ huyết áp</a>
+                            <a class="filter-item ${param.bloodPressure eq 'missing' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=missing&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Chưa đo</a>
+                        </div>
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${ageLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.age ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.age eq 'child' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=child&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Dưới 18 tuổi</a>
+                            <a class="filter-item ${param.age eq 'adult' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=adult&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> 18–39 tuổi</a>
+                            <a class="filter-item ${param.age eq 'middle' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=middle&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> 40–59 tuổi</a>
+                            <a class="filter-item ${param.age eq 'senior' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=senior&gender=${param.gender}&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Từ 60 tuổi</a>
+                        </div>
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${genderLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.gender ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.gender eq 'nam' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=nam&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Nam</a>
+                            <a class="filter-item ${param.gender eq 'nu' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=nu&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Nữ</a>
+                            <a class="filter-item ${param.gender eq 'khac' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=khac&diabetesType=${param.diabetesType}&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Khác</a>
+                        </div>
+                    </div>
+
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${diabetesTypeLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.diabetesType ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.diabetesType eq 'Type 1' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=Type%201&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tiểu đường týp 1</a>
+                            <a class="filter-item ${param.diabetesType eq 'Type 2' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=Type%202&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Tiểu đường týp 2</a>
+                            <a class="filter-item ${param.diabetesType eq 'Thai kỳ' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=Thai%20k%E1%BB%B3&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Thai kỳ</a>
+                            <a class="filter-item ${param.diabetesType eq 'Khác' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=Kh%C3%A1c&action=${param.action}"><i class="fa-solid fa-check filter-check"></i> Khác</a>
                         </div>
                     </div>
 
@@ -492,9 +576,9 @@
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="filter-menu">
-                            <a class="filter-item ${empty param.action ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&action="><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
-                            <a class="filter-item ${param.action eq 'no-update' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&action=no-update"><i class="fa-solid fa-check filter-check"></i> Chưa cập nhật 7 ngày</a>
-                            <a class="filter-item ${param.action eq 'no-followup' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&action=no-followup"><i class="fa-solid fa-check filter-check"></i> Chưa tái khám 30 ngày</a>
+                            <a class="filter-item ${empty param.action ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action="><i class="fa-solid fa-check filter-check"></i> Tất cả</a>
+                            <a class="filter-item ${param.action eq 'no-update' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=no-update"><i class="fa-solid fa-check filter-check"></i> Chưa cập nhật 7 ngày</a>
+                            <a class="filter-item ${param.action eq 'no-followup' ? 'active' : ''}" href="${basePath}?keyword=${param.keyword}&glucose=${param.glucose}&hba1c=${param.hba1c}&bmi=${param.bmi}&bloodPressure=${param.bloodPressure}&age=${param.age}&gender=${param.gender}&diabetesType=${param.diabetesType}&action=no-followup"><i class="fa-solid fa-check filter-check"></i> Chưa tái khám 30 ngày</a>
                         </div>
                     </div>
 

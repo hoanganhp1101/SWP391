@@ -8,8 +8,12 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class EncounterCreateDTO {
+
+    private static final Pattern NON_NEGATIVE_DECIMAL = Pattern.compile("^\\d+(\\.\\d+)?$");
+    private static final Pattern NON_NEGATIVE_INTEGER = Pattern.compile("^\\d+$");
 
     private String encounterType = "tai_kham_noi_tiet";
     private String patientId;
@@ -256,8 +260,10 @@ public class EncounterCreateDTO {
 
     /**
      * Chuẩn hóa dữ liệu form trước khi validate / lưu — không phụ thuộc {@link HttpServletRequest}.
+     * Xóa chỉ số không thuộc loại hồ sơ hiện tại (tránh submit field ẩn từ form DOM).
      */
     public void prepareForSave() {
+        clearFieldsOutsideEncounterType();
         calculateBmiIfNeeded();
         syncLabToHealthMetrics();
         if (!isTaiKhamNoiTiet()) {
@@ -284,6 +290,82 @@ public class EncounterCreateDTO {
         }
     }
 
+    /**
+     * Chỉ giữ field thuộc loại encounter hiện tại.
+     * Field ẩn trên UI vẫn có thể được browser submit — phải null hóa ở đây.
+     */
+    public void clearFieldsOutsideEncounterType() {
+        String type = resolveEncounterType();
+        if ("mau_tong_quat".equals(type)) {
+            clearBiochemistryLabs();
+            clearTaiKhamClinicalMetrics();
+            return;
+        }
+        if ("sinh_hoa_mau".equals(type)) {
+            clearBloodCountLabs();
+            clearTaiKhamClinicalMetrics();
+            return;
+        }
+        // tai_kham_noi_tiet
+        clearBloodCountLabs();
+        clearBiochemistryLabs();
+    }
+
+    private void clearBloodCountLabs() {
+        labWbc = null;
+        labRbc = null;
+        labHgb = null;
+        labHct = null;
+        labPlt = null;
+    }
+
+    private void clearBiochemistryLabs() {
+        labGlucoseMau = null;
+        labHba1c = null;
+        labCholesterol = null;
+        labTriglyceride = null;
+        labHdl = null;
+        labLdl = null;
+        labAst = null;
+        labAlt = null;
+        labUre = null;
+        labCreatinine = null;
+        labHbsag = null;
+        labAntiHcv = null;
+        labNuocTieu = null;
+        labGhiChu = null;
+    }
+
+    /** Chỉ số lâm sàng thuộc form tái khám — không dùng cho CBC/sinh hóa. */
+    private void clearTaiKhamClinicalMetrics() {
+        duongHuyetMgdl = null;
+        thoiDiemDoDuong = null;
+        huyetApTamThu = null;
+        huyetApTamTruong = null;
+        nhipTim = null;
+        nhietDoC = null;
+        nhipTho = null;
+        chieuCaoCm = null;
+        canNangKg = null;
+        bmi = null;
+        hba1cPercent = null;
+        cholesterolMmol = null;
+        triglycerideMmol = null;
+        carbsG = null;
+        loaiInsulinTiem = null;
+        lieuLuongInsulinUi = null;
+        ghiChuSucKhoe = null;
+        trieuChung = null;
+        tienSuBenh = null;
+        lyDoKham = null;
+        quaTrinhBenhLy = null;
+        khamLamSang = null;
+        chanDoanChinh = null;
+        chanDoanPhu = null;
+        phanLoaiTieuDuong = null;
+        huongXuTri = null;
+    }
+
     private static String trimToNull(String value) {
         if (value == null) {
             return null;
@@ -304,14 +386,30 @@ public class EncounterCreateDTO {
         if (value == null || value.isBlank()) {
             return null;
         }
-        return Double.parseDouble(value.trim().replace(",", "."));
+        String normalized = value.trim().replace(',', '.');
+        if (!NON_NEGATIVE_DECIMAL.matcher(normalized).matches()) {
+            throw new NumberFormatException("Invalid decimal: " + value);
+        }
+        try {
+            return Double.parseDouble(normalized);
+        } catch (NumberFormatException ex) {
+            throw new NumberFormatException("Invalid decimal: " + value);
+        }
     }
 
     private static Integer parseInteger(String value) {
         if (value == null || value.isBlank()) {
             return null;
         }
-        return Integer.parseInt(value.trim());
+        String normalized = value.trim();
+        if (!NON_NEGATIVE_INTEGER.matcher(normalized).matches()) {
+            throw new NumberFormatException("Invalid integer: " + value);
+        }
+        try {
+            return Integer.parseInt(normalized);
+        } catch (NumberFormatException ex) {
+            throw new NumberFormatException("Invalid integer: " + value);
+        }
     }
 
     private static String firstNonBlank(String first, String second) {

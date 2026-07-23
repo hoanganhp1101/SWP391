@@ -98,9 +98,6 @@ public class MedicalEncounterController extends HttpServlet {
             case "form":
                 form(request, response);
                 break;
-            case "delete":
-                delete(request, response);
-                break;
 
             default:
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thao tác không hợp lệ");
@@ -160,66 +157,6 @@ public class MedicalEncounterController extends HttpServlet {
         request.setAttribute("detailView", detailView);
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
                 .forward(request, response);
-    }
-
-    private void delete(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-
-
-        request.setCharacterEncoding("UTF-8");
-
-        User user = AuthContext.requirePatientDataAccess(request, response);
-        if (user == null) {
-            return;
-        }
-
-        String encounterId = request.getParameter("id");
-        if (encounterId == null || encounterId.isBlank()) {
-            response.sendRedirect(request.getContextPath() + "/doctor/patient-records?error=missing_id");
-            return;
-        }
-        if (!AuthContext.ensureEncounterAccess(user, patientDAO, encounterDAO, encounterId, response)) {
-            return;
-        }
-
-        try {
-            String scopeDoctorId = AuthContext.scopeDoctorId(user);
-            MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
-            if (encounter == null) {
-                throw new SQLException("Không tìm thấy hồ sơ khám bệnh");
-            }
-
-            Connection con = DBContext.getConnection();
-            if (con == null) {
-                throw new SQLException("Không thể kết nối cơ sở dữ liệu");
-            }
-
-            boolean previousAutoCommit = con.getAutoCommit();
-            con.setAutoCommit(false);
-
-            try {
-                String prescriptionId = prescriptionDAO.getIdByEncounterId(con, encounterId);
-                medicationDAO.deleteByPrescriptionId(con, prescriptionId);
-                prescriptionDAO.deleteByEncounterId(con, encounterId);
-                labResultDAO.deleteByEncounterId(con, encounterId);
-                healthRecordDAO.delete(con, encounterId);
-                encounterDAO.deleteById(con, encounterId);
-                con.commit();
-
-            } catch (SQLException ex) {
-                con.rollback();
-                throw ex;
-
-            } finally {
-                con.setAutoCommit(previousAutoCommit);
-                con.close();
-            }
-            response.sendRedirect(request.getContextPath() + "/doctor/patient-records?deleted=1");
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            response.sendRedirect(request.getContextPath()
-                    + "/doctor/patient-records?error=delete");
-        }
     }
 
     private void analyze(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -427,11 +364,14 @@ public class MedicalEncounterController extends HttpServlet {
         labels.put("hba1cPercent", "HbA1c");
         labels.put("chieuCaoCm", "Chiều cao");
         labels.put("canNangKg", "Cân nặng");
+        labels.put("bmi", "BMI");
         labels.put("huyetApTamThu", "Huyết áp tâm thu");
         labels.put("huyetApTamTruong", "Huyết áp tâm trương");
         labels.put("nhipTim", "Nhịp tim");
         labels.put("nhietDoC", "Nhiệt độ");
         labels.put("nhipTho", "Nhịp thở");
+        labels.put("carbsG", "Carbohydrate");
+        labels.put("lieuLuongInsulinUi", "Liều insulin");
         labels.put("labGlucoseMau", "Đường huyết");
         labels.put("labHba1c", "HbA1c");
         labels.put("labCholesterol", "Cholesterol");
@@ -454,30 +394,31 @@ public class MedicalEncounterController extends HttpServlet {
             if (value == null || value.isBlank()) {
                 continue;
             }
+            String normalized = value.trim().replace(',', '.');
+            boolean integerField = "huyetApTamThu".equals(field.getKey())
+                    || "huyetApTamTruong".equals(field.getKey())
+                    || "nhipTim".equals(field.getKey())
+                    || "nhipTho".equals(field.getKey())
+                    || "lieuLuongInsulinUi".equals(field.getKey());
+            boolean valid = integerField
+                    ? normalized.matches("^\\d+$")
+                    : normalized.matches("^\\d+(\\.\\d+)?$");
+            if (!valid) {
+                errors.add(field.getValue() + " chỉ được nhập số.");
+                continue;
+            }
             try {
-                String normalized = value.trim().replace(",", ".");
-                if ("huyetApTamThu".equals(field.getKey())
-                        || "huyetApTamTruong".equals(field.getKey())
-                        || "nhipTim".equals(field.getKey())
-                        || "nhipTho".equals(field.getKey())) {
+                if (integerField) {
                     Integer.parseInt(normalized);
                 } else {
                     Double.parseDouble(normalized);
                 }
             } catch (NumberFormatException ex) {
-                if ("Đường huyết".equals(field.getValue()) || "HbA1c".equals(field.getValue())) {
-                    errors.add(field.getValue() + " phải là số.");
-                } else {
-                    errors.add(field.getValue() + ("huyetApTamThu".equals(field.getKey())
-                        || "huyetApTamTruong".equals(field.getKey())
-                        || "nhipTim".equals(field.getKey())
-                        || "nhipTho".equals(field.getKey())
-                        ? " phải là số nguyên hợp lệ." : " phải là số hợp lệ."));
-                }
+                errors.add(field.getValue() + " chỉ được nhập số.");
             }
         }
         if (errors.isEmpty()) {
-            errors.add("Dữ liệu số không hợp lệ. Vui lòng kiểm tra lại trường vừa nhập.");
+            errors.add("Giá trị phải là số hợp lệ.");
         }
         return errors;
     }

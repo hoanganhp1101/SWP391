@@ -1,9 +1,4 @@
-<%@ page import="com.example.diabetesmanage.model.Appointment" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
-<%@ page import="java.util.Locale" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -423,8 +418,6 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="${empty doctor}">
     <c:set var="doctor" value="${sessionScope.user}"/>
 </c:if>
@@ -465,6 +458,7 @@
                         <form method="get"
                               action="${pageContext.request.contextPath}/doctor/appointments">
 
+                            <input type="hidden" name="type" value="${param.type}">
                             <input type="hidden" name="status" value="${param.status}">
                             <input type="hidden" name="fromDate" value="${param.fromDate}">
                             <input type="hidden" name="toDate" value="${param.toDate}">
@@ -496,6 +490,9 @@
                     </c:when>
                     <c:otherwise><c:set var="dateLabel" value="Chọn khoảng ngày"/></c:otherwise>
                 </c:choose>
+                <c:set var="typeLabel" value="${param.type eq 'tai_kham_noi_tiet' ? 'Bệnh án tái khám Nội tiết'
+                        : (param.type eq 'mau_tong_quat' ? 'Kết quả xét nghiệm máu tổng quát'
+                        : (param.type eq 'sinh_hoa_mau' ? 'Kết quả sinh hóa máu' : 'Loại hồ sơ'))}"/>
 
                 <div class="filter-bar">
 
@@ -508,6 +505,7 @@
                         <div class="filter-popup">
                             <form method="get" action="${basePath}">
                                 <input type="hidden" name="keyword" value="${param.keyword}">
+                                <input type="hidden" name="type" value="${param.type}">
                                 <input type="hidden" name="status" value="${param.status}">
                                 <div class="filter-fields">
                                     <label>Từ ngày</label>
@@ -522,6 +520,32 @@
                         </div>
                     </div>
 
+                    <!-- Loại hồ sơ -->
+                    <div class="filter-dropdown">
+                        <button type="button" class="filter-button">
+                            <span class="filter-label">${typeLabel}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-menu">
+                            <a class="filter-item ${empty param.type ? 'active' : ''}"
+                               href="${basePath}?type=&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=${param.status}">
+                                <i class="fa-solid fa-check filter-check"></i> Tất cả
+                            </a>
+                            <a class="filter-item ${param.type eq 'tai_kham_noi_tiet' ? 'active' : ''}"
+                               href="${basePath}?type=tai_kham_noi_tiet&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=${param.status}">
+                                <i class="fa-solid fa-check filter-check"></i> Bệnh án tái khám Nội tiết
+                            </a>
+                            <a class="filter-item ${param.type eq 'mau_tong_quat' ? 'active' : ''}"
+                               href="${basePath}?type=mau_tong_quat&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=${param.status}">
+                                <i class="fa-solid fa-check filter-check"></i> Kết quả xét nghiệm máu tổng quát
+                            </a>
+                            <a class="filter-item ${param.type eq 'sinh_hoa_mau' ? 'active' : ''}"
+                               href="${basePath}?type=sinh_hoa_mau&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=${param.status}">
+                                <i class="fa-solid fa-check filter-check"></i> Kết quả sinh hóa máu
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Trạng thái -->
                     <div class="filter-dropdown">
                         <button type="button" class="filter-button">
@@ -530,19 +554,19 @@
                         </button>
                         <div class="filter-menu">
                             <a class="filter-item ${empty param.status ? 'active' : ''}"
-                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=">
+                               href="${basePath}?type=${param.type}&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=">
                                 <i class="fa-solid fa-check filter-check"></i> Tất cả
                             </a>
                             <a class="filter-item ${param.status eq 'cho_kham' ? 'active' : ''}"
-                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=cho_kham">
+                               href="${basePath}?type=${param.type}&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=cho_kham">
                                 <i class="fa-solid fa-check filter-check"></i> Chờ khám
                             </a>
                             <a class="filter-item ${param.status eq 'da_kham' ? 'active' : ''}"
-                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=da_kham">
+                               href="${basePath}?type=${param.type}&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=da_kham">
                                 <i class="fa-solid fa-check filter-check"></i> Đã khám
                             </a>
                             <a class="filter-item ${(param.status eq 'da_huy' or param.status eq 'huy') ? 'active' : ''}"
-                               href="${basePath}?keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=da_huy">
+                               href="${basePath}?type=${param.type}&keyword=${param.keyword}&fromDate=${param.fromDate}&toDate=${param.toDate}&status=da_huy">
                                 <i class="fa-solid fa-check filter-check"></i> Đã hủy
                             </a>
                         </div>
@@ -566,68 +590,48 @@
                         </thead>
 
                         <tbody>
-
-                        <%
-                            List<Appointment> appointments =
-                                    (List<Appointment>) request.getAttribute("appointments");
-                            DateTimeFormatter timeFmt =
-                                    DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm a", Locale.US);
-
-                            if (appointments != null) {
-                                for (Appointment appt : appointments) {
-                                    String statusClass = "status-" + appt.getTrangThai();
-                                    String timeText = appt.getThoiGianHen() != null
-                                            ? appt.getThoiGianHen().toLocalDateTime().format(timeFmt)
-                                            : "—";
-                        %>
-
+                        <c:forEach var="appt" items="${appointments}">
                         <tr>
-
-                            <td><%= appt.getPatientName() %></td>
-                            <td><%= appt.getNoiDungKham() %></td>
-                            <td><%= timeText %></td>
-                            <td><%= appt.getDiaDiem() %></td>
+                            <td><c:out value="${appt.patientName}"/></td>
+                            <td><c:out value="${appt.noiDungKham}"/></td>
+                            <td><c:out value="${appt.thoiGianHenDisplay}"/></td>
+                            <td><c:out value="${appt.diaDiem}"/></td>
                             <td>
-                                <span class="status-badge <%= statusClass %>">
-                                    <%= appt.getTrangThaiLabel() %>
+                                <span class="status-badge ${appt.statusCssClass}">
+                                    <c:out value="${appt.trangThaiLabel}"/>
                                 </span>
                             </td>
                             <td>
-                                <% if (Appointment.STATUS_CHO_KHAM.equals(appt.getTrangThai())) { %>
-                                <form method="post"
-                                      action="${pageContext.request.contextPath}/doctor/appointments"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('Đánh dấu đã khám và tạo hồ sơ lần khám?');">
-                                    <input type="hidden" name="id" value="<%= appt.getId() %>">
-                                    <input type="hidden" name="status" value="da_kham">
-                                    <input type="hidden" name="filterStatus" value="${param.status}">
-                                    <button type="submit" class="btn-status btn-complete">
-                                        Đánh dấu đã khám
-                                    </button>
-                                </form>
-                                <form method="post"
-                                      action="${pageContext.request.contextPath}/doctor/appointments"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('Hủy lịch hẹn này?');">
-                                    <input type="hidden" name="id" value="<%= appt.getId() %>">
-                                    <input type="hidden" name="status" value="da_huy">
-                                    <input type="hidden" name="filterStatus" value="${param.status}">
-                                    <button type="submit" class="btn-status btn-cancel">
-                                        Hủy lịch
-                                    </button>
-                                </form>
-                                <% } else { %>
-                                —
-                                <% } %>
+                                <c:choose>
+                                    <c:when test="${appt.choKham}">
+                                        <form method="post"
+                                              action="${pageContext.request.contextPath}/doctor/appointments"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('Đánh dấu đã khám và tạo hồ sơ lần khám?');">
+                                            <input type="hidden" name="id" value="${appt.id}">
+                                            <input type="hidden" name="status" value="da_kham">
+                                            <input type="hidden" name="filterStatus" value="${param.status}">
+                                            <button type="submit" class="btn-status btn-complete">
+                                                Đánh dấu đã khám
+                                            </button>
+                                        </form>
+                                        <form method="post"
+                                              action="${pageContext.request.contextPath}/doctor/appointments"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('Hủy lịch hẹn này?');">
+                                            <input type="hidden" name="id" value="${appt.id}">
+                                            <input type="hidden" name="status" value="da_huy">
+                                            <input type="hidden" name="filterStatus" value="${param.status}">
+                                            <button type="submit" class="btn-status btn-cancel">
+                                                Hủy lịch
+                                            </button>
+                                        </form>
+                                    </c:when>
+                                    <c:otherwise>—</c:otherwise>
+                                </c:choose>
                             </td>
-
                         </tr>
-
-                        <%
-                                }
-                            }
-                        %>
-
+                        </c:forEach>
                         </tbody>
 
                     </table>

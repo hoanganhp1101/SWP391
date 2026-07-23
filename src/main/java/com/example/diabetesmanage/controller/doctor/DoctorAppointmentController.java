@@ -34,9 +34,10 @@ public class DoctorAppointmentController extends HttpServlet {
         String keyword = request.getParameter("keyword");
         String fromDate = request.getParameter("fromDate");
         String toDate = request.getParameter("toDate");
+        String type = request.getParameter("type");
 
         List<Appointment> appointments =
-                appointmentDAO.findAll(scopeDoctorId, status, keyword, fromDate, toDate);
+                appointmentDAO.findAll(scopeDoctorId, status, keyword, fromDate, toDate, type);
 
         DoctorLayoutHelper.prepare(request, user, "appointments");
         request.setAttribute("appointments", appointments);
