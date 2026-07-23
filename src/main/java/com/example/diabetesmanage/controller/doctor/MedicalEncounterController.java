@@ -98,9 +98,6 @@ public class MedicalEncounterController extends HttpServlet {
             case "form":
                 form(request, response);
                 break;
-            case "delete":
-                delete(request, response);
-                break;
 
             default:
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thao tác không hợp lệ");
@@ -160,66 +157,6 @@ public class MedicalEncounterController extends HttpServlet {
         request.setAttribute("detailView", detailView);
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
                 .forward(request, response);
-    }
-
-    private void delete(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-
-
-        request.setCharacterEncoding("UTF-8");
-
-        User user = AuthContext.requirePatientDataAccess(request, response);
-        if (user == null) {
-            return;
-        }
-
-        String encounterId = request.getParameter("id");
-        if (encounterId == null || encounterId.isBlank()) {
-            response.sendRedirect(request.getContextPath() + "/doctor/patient-records?error=missing_id");
-            return;
-        }
-        if (!AuthContext.ensureEncounterAccess(user, patientDAO, encounterDAO, encounterId, response)) {
-            return;
-        }
-
-        try {
-            String scopeDoctorId = AuthContext.scopeDoctorId(user);
-            MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
-            if (encounter == null) {
-                throw new SQLException("Không tìm thấy hồ sơ khám bệnh");
-            }
-
-            Connection con = DBContext.getConnection();
-            if (con == null) {
-                throw new SQLException("Không thể kết nối cơ sở dữ liệu");
-            }
-
-            boolean previousAutoCommit = con.getAutoCommit();
-            con.setAutoCommit(false);
-
-            try {
-                String prescriptionId = prescriptionDAO.getIdByEncounterId(con, encounterId);
-                medicationDAO.deleteByPrescriptionId(con, prescriptionId);
-                prescriptionDAO.deleteByEncounterId(con, encounterId);
-                labResultDAO.deleteByEncounterId(con, encounterId);
-                healthRecordDAO.delete(con, encounterId);
-                encounterDAO.deleteById(con, encounterId);
-                con.commit();
-
-            } catch (SQLException ex) {
-                con.rollback();
-                throw ex;
-
-            } finally {
-                con.setAutoCommit(previousAutoCommit);
-                con.close();
-            }
-            response.sendRedirect(request.getContextPath() + "/doctor/patient-records?deleted=1");
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            response.sendRedirect(request.getContextPath()
-                    + "/doctor/patient-records?error=delete");
-        }
     }
 
     private void analyze(HttpServletRequest request, HttpServletResponse response) throws IOException {

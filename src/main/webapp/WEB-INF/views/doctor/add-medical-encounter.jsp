@@ -181,6 +181,12 @@
             <div class="alert-error" id="ajaxErrors" style="display:none;"></div>
 
             <form method="post" action="${pageContext.request.contextPath}/doctor/patient-records" id="encounterForm" novalidate>
+                <c:set var="activeEncounterType"
+                       value="${empty form.encounterType ? 'tai_kham_noi_tiet' : form.encounterType}"/>
+                <c:set var="showTaiKham" value="${activeEncounterType eq 'tai_kham_noi_tiet'}"/>
+                <c:set var="showSinhHoa" value="${activeEncounterType eq 'sinh_hoa_mau'}"/>
+                <c:set var="showMauTongQuat" value="${activeEncounterType eq 'mau_tong_quat'}"/>
+
                 <input type="hidden" name="action" id="action" value="form">
                 <input type="hidden" name="patientId" id="patientId" value="${form.patientId}">
                 <input type="hidden" name="thoiDiemDoDuong" value="luc_doi">
@@ -275,7 +281,8 @@
                 </div>
 
                 <!-- B. Thông tin lâm sàng -->
-                <div class="card" data-encounter-section="tai_kham_noi_tiet">
+                <div class="card" data-encounter-section="tai_kham_noi_tiet"
+                     style="display:${showTaiKham ? 'block' : 'none'};">
                     <div class="card-top"><i class="fa-solid fa-stethoscope"></i> B. Thông tin lâm sàng</div>
                     <div class="card-body">
                         <div class="form-container">
@@ -297,13 +304,14 @@
                 </div>
 
                 <!-- C. Chỉ số sức khỏe -->
-                <div class="card" data-encounter-section="tai_kham_noi_tiet">
+                <div class="card" data-encounter-section="tai_kham_noi_tiet"
+                     style="display:${showTaiKham ? 'block' : 'none'};">
                     <div class="card-top"><i class="fa-solid fa-heart-pulse"></i> C. Chỉ số sức khỏe</div>
                     <div class="card-body">
                         <div class="form-container">
                             <div class="form-group">
-                                <label>Đường huyết (mg/dL) <span class="req tai-kham-required">*</span></label>
-                                <input type="number" step="any" min="0" max="800" name="duongHuyetMgdl" value="${form.duongHuyetMgdl}" data-tai-kham-required="true" inputmode="decimal">
+                                <label>Đường huyết (mg/dL) <span class="req tai-kham-required" style="display:${showTaiKham ? 'inline' : 'none'};">*</span></label>
+                                <input type="number" step="any" min="0" max="800" name="duongHuyetMgdl" value="${form.duongHuyetMgdl}" data-tai-kham-required="true" ${showTaiKham ? 'required' : ''} inputmode="decimal">
                                 <div class="field-error" data-error-for="duongHuyetMgdl"><c:out value="${fieldErrors['duongHuyetMgdl']}"/></div>
                             </div>
                             <div class="form-group">
@@ -355,7 +363,8 @@
                 </div>
 
                 <!-- D. Kết quả sinh hóa -->
-                <div class="card" data-encounter-section="sinh_hoa_mau">
+                <div class="card" data-encounter-section="sinh_hoa_mau"
+                     style="display:${showSinhHoa ? 'block' : 'none'};">
                     <div class="card-top"><i class="fa-solid fa-flask"></i> D. Kết quả sinh hóa máu</div>
                     <div class="card-body">
                         <div class="form-container">
@@ -374,7 +383,8 @@
                 </div>
 
                 <!-- E. Xét nghiệm máu tổng quát -->
-                <div class="card" data-encounter-section="mau_tong_quat">
+                <div class="card" data-encounter-section="mau_tong_quat"
+                     style="display:${showMauTongQuat ? 'block' : 'none'};">
                     <div class="card-top"><i class="fa-solid fa-vial"></i> E. Xét nghiệm máu tổng quát</div>
                     <div class="card-body">
                         <div class="form-container">
@@ -428,8 +438,14 @@
                 <div class="form-actions">
                     <a href="${pageContext.request.contextPath}/doctor/patient-records" class="btn btn-outline">Hủy</a>
                     <button type="button" class="btn btn-ai" id="btnAnalyze"><i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích AI</button>
-                    <button type="submit" class="btn btn-primary" id="btnContinue" disabled><i class="fa-solid fa-arrow-right"></i> Tiếp tục kê đơn</button>
-                    <button type="submit" class="btn btn-primary" id="btnSave" disabled style="display:none;"><i class="fa-solid fa-save"></i> Lưu hồ sơ</button>
+                    <button type="submit" class="btn btn-primary" id="btnContinue"
+                            style="display:${showTaiKham ? 'inline-flex' : 'none'};">
+                        <i class="fa-solid fa-arrow-right"></i> Tiếp tục kê đơn
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnSave"
+                            style="display:${showTaiKham ? 'none' : 'inline-flex'};">
+                        <i class="fa-solid fa-save"></i> Lưu hồ sơ
+                    </button>
                 </div>
             </form>
     </main>
@@ -495,6 +511,35 @@
         return d.innerHTML;
     }
 
+    const heightInput = document.getElementById('chieuCaoCm');
+    const weightInput = document.getElementById('canNangKg');
+    const bmiInput = document.getElementById('bmi');
+
+    function calcBmi() {
+        if (!heightInput || !weightInput || !bmiInput) {
+            return;
+        }
+        const h = Number(heightInput.value);
+        const w = Number(weightInput.value);
+
+        if (!Number.isFinite(h) || !Number.isFinite(w) || h <= 0 || w <= 0) {
+            bmiInput.value = '';
+            return;
+        }
+
+        const bmi = w / Math.pow(h / 100, 2);
+        bmiInput.value = bmi.toFixed(2);
+    }
+
+    ['input', 'change', 'blur'].forEach(function (evt) {
+        if (heightInput) {
+            heightInput.addEventListener(evt, calcBmi);
+        }
+        if (weightInput) {
+            weightInput.addEventListener(evt, calcBmi);
+        }
+    });
+
     function selectPatient(p) {
         patientIdInput.value = p.id;
         setFieldError('patientId', '');
@@ -510,10 +555,10 @@
         document.getElementById('piInsurance').textContent = p.insurance || '—';
         document.getElementById('piHeight').textContent = p.height || '—';
         infoPanel.classList.add('show');
-        if (p.height && !document.getElementById('chieuCaoCm').value) {
-            document.getElementById('chieuCaoCm').value = p.height;
-            calcBmi();
+        if (heightInput && p.height && !heightInput.value) {
+            heightInput.value = p.height;
         }
+        calcBmi();
         resultsBox.classList.remove('show');
     }
 
@@ -527,101 +572,129 @@
         }
     });
 
+    const encounterTypeSelect = document.getElementById('encounterType');
+    const btnContinue = document.getElementById('btnContinue');
+    const btnSave = document.getElementById('btnSave');
+    const form = document.getElementById('encounterForm');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const ajaxErrors = document.getElementById('ajaxErrors');
+    const aiCard = document.getElementById('aiCard');
+    let analyzed = false; // đã phân tích AI thành công chưa
+
     const initialId = patientIdInput.value;
     if (initialId) {
         const found = patients.find(function (p) { return p.id === initialId; });
         if (found) selectPatient(found);
+    } else {
+        calcBmi();
     }
-
-    const heightInput = document.getElementById('chieuCaoCm');
-    const weightInput = document.getElementById('canNangKg');
-    const bmiInput = document.getElementById('bmi');
-    function calcBmi() {
-        const h = parseFloat(heightInput.value);
-        const w = parseFloat(weightInput.value);
-        if (!h || !w || h <= 0) return;
-        const m = h / 100;
-        bmiInput.value = (w / (m * m)).toFixed(2);
-    }
-    heightInput.addEventListener('input', calcBmi);
-    weightInput.addEventListener('input', calcBmi);
-    calcBmi();
-
-    const encounterTypeSelect = document.getElementById('encounterType');
-    const btnContinue = document.getElementById('btnContinue');
-    const btnSave = document.getElementById('btnSave');
-    let analyzed = false; // đã phân tích AI thành công chưa
 
     // Nút submit đang hiển thị theo loại hồ sơ (Nội tiết → kê đơn, còn lại → lưu hồ sơ).
     function activeSubmitButton() {
         return encounterTypeSelect.value === 'tai_kham_noi_tiet' ? btnContinue : btnSave;
     }
 
+    /** Chỉ quyết định nút nào hiển thị — không enable/disable. */
     function toggleActionButtons() {
         const type = encounterTypeSelect.value;
 
         if (type === "tai_kham_noi_tiet") {
-            // Chỉ hiện nút kê đơn
             btnContinue.style.display = "inline-flex";
             btnSave.style.display = "none";
         } else {
-            // Chỉ hiện nút lưu
             btnContinue.style.display = "none";
             btnSave.style.display = "inline-flex";
         }
-
-        btnContinue.disabled = false;
-        btnSave.disabled = false;
     }
 
-    function toggleEncounterSections() {
-        const type = encounterTypeSelect.value;
+    /** Khôi phục trạng thái nút sau POST fail / bfcache / client validation fail. */
+    function resetSubmitButtons() {
+        btnSave.disabled = false;
+        btnContinue.disabled = false;
+
+        btnSave.innerHTML =
+            '<i class="fa-solid fa-save"></i> Lưu hồ sơ';
+
+        btnContinue.innerHTML =
+            '<i class="fa-solid fa-arrow-right"></i> Tiếp tục kê đơn';
+    }
+
+    /**
+     * Synchronize encounter sections with #encounterType.
+     * Initial visibility is rendered by JSP from ${form.encounterType}.
+     * JS only re-syncs on load and when the user changes encounterType.
+     */
+    function updateEncounterUI() {
+        const type = encounterTypeSelect ? encounterTypeSelect.value : '';
         const isTaiKham = type === 'tai_kham_noi_tiet';
+
         document.querySelectorAll('[data-encounter-section]').forEach(function (card) {
             const active = card.getAttribute('data-encounter-section') === type;
-            card.style.display = active ? '' : 'none';
-            // Input ẩn vẫn bị FormData submit → disable để không gửi dữ liệu loại hồ sơ khác.
-            card.querySelectorAll('input, select, textarea').forEach(function (el) {
-                el.disabled = !active;
-            });
+            card.style.display = active ? 'block' : 'none';
         });
+
         document.querySelectorAll('[data-tai-kham-required]').forEach(function (field) {
-            if (isTaiKham) { field.setAttribute('required', 'required'); }
-            else { field.removeAttribute('required'); }
+            if (isTaiKham) {
+                field.setAttribute('required', 'required');
+            } else {
+                field.removeAttribute('required');
+            }
         });
         document.querySelectorAll('.tai-kham-required').forEach(function (mark) {
-            mark.style.display = isTaiKham ? '' : 'none';
+            mark.style.display = isTaiKham ? 'inline' : 'none';
         });
+
         toggleActionButtons();
+        calcBmi();
     }
-    encounterTypeSelect.addEventListener('change', function () {
-        resetAI();
-        toggleEncounterSections();
-    });
+
     function resetAI() {
         analyzed = false;
-
-        aiCard.classList.remove("show");
-
-        document.getElementById("aiSummary").value = "";
-        document.getElementById("aiRiskLevel").value = "";
-        document.getElementById("aiRiskScore").value = "";
-
-        ajaxErrors.style.display = "none";
-
-        btnAnalyze.disabled = false;
-        btnAnalyze.innerHTML =
-            '<i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích AI';
-
+        if (aiCard) {
+            aiCard.classList.remove('show');
+        }
+        var aiSummary = document.getElementById('aiSummary');
+        var aiRiskLevel = document.getElementById('aiRiskLevel');
+        var aiRiskScore = document.getElementById('aiRiskScore');
+        if (aiSummary) aiSummary.value = '';
+        if (aiRiskLevel) aiRiskLevel.value = '';
+        if (aiRiskScore) aiRiskScore.value = '';
+        if (ajaxErrors) {
+            ajaxErrors.style.display = 'none';
+        }
+        if (btnAnalyze) {
+            btnAnalyze.disabled = false;
+            btnAnalyze.innerHTML =
+                '<i class="fa-solid fa-wand-magic-sparkles"></i> Phân tích AI';
+        }
+        // Do NOT change encounter section visibility.
         toggleActionButtons();
     }
-    toggleEncounterSections();
+
+    encounterTypeSelect.addEventListener('change', function () {
+        resetAI();
+        updateEncounterUI();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        resetSubmitButtons();
+        updateEncounterUI();
+        calcBmi();
+    });
+
+    window.addEventListener('pageshow', function () {
+        resetSubmitButtons();
+        calcBmi();
+    });
+
+    // Script ở cuối body: DOM đã sẵn sàng — chạy ngay nếu DOMContentLoaded đã qua.
+    if (document.readyState !== 'loading') {
+        resetSubmitButtons();
+        updateEncounterUI();
+        calcBmi();
+    }
 
     // ---- Phân tích AI (AJAX, không lưu DB) ----
-    const form = document.getElementById('encounterForm');
-    const btnAnalyze = document.getElementById('btnAnalyze');
-    const ajaxErrors = document.getElementById('ajaxErrors');
-    const aiCard = document.getElementById('aiCard');
     const visitDateInput = form.elements.ngayKham;
     const now = new Date();
     const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
@@ -691,7 +764,8 @@
     function validateNumberField(name) {
         const field = form.elements[name];
         const rule = validationRules[name];
-        if (!field || !rule || field.closest('[data-encounter-section]')?.style.display === 'none') {
+        const section = field ? field.closest('[data-encounter-section]') : null;
+        if (!field || !rule || (section && section.style.display === 'none')) {
             setFieldError(name, '');
             return null;
         }
@@ -901,6 +975,7 @@
         const clientErrors = validateEncounterForm();
         if (clientErrors.length) {
             e.preventDefault();
+            resetSubmitButtons();
             showErrors(clientErrors);
             const firstInvalid = form.querySelector('.input-error');
             if (firstInvalid) firstInvalid.focus();
@@ -908,7 +983,8 @@
         }
         const submitBtn = activeSubmitButton();
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+        submitBtn.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
     });
 
     // Hiển thị lại lỗi server dưới từng ô (nếu có).
