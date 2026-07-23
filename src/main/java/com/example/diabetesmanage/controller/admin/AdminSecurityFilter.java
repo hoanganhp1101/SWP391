@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.controller.admin;
 
+import com.example.diabetesmanage.model.User;
 import java.io.IOException;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -20,7 +21,10 @@ import jakarta.servlet.http.HttpSession;
         "/admin/medications",
         "/admin/foods",
         "/admin/assign",
-        "/RecordController"
+        "/RecordController",
+        "/ai-report",
+        "/api/patient/health-records",
+        "/admin/*"
 })
 public class AdminSecurityFilter implements Filter {
 
@@ -30,16 +34,26 @@ public class AdminSecurityFilter implements Filter {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        HttpSession session = httpRequest.getSession(false);
+        String path = httpRequest.getServletPath();
 
+        // Legacy admin login path redirects via AdminLoginServlet; still allow through filter.
+        if ("/admin/login".equals(path)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        HttpSession session = httpRequest.getSession(false);
         boolean isLoggedInAdmin = false;
         if (session != null) {
             Object admin = session.getAttribute("adminUser");
             Object user = session.getAttribute("user");
-            if (admin != null) {
+            if (admin instanceof User adminUser
+                    && "quan_tri_vien".equalsIgnoreCase(adminUser.getVaiTro())
+                    && adminUser.getKichHoat() == 1) {
                 isLoggedInAdmin = true;
-            } else if (user instanceof com.example.diabetesmanage.model.User u
-                    && "quan_tri_vien".equalsIgnoreCase(u.getVaiTro())) {
+            } else if (user instanceof User u
+                    && "quan_tri_vien".equalsIgnoreCase(u.getVaiTro())
+                    && u.getKichHoat() == 1) {
                 isLoggedInAdmin = true;
                 session.setAttribute("adminUser", u);
                 session.setAttribute("loginUser", u);

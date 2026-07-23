@@ -169,10 +169,10 @@ public class UserDAO {
         return null;
     }
 
-    private String hashSHA256(String input) {
+    public String hashSHA256(String input) {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] messageDigest = md.digest(input.getBytes("UTF-8"));
+            byte[] messageDigest = md.digest((input == null ? "" : input).getBytes("UTF-8"));
             StringBuilder hexString = new StringBuilder();
             for (byte b : messageDigest) {
                 String hex = Integer.toHexString(0xff & b);
@@ -209,13 +209,13 @@ public class UserDAO {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
-        if (role != null && !role.trim().isEmpty()) {
+        if (isValidRole(role)) {
             sql.append(" AND vai_tro = ?");
-            params.add(role);
+            params.add(role.trim());
         }
-        if (status != null && !status.trim().isEmpty()) {
+        if (isValidStatus(status)) {
             sql.append(" AND kich_hoat = ?");
-            params.add(Integer.parseInt(status));
+            params.add(Integer.parseInt(status.trim()));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (ho_ten LIKE ? OR email LIKE ? OR so_dien_thoai LIKE ?)");
@@ -247,13 +247,13 @@ public class UserDAO {
         StringBuilder sql = new StringBuilder("SELECT * FROM users WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
-        if (role != null && !role.trim().isEmpty()) {
+        if (isValidRole(role)) {
             sql.append(" AND vai_tro = ?");
-            params.add(role);
+            params.add(role.trim());
         }
-        if (status != null && !status.trim().isEmpty()) {
+        if (isValidStatus(status)) {
             sql.append(" AND kich_hoat = ?");
-            params.add(Integer.parseInt(status));
+            params.add(Integer.parseInt(status.trim()));
         }
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (ho_ten LIKE ? OR email LIKE ? OR so_dien_thoai LIKE ?)");
@@ -298,7 +298,7 @@ public class UserDAO {
             ps.setString(3, u.getEmail());
             ps.setString(4, u.getSoDienThoai());
             ps.setString(5, u.getVaiTro());
-            ps.setString(6, u.getMatKhauHash());
+            ps.setString(6, hashSHA256(u.getMatKhauHash()));
 
             return ps.executeUpdate() > 0;
 
@@ -323,6 +323,27 @@ public class UserDAO {
             System.err.println("Lỗi khi cập nhật trạng thái user: " + e.getMessage());
         }
         return false;
+    }
+
+    private boolean isValidRole(String role) {
+        if (role == null) {
+            return false;
+        }
+
+        String normalizedRole = role.trim();
+        return "quan_tri_vien".equals(normalizedRole)
+                || "bac_si".equals(normalizedRole)
+                || "y_ta".equals(normalizedRole)
+                || "benh_nhan".equals(normalizedRole);
+    }
+
+    private boolean isValidStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+
+        String normalizedStatus = status.trim();
+        return "0".equals(normalizedStatus) || "1".equals(normalizedStatus);
     }
 
     private User mapResultSetToUser(ResultSet rs) throws SQLException {

@@ -13,6 +13,7 @@ public class Prescription {
     private String huongDieuTri;
     private String cheDoAn;
     private String luyenTap;
+    private String ghiChu;
     private Timestamp ngayTaiKham;
     
     // For joining with doctor User table
@@ -44,6 +45,8 @@ public class Prescription {
     public void setCheDoAn(String cheDoAn) { this.cheDoAn = cheDoAn; }
     public String getLuyenTap() { return luyenTap; }
     public void setLuyenTap(String luyenTap) { this.luyenTap = luyenTap; }
+    public String getGhiChu() { return ghiChu; }
+    public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
     public List<Medication> getMedications() { return medications; }
     public void setMedications(List<Medication> medications) { this.medications = medications; }
 }

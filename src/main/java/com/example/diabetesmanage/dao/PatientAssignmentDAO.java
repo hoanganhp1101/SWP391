@@ -14,14 +14,20 @@ public class PatientAssignmentDAO {
 
     // Phân công bác sĩ mới cho bệnh nhân
     public boolean assignDoctor(String patientId, String doctorId) {
+        if (isBlank(patientId) || isBlank(doctorId)) {
+            return false;
+        }
+
         String disableOldSql = "UPDATE patient_assignments SET trang_thai = false WHERE patient_id = ?";
         String insertNewSql = "INSERT INTO patient_assignments (id, patient_id, doctor_id, trang_thai) VALUES (?, ?, ?, true)";
+        String updatePatientSql = "UPDATE patients SET bac_si_id = ? WHERE id = ?";
 
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false); // Bắt đầu Transaction
 
             try (PreparedStatement psDisable = conn.prepareStatement(disableOldSql);
-                 PreparedStatement psInsert = conn.prepareStatement(insertNewSql)) {
+                 PreparedStatement psInsert = conn.prepareStatement(insertNewSql);
+                 PreparedStatement psUpdatePatient = conn.prepareStatement(updatePatientSql)) {
 
                 // 1. Vô hiệu hóa phân công cũ
                 psDisable.setString(1, patientId);
@@ -31,7 +37,18 @@ public class PatientAssignmentDAO {
                 psInsert.setString(1, UUID.randomUUID().toString());
                 psInsert.setString(2, patientId);
                 psInsert.setString(3, doctorId);
-                psInsert.executeUpdate();
+                if (psInsert.executeUpdate() != 1) {
+                    conn.rollback();
+                    return false;
+                }
+
+                // Keep the denormalized doctor reference used by patient lists and risk reports in sync.
+                psUpdatePatient.setString(1, doctorId);
+                psUpdatePatient.setString(2, patientId);
+                if (psUpdatePatient.executeUpdate() != 1) {
+                    conn.rollback();
+                    return false;
+                }
 
                 conn.commit(); // Hoàn tất Transaction
                 return true;
@@ -43,6 +60,10 @@ public class PatientAssignmentDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     // Lấy Map chứa <PatientID, Tên Bác sĩ đang điều trị> để hiển thị ra bảng
