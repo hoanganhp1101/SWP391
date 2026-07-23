@@ -93,7 +93,7 @@ public class PatientDietServlet extends HttpServlet {
                         DietPlanDAO planDAO = new DietPlanDAO();
                         
                         // Xóa các thực đơn cũ trong ngày của AI để tránh trùng lặp
-                        try (java.sql.Connection conn = com.example.diabetesmanage.util.DBContext.getConnection();
+                        try (java.sql.Connection conn = com.example.diabetesmanage.context.DBContext.getConnection();
                              java.sql.PreparedStatement ps = conn.prepareStatement("DELETE FROM diet_plans WHERE patient_id = ? AND DATE(ngay_tao) = CURDATE() AND doctor_id = 'AI_SYSTEM'")) {
                             ps.setString(1, patientId);
                             ps.executeUpdate();

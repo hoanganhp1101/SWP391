@@ -14,6 +14,8 @@
                class="${activeTop == 'profile' ? 'active' : ''}">Hồ sơ y tế</a>
             <a href="${ctx}/patient-appointments"
                class="${activeTop == 'appointments' ? 'active' : ''}">Lịch khám</a>
+            <a href="${ctx}/patient-prescriptions"
+               class="${activeTop == 'prescriptions' ? 'active' : ''}">Đơn thuốc</a>
             <a href="${ctx}/patient-iot"
                class="${activeTop == 'iot' ? 'active' : ''}">IoT mô phỏng</a>
             <a href="${ctx}/patient-diet"

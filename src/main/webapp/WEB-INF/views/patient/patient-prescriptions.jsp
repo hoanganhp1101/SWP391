@@ -130,38 +130,13 @@
 </head>
 <body class="patient-app">
     <jsp:include page="layout/topnav.jsp">
-        <jsp:param name="activeTop" value="dashboard"/>
+        <jsp:param name="activeTop" value="prescriptions"/>
     </jsp:include>
 
     <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="profile-card">
-                <a class="avatar-link" href="#" title="Chỉnh sửa hồ sơ" data-open-profile-modal>
-                    <div class="profile-avatar"></div>
-                </a>
-                <div class="profile-name">${patientInfo.hoTen != null ? patientInfo.hoTen : 'Bệnh nhân'}</div>
-                <div class="profile-role">Bệnh nhân - ĐTĐ ${patientInfo.loaiTieuDuong != null ? patientInfo.loaiTieuDuong : 'Type 2'}</div>
-                <div class="avatar-hint">Nhấn ảnh đại diện để chỉnh sửa hồ sơ</div>
-            </div>
-            <nav class="sidebar-menu">
-                <a href="patient-dashboard" class="menu-btn"><i class="fas fa-chart-pie"></i> Tổng quan</a>
-                <a href="patient-medical-profile" class="menu-btn"><i class="fas fa-file-medical"></i> Xem bệnh án cá nhân</a>
-                <a href="patient-appointments" class="menu-btn"><i class="far fa-calendar-alt"></i> Xem lịch khám</a>
-                <a href="patient-prescriptions" class="menu-btn active"><i class="fas fa-pills"></i> Đơn thuốc</a>
-                <a href="patient-diet" class="menu-btn"><i class="fas fa-utensils"></i> Thực đơn AI</a>
-                <a href="#" class="menu-btn"><i class="fas fa-chart-line"></i> Biểu đồ tiến triển</a>
-                <a href="patient-medical-history" class="menu-btn"><i class="fas fa-file-pdf"></i> Lịch sử khám bệnh</a>
-            </nav>
-
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
-                <a href="#" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-btn"><i class="far fa-question-circle"></i> Hỗ trợ</a>
-                <a href="${pageContext.request.contextPath}/logout" class="menu-btn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
-            </div>
-        </aside>
+        <jsp:include page="layout/sidebar.jsp">
+            <jsp:param name="activeMenu" value="prescriptions"/>
+        </jsp:include>
 
         <!-- Content -->
         <main class="content">
