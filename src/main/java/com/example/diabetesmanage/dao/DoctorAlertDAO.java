@@ -109,8 +109,8 @@ public class DoctorAlertDAO {
     private void bindParams(PreparedStatement ps, List<?> params) throws SQLException {
         for (int i = 0; i < params.size(); i++) {
             Object value = params.get(i);
-            if (value instanceof Integer intValue) {
-                ps.setInt(i + 1, intValue);
+            if (value instanceof Integer) {
+                ps.setInt(i + 1, (Integer) value);
             } else {
                 ps.setString(i + 1, String.valueOf(value));
             }

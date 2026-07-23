@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.controller.login;
 
+import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.UserDAO;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -55,7 +56,7 @@ public class LoginController extends HttpServlet {
         // Chỉ cho phép forward khi đã đăng nhập đúng role
         if (service.equals("admin")) {
             User current = (User) session.getAttribute("user");
-            if (current == null || !"quan_tri_vien".equalsIgnoreCase(current.getVaiTro())) {
+            if (current == null || !"quan_tri_vien".equalsIgnoreCase(normalizeRole(current.getVaiTro()))) {
                 response.sendRedirect(request.getContextPath() + "/Logincontroller");
                 return;
             }
@@ -64,7 +65,7 @@ public class LoginController extends HttpServlet {
         }
         if (service.equals("user")) {
             User current = (User) session.getAttribute("user");
-            if (current == null || !"benh_nhan".equalsIgnoreCase(current.getVaiTro())) {
+            if (current == null || !"benh_nhan".equalsIgnoreCase(normalizeRole(current.getVaiTro()))) {
                 response.sendRedirect(request.getContextPath() + "/Logincontroller");
                 return;
             }
@@ -100,17 +101,25 @@ public class LoginController extends HttpServlet {
                 request.setAttribute("passError", "Mật khẩu không được vượt quá 50 ký tự");
                 hasError = true;
             }
-            
+
             if (hasError) {
                 request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
                 return;
             }
-            
+
             Encode encoder = new Encode();
             String hashedPass = encoder.Encode(inputPass);
 
             UserDAO dao = UserDAO.getInstance();
-            User user = dao.checkLogin(inputUser, hashedPass);
+            User user;
+            try {
+                user = dao.checkLogin(inputUser.trim(), hashedPass);
+            } catch (IllegalStateException dbError) {
+                request.setAttribute("AccountError",
+                        "Không kết nối được MySQL. Kiểm tra MySQL đang chạy và mật khẩu trong DBContext.");
+                request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+                return;
+            }
 
             if (user == null) {
                 request.setAttribute("AccountError", "Email/tên đăng nhập hoặc mật khẩu không đúng");
@@ -124,11 +133,29 @@ public class LoginController extends HttpServlet {
                 return;
             }
 
-            // Đăng nhập thành công → set session (đồng bộ các key legacy)
+            String role = normalizeRole(user.getVaiTro());
+            if (!isSupportedRole(role)) {
+                request.setAttribute("AccountError", "Vai trò không được hỗ trợ đăng nhập.");
+                request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+                return;
+            }
+
+            // Bệnh nhân phải có hồ sơ patients trước khi vào portal
+            if ("benh_nhan".equalsIgnoreCase(role)) {
+                String patientId = new PatientDAO().ensurePatientProfileForUser(user.getId());
+                if (patientId == null) {
+                    request.setAttribute("AccountError", "Không tạo được hồ sơ bệnh nhân. Vui lòng liên hệ quản trị.");
+                    request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+                    return;
+                }
+            }
+
+            // Xoay session để xóa quyền/role cũ (tránh adminUser sót → vào sai cổng)
+            session = rotateSession(request, session);
             session.setAttribute("user", user);
             session.setAttribute("loginUser", user);
+            session.removeAttribute("adminUser");
 
-            String role = user.getVaiTro();
             if ("quan_tri_vien".equalsIgnoreCase(role)) {
                 session.setAttribute("adminUser", user);
                 session.setAttribute("status", 1);
@@ -139,22 +166,42 @@ public class LoginController extends HttpServlet {
             } else if ("bac_si".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 3);
                 response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
-            } else {
-                request.setAttribute("AccountError", "Vai trò không được hỗ trợ đăng nhập.");
-                request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
             }
-
         }
+    }
+
+    private static String normalizeRole(String role) {
+        return role == null ? "" : role.trim();
+    }
+
+    private static boolean isSupportedRole(String role) {
+        return "quan_tri_vien".equalsIgnoreCase(role)
+                || "benh_nhan".equalsIgnoreCase(role)
+                || "bac_si".equalsIgnoreCase(role);
+    }
+
+    private static HttpSession rotateSession(HttpServletRequest request, HttpSession oldSession) {
+        if (oldSession != null) {
+            try {
+                oldSession.invalidate();
+            } catch (IllegalStateException ignored) {
+                // session đã hết hạn
+            }
+        }
+        return request.getSession(true);
     }
 
     private void redirectByRole(HttpServletResponse response, String contextPath, String role)
             throws IOException {
-        if ("quan_tri_vien".equalsIgnoreCase(role)) {
+        String normalized = normalizeRole(role);
+        if ("quan_tri_vien".equalsIgnoreCase(normalized)) {
             response.sendRedirect(contextPath + "/admin-dashboard");
-        } else if ("benh_nhan".equalsIgnoreCase(role)) {
+        } else if ("benh_nhan".equalsIgnoreCase(normalized)) {
             response.sendRedirect(contextPath + "/patient-dashboard");
-        } else if ("bac_si".equalsIgnoreCase(role)) {
+        } else if ("bac_si".equalsIgnoreCase(normalized)) {
             response.sendRedirect(contextPath + "/doctor-dashboard");
+        } else {
+            response.sendRedirect(contextPath + "/Logincontroller");
         }
     }
 

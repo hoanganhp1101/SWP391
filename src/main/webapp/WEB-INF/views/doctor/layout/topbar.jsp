@@ -23,8 +23,12 @@
            class="${activeTopNav == 'patients' ? 'active' : ''}">Bệnh nhân</a>
         <a href="${ctx}/doctor/patient-records"
            class="${activeTopNav == 'records' ? 'active' : ''}">Hồ sơ</a>
-        <a href="${ctx}/doctor-dashboard#danger-section"
-           class="${activeTopNav == 'reports' ? 'active' : ''}">Báo cáo</a>
+        <a href="${ctx}/doctor/appointments"
+           class="${activeTopNav == 'appointments' ? 'active' : ''}">Lịch khám</a>
+        <a href="${ctx}/doctor/alerts"
+           class="${activeTopNav == 'alerts' ? 'active' : ''}">Cảnh báo</a>
+        <a href="${ctx}/doctor/analytics"
+           class="${activeTopNav == 'analytics' ? 'active' : ''}">Phân tích</a>
     </div>
 
     <div class="top-actions">
@@ -32,8 +36,9 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" placeholder="Tìm kiếm hồ sơ y tế...">
         </div>
-        <i class="fa-regular fa-bell icon-btn"></i>
-        <i class="fa-solid fa-gear icon-btn"></i>
+        <a href="${ctx}/doctor/alerts" title="Cảnh báo" class="icon-btn-link">
+            <i class="fa-regular fa-bell icon-btn"></i>
+        </a>
         <img class="topbar-avatar avatar"
              src="${not empty doctor.anhDaiDien ? doctor.anhDaiDien : 'https://i.pravatar.cc/40'}"
              alt="">

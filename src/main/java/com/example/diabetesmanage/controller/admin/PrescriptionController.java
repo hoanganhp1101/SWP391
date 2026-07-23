@@ -82,22 +82,42 @@ public class PrescriptionController extends HttpServlet {
             Prescription prescription = new Prescription();
             prescription.setPatientId(patientId);
             prescription.setBacSiId(loginUser.getId());
-
-            List<PrescriptionDetail> details = new ArrayList<>();
-            for (int i = 0; i < medicationIds.length; i++) {
-                if (medicationIds[i] != null && !medicationIds[i].trim().isEmpty()) {
-                    PrescriptionDetail detail = new PrescriptionDetail();
-                    detail.setMedicationId(medicationIds[i]);
-                    detail.setLieuLuong(lieuLuongs[i]);
-                    detail.setTanSuat(tanSuats[i]);
-                    details.add(detail);
-                }
+            if (ghiChu != null) {
+                prescription.setGhiChu(ghiChu.trim());
             }
 
-            prescriptionDAO.createPrescription(prescription, details);
+            List<PrescriptionDetail> details = buildPrescriptionDetails(medicationIds, lieuLuongs, tanSuats);
+            if (!details.isEmpty()) {
+                prescriptionDAO.createPrescription(prescription, details);
+            }
         }
 
         // Kê xong thì quay lại danh sách bệnh nhân
         response.sendRedirect(request.getContextPath() + "/patient-manager");
+    }
+
+    /**
+     * Ghép các mảng form thành danh sách chi tiết đơn; bỏ dòng thiếu/blank, cắt theo độ dài chung.
+     */
+    List<PrescriptionDetail> buildPrescriptionDetails(String[] medicationIds, String[] lieuLuongs, String[] tanSuats) {
+        List<PrescriptionDetail> details = new ArrayList<>();
+        if (medicationIds == null || lieuLuongs == null || tanSuats == null) {
+            return details;
+        }
+        int n = Math.min(medicationIds.length, Math.min(lieuLuongs.length, tanSuats.length));
+        for (int i = 0; i < n; i++) {
+            String medId = medicationIds[i] == null ? "" : medicationIds[i].trim();
+            String lieuLuong = lieuLuongs[i] == null ? "" : lieuLuongs[i].trim();
+            String tanSuat = tanSuats[i] == null ? "" : tanSuats[i].trim();
+            if (medId.isEmpty() || lieuLuong.isEmpty() || tanSuat.isEmpty()) {
+                continue;
+            }
+            PrescriptionDetail detail = new PrescriptionDetail();
+            detail.setMedicationId(medId);
+            detail.setLieuLuong(lieuLuong);
+            detail.setTanSuat(tanSuat);
+            details.add(detail);
+        }
+        return details;
     }
 }

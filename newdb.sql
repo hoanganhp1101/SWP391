@@ -1,6 +1,9 @@
 -- ============================================================
--- PROJECT: DIABCARE AI - HỆ THỐNG QUẢN LÝ BỆNH ÁN TIỂU ĐƯỜNG
--- Mô tả: File khởi tạo cấu trúc CSDL và dữ liệu mẫu (Human-readable)
+-- PROJECT: DIABCARE — HỆ THỐNG QUẢN LÝ BỆNH ÁN TIỂU ĐƯỜNG
+-- NGUỒN CHÍNH (single source of truth) cho MySQL schema + seed.
+-- Chỉ cần chạy file này khi setup / reset DB:
+--   mysql -u root -p < newdb.sql
+-- Các file SQL khác trong /scripts chỉ là migration/legacy tùy chọn.
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS diabcare_db
@@ -11,6 +14,7 @@ USE diabcare_db;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP VIEW IF EXISTS v_patient_summary;
+DROP TABLE IF EXISTS educational_contents;
 DROP TABLE IF EXISTS diet_plan_details;
 DROP TABLE IF EXISTS diet_plans;
 DROP TABLE IF EXISTS patient_assignments;
@@ -411,6 +415,23 @@ CREATE TABLE prescription_details (
     CONSTRAINT fk_rxd_med FOREIGN KEY (medication_id)   REFERENCES master_medications(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Nội dung giáo dục sức khỏe (admin educational content)
+CREATE TABLE educational_contents (
+    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    title               VARCHAR(200)    NOT NULL,
+    category            VARCHAR(60)     NOT NULL,
+    summary             VARCHAR(500)    DEFAULT NULL,
+    content             TEXT            NOT NULL,
+    target_audience     VARCHAR(60)     DEFAULT 'benh_nhan',
+    display_order       INT             NOT NULL DEFAULT 0,
+    active              TINYINT(1)      NOT NULL DEFAULT 1,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_edu_category (category),
+    INDEX idx_edu_active (active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================================
 -- 2. KHỞI TẠO VIEW TỔNG HỢP (Dùng cho Dashboard Bác sĩ)
 -- ============================================================
@@ -427,6 +448,8 @@ SELECT
     hr.duong_huyet_mgdl     AS duong_huyet_gan_nhat,
     hr.bmi                  AS bmi_gan_nhat,
     hr.hba1c_percent        AS hba1c_gan_nhat,
+    hr.huyet_ap_tam_thu     AS huyet_ap_tam_thu,
+    hr.huyet_ap_tam_truong  AS huyet_ap_tam_truong,
     hr.thoi_gian_do         AS lan_do_cuoi,
     aa.muc_canh_bao         AS muc_nguy_co,
     aa.diem_nguy_co,
@@ -446,6 +469,7 @@ USE diabcare_db;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 2. Dọn sạch dữ liệu trong toàn bộ các bảng
+TRUNCATE TABLE educational_contents;
 TRUNCATE TABLE diet_plan_details;
 TRUNCATE TABLE diet_plans;
 TRUNCATE TABLE patient_assignments;
@@ -485,9 +509,9 @@ SET @prescription_id = UUID();
 -- 2. TẠO TÀI KHOẢN NGƯỜI DÙNG (ADMIN, BÁC SĨ & BỆNH NHÂN)
 -- ============================================================
 INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, anh_dai_dien) VALUES
-(@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', 'bac_si', SHA2('doctor123', 256), 'https://ui-avatars.com/api/?name=Bac+Si+Tran+Thi+B&background=0D8ABC&color=fff'),
-(@patient_user_id, 'Đỗ Thị L.', 'dothil@example.com', '0988777666', 'benh_nhan', SHA2('password123', 256), 'https://ui-avatars.com/api/?name=Do+Thi+L&background=0D8ABC&color=fff'),
-(@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', 'quan_tri_vien', SHA2('admin2024!', 256), 'https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff');
+(@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', 'bac_si', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Bac+Si+Tran+Thi+B&background=0D8ABC&color=fff'),
+(@patient_user_id, 'Đỗ Thị L.', 'dothil@example.com', '0988777666', 'benh_nhan', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Do+Thi+L&background=0D8ABC&color=fff'),
+(@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', 'quan_tri_vien', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff');
 
 -- ============================================================
 -- 3. HỒ SƠ BỆNH NHÂN (Từ Bệnh án PDF)
@@ -592,3 +616,22 @@ INSERT INTO master_medications (id, ten_thuoc, hoat_chat, don_vi_tinh, loai_thuo
 ('m3', 'Glucophage XR 750mg', 'Metformin', 'Viên', 'Uống', 'Uống vào buổi tối cùng với bữa ăn.', 1),
 ('m4', 'Lantus 100 IU/ml', 'Insulin Glargine', 'Bút tiêm', 'Tiêm dưới da', 'Tiêm 1 lần/ngày vào cùng một thời điểm. Luân phiên vị trí tiêm.', 1),
 ('m5', 'Novomix 30 FlexPen', 'Insulin Aspart', 'Bút tiêm', 'Tiêm dưới da', 'Tiêm ngay trước hoặc sau bữa ăn chính.', 1);
+
+-- ============================================================
+-- 9. NỘI DUNG GIÁO DỤC (gộp từ educational_contents.sql)
+-- ============================================================
+INSERT INTO educational_contents
+    (id, title, category, summary, content, target_audience, display_order, active)
+VALUES
+    (UUID(), 'Nhận biết dấu hiệu hạ đường huyết', 'tu_cham_soc',
+     'Các dấu hiệu cần chú ý và cách xử trí ban đầu khi đường huyết xuống thấp.',
+     'Theo dõi các dấu hiệu như run tay, vã mồ hôi, chóng mặt, đói cồn cào hoặc lú lẫn. Khi nghi ngờ hạ đường huyết, người bệnh nên đo đường huyết nếu có máy đo và bổ sung carbohydrate hấp thu nhanh theo hướng dẫn của nhân viên y tế.',
+     'benh_nhan', 1, 1),
+    (UUID(), 'Nguyên tắc chọn thực phẩm GI thấp', 'dinh_duong',
+     'Gợi ý lựa chọn thực phẩm giúp hạn chế tăng đường huyết sau ăn.',
+     'Ưu tiên ngũ cốc nguyên hạt, rau xanh, đạm nạc và thực phẩm giàu chất xơ. Hạn chế nước ngọt, bánh kẹo, tinh bột tinh chế và khẩu phần quá lớn trong một bữa.',
+     'benh_nhan', 2, 1),
+    (UUID(), 'Lưu ý khi sử dụng insulin', 'thuoc_insulin',
+     'Các điểm cần nhớ khi bảo quản và sử dụng insulin.',
+     'Insulin cần được dùng đúng loại, đúng liều, đúng thời điểm theo chỉ định. Không tự ý thay đổi liều. Kiểm tra hạn dùng, cách bảo quản và vị trí tiêm để giảm nguy cơ sai liều hoặc kích ứng.',
+     'benh_nhan', 3, 1);

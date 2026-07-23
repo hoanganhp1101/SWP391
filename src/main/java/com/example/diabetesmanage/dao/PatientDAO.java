@@ -26,6 +26,8 @@ public class PatientDAO {
                     "vps.duong_huyet_gan_nhat AS duong_huyet_gan_nhat, " +
                     "vps.bmi_gan_nhat AS bmi_gan_nhat, " +
                     "vps.hba1c_gan_nhat AS hba1c_gan_nhat, " +
+                    "vps.huyet_ap_tam_thu AS huyet_ap_tam_thu, " +
+                    "vps.huyet_ap_tam_truong AS huyet_ap_tam_truong, " +
                     "vps.muc_nguy_co AS muc_nguy_co, " +
                     "vps.diem_nguy_co AS diem_nguy_co, " +
                     "vps.lan_do_cuoi AS lan_do_cuoi, " +
@@ -377,6 +379,37 @@ public class PatientDAO {
         return null;
     }
 
+    /**
+     * Đảm bảo user bệnh nhân có dòng trong {@code patients}.
+     * Tài khoản đăng ký cũ có thể chỉ có {@code users} → login vào dashboard sẽ lỗi.
+     */
+    public String ensurePatientProfileForUser(String userId) {
+        String existing = getPatientIdByUserId(userId);
+        if (existing != null && !existing.isBlank()) {
+            return existing;
+        }
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String patientId = UUID.randomUUID().toString();
+        String sql = "INSERT INTO patients (id, user_id, ngay_sinh, loai_tieu_duong) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, patientId);
+            ps.setString(2, userId.trim());
+            ps.setDate(3, java.sql.Date.valueOf("2000-01-01"));
+            ps.setString(4, "Type 2");
+            if (ps.executeUpdate() > 0) {
+                return patientId;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Race: hồ sơ vừa được tạo bởi request khác
+            return getPatientIdByUserId(userId);
+        }
+        return null;
+    }
+
     // ── Doctor portal methods ──────────────────────────────────────────────────
 
     public List<Patient> getPatients(String scopeDoctorId) {
@@ -599,8 +632,16 @@ public class PatientDAO {
     }
 
     private void appendBloodPressureFilter(StringBuilder sql, String bloodPressure) {
-        // Disabled for current database schema (v_patient_summary does not expose huyet_ap_tam_thu/huyet_ap_tam_truong).
-        // Keep method signature to avoid changing controller/JSP flow.
+        if ("normal".equalsIgnoreCase(bloodPressure)) {
+            sql.append("AND vps.huyet_ap_tam_thu IS NOT NULL AND vps.huyet_ap_tam_truong IS NOT NULL ")
+                    .append("AND vps.huyet_ap_tam_thu < 140 AND vps.huyet_ap_tam_truong < 90 ");
+        } else if ("high".equalsIgnoreCase(bloodPressure)) {
+            sql.append("AND (vps.huyet_ap_tam_thu >= 140 OR vps.huyet_ap_tam_truong >= 90) ");
+        } else if ("low".equalsIgnoreCase(bloodPressure)) {
+            sql.append("AND vps.huyet_ap_tam_thu IS NOT NULL AND vps.huyet_ap_tam_thu < 90 ");
+        } else if ("missing".equalsIgnoreCase(bloodPressure)) {
+            sql.append("AND (vps.huyet_ap_tam_thu IS NULL OR vps.huyet_ap_tam_truong IS NULL) ");
+        }
     }
 
     private void appendAgeFilter(StringBuilder sql, String age) {
@@ -678,6 +719,8 @@ public class PatientDAO {
         p.setDuongHuyetGanNhat(optDouble(rs, "duong_huyet_gan_nhat"));
         p.setBmiGanNhat(optDouble(rs, "bmi_gan_nhat"));
         p.setHba1cGanNhat(optDouble(rs, "hba1c_gan_nhat"));
+        p.setHuyetApTamThu(optionalInt(rs, "huyet_ap_tam_thu"));
+        p.setHuyetApTamTruong(optionalInt(rs, "huyet_ap_tam_truong"));
         p.setMucNguyCo(rs.getString("muc_nguy_co"));
         p.setDiemNguyCo(optDouble(rs, "diem_nguy_co"));
         p.setLanDoCuoi(rs.getTimestamp("lan_do_cuoi"));

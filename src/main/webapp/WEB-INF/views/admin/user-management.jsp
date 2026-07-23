@@ -111,7 +111,7 @@
                             </td>
                             <td>
                                 <c:choose>
-                                    <c:when test="${u.kichHoat == 1}">
+                                    <c:when test="${u.kichHoat}">
                                         <span class="text-success small fw-medium"><i class="fas fa-circle me-1" style="font-size:8px;"></i> Hoạt động</span>
                                     </c:when>
                                     <c:otherwise>
@@ -134,7 +134,7 @@
                                 </button>
 
                                 <c:choose>
-                                    <c:when test="${u.kichHoat == 1}">
+                                    <c:when test="${u.kichHoat}">
                                         <form action="${pageContext.request.contextPath}/admin/users" method="POST" class="d-inline">
                                             <input type="hidden" name="action" value="toggleStatus">
                                             <input type="hidden" name="id" value="${u.id}">

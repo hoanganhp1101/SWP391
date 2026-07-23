@@ -242,10 +242,10 @@ public class DoctorAnalyticsDAO {
     private void bind(PreparedStatement ps, Object... params) throws Exception {
         for (int i = 0; i < params.length; i++) {
             Object v = params[i];
-            if (v instanceof Integer intValue) {
-                ps.setInt(i + 1, intValue);
-            } else if (v instanceof Double doubleValue) {
-                ps.setDouble(i + 1, doubleValue);
+            if (v instanceof Integer) {
+                ps.setInt(i + 1, (Integer) v);
+            } else if (v instanceof Double) {
+                ps.setDouble(i + 1, (Double) v);
             } else {
                 ps.setString(i + 1, String.valueOf(v));
             }

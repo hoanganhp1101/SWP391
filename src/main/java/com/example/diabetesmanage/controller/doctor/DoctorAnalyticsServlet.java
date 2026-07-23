@@ -2,15 +2,18 @@ package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.DoctorAlertDAO;
 import com.example.diabetesmanage.dao.DoctorAnalyticsDAO;
+import com.example.diabetesmanage.model.User;
+import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.util.List;
-import com.example.diabetesmanage.model.User;
 
 @WebServlet(name = "DoctorAnalyticsServlet", urlPatterns = {"/doctor/analytics"})
 public class DoctorAnalyticsServlet extends HttpServlet {
@@ -19,13 +22,12 @@ public class DoctorAnalyticsServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
-        User user = session == null ? null : (User) session.getAttribute("user");
-        if (user == null || !"bac_si".equalsIgnoreCase(user.getVaiTro())) {
-            response.sendRedirect(request.getContextPath() + "/Logincontroller");
+        User user = AuthContext.requireDoctor(request, response);
+        if (user == null) {
             return;
         }
         String doctorId = user.getId();
+        DoctorLayoutHelper.prepare(request, user, "analytics");
 
         int days = parseDays(request.getParameter("days"));
 

@@ -19,7 +19,7 @@
             <div class="auth-alert auth-alert-error">${AccountError}</div>
         </c:if>
 
-        <form action="Logincontroller" method="post" autocomplete="on">
+        <form action="${pageContext.request.contextPath}/Logincontroller" method="post" autocomplete="on">
             <input type="hidden" name="service" value="checkaccount">
 
             <div class="auth-field">
@@ -44,14 +44,14 @@
             </div>
 
             <div class="auth-row-actions">
-                <a href="ForgotPassword">Quên mật khẩu?</a>
+                <a href="${pageContext.request.contextPath}/ForgotPassword">Quên mật khẩu?</a>
             </div>
 
             <button type="submit" class="auth-btn">Đăng nhập</button>
         </form>
 
         <p class="auth-footer">
-            Chưa có tài khoản? <a href="RegisterController">Đăng ký</a>
+            Chưa có tài khoản? <a href="${pageContext.request.contextPath}/RegisterController">Đăng ký</a>
         </p>
     </div>
 </body>

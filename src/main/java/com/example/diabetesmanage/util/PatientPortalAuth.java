@@ -31,7 +31,11 @@ public final class PatientPortalAuth {
             response.sendRedirect(request.getContextPath() + "/Logincontroller");
             return null;
         }
-        String patientId = new PatientDAO().getPatientIdByUserId(user.getId());
+        PatientDAO patientDAO = new PatientDAO();
+        String patientId = patientDAO.getPatientIdByUserId(user.getId());
+        if (patientId == null || patientId.isBlank()) {
+            patientId = patientDAO.ensurePatientProfileForUser(user.getId());
+        }
         if (patientId == null || patientId.isBlank()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Khong tim thay ho so benh nhan.");
             return null;

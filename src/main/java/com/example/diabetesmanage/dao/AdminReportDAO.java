@@ -2,7 +2,7 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.model.AdminReportStats;
 import com.example.diabetesmanage.model.ReportBucket;
-import com.example.diabetesmanage.util.DBContext;
+import com.example.diabetesmanage.context.DBContext;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

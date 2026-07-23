@@ -67,16 +67,22 @@ public class UserDAO {
             return null;
         }
         String sql = "SELECT * FROM users WHERE email = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email.trim());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToUser(rs);
+        try {
+            Connection conn = DBContext.getConnection();
+            if (conn == null) {
+                throw new IllegalStateException("Không kết nối được MySQL. Kiểm tra DBContext và dịch vụ MySQL.");
+            }
+            try (conn; PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, email.trim());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return mapResultSetToUser(rs);
+                    }
                 }
             }
         } catch (SQLException e) {
             Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "getUserByEmail error", e);
+            throw new IllegalStateException("Lỗi truy vấn người dùng khi đăng nhập.", e);
         }
         return null;
     }
@@ -128,19 +134,23 @@ public class UserDAO {
     }
 
     public boolean registerUser(User user) {
-        String sql = "INSERT INTO users (ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, kich_hoat, ngay_tao) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        if (user.getId() == null || user.getId().isBlank()) {
+            user.setId(java.util.UUID.randomUUID().toString());
+        }
+        String sql = "INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, kich_hoat, ngay_tao) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement st = conn.prepareStatement(sql)) {
 
-            st.setString(1, user.getHoTen());
-            st.setString(2, user.getEmail());
-            st.setString(3, user.getSoDienThoai());
-            st.setString(4, user.getVaiTro());
-            st.setString(5, user.getMatKhauHash());
-            st.setBoolean(6, user.isKichHoat());
-            st.setTimestamp(7, user.getNgayTao() != null ? user.getNgayTao() : new Timestamp(System.currentTimeMillis()));
+            st.setString(1, user.getId());
+            st.setString(2, user.getHoTen());
+            st.setString(3, user.getEmail());
+            st.setString(4, user.getSoDienThoai());
+            st.setString(5, user.getVaiTro());
+            st.setString(6, user.getMatKhauHash());
+            st.setBoolean(7, user.isKichHoat());
+            st.setTimestamp(8, user.getNgayTao() != null ? user.getNgayTao() : new Timestamp(System.currentTimeMillis()));
 
             return st.executeUpdate() > 0;
         } catch (Exception e) {

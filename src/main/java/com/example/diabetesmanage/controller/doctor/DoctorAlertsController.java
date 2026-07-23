@@ -1,16 +1,19 @@
 package com.example.diabetesmanage.controller.doctor;
 
 import com.example.diabetesmanage.dao.DoctorAlertDAO;
+import com.example.diabetesmanage.model.DoctorAlert;
+import com.example.diabetesmanage.model.User;
+import com.example.diabetesmanage.util.AuthContext;
+import com.example.diabetesmanage.util.DoctorLayoutHelper;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.util.List;
-import com.example.diabetesmanage.model.DoctorAlert;
-import com.example.diabetesmanage.model.User;
 
 @WebServlet(
         name = "DoctorAlertsController",
@@ -24,10 +27,8 @@ public class DoctorAlertsController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
-        User user = session == null ? null : (User) session.getAttribute("user");
-        if (user == null || !"bac_si".equalsIgnoreCase(user.getVaiTro())) {
-            response.sendRedirect(request.getContextPath() + "/Logincontroller");
+        User user = AuthContext.requireDoctor(request, response);
+        if (user == null) {
             return;
         }
         String doctorId = user.getId();
@@ -51,6 +52,7 @@ public class DoctorAlertsController extends HttpServlet {
         int fromIndex = totalAlerts == 0 ? 0 : ((page - 1) * PAGE_SIZE) + 1;
         int toIndex = Math.min(page * PAGE_SIZE, totalAlerts);
 
+        DoctorLayoutHelper.prepare(request, user, "alerts");
         request.setAttribute("listAlerts", alerts);
         request.setAttribute("totalAlerts", totalAlerts);
         request.setAttribute("severityFilter", severity);
@@ -63,7 +65,7 @@ public class DoctorAlertsController extends HttpServlet {
         request.setAttribute("fromIndex", fromIndex);
         request.setAttribute("toIndex", toIndex);
 
-        request.getRequestDispatcher("/WEB-INF/views/doctor/DoctorAlert.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/doctor/alert.jsp").forward(request, response);
     }
 
     @Override

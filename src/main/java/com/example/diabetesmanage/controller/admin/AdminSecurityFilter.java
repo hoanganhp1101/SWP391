@@ -47,16 +47,20 @@ public class AdminSecurityFilter implements Filter {
         if (session != null) {
             Object admin = session.getAttribute("adminUser");
             Object user = session.getAttribute("user");
-            if (admin instanceof User adminUser
-                    && "quan_tri_vien".equalsIgnoreCase(adminUser.getVaiTro())
-                    && adminUser.getKichHoat() == 1) {
-                isLoggedInAdmin = true;
-            } else if (user instanceof User u
-                    && "quan_tri_vien".equalsIgnoreCase(u.getVaiTro())
-                    && u.getKichHoat() == 1) {
-                isLoggedInAdmin = true;
-                session.setAttribute("adminUser", u);
-                session.setAttribute("loginUser", u);
+            if (admin instanceof User) {
+                User adminUser = (User) admin;
+                if ("quan_tri_vien".equalsIgnoreCase(adminUser.getVaiTro())
+                        && adminUser.getKichHoat() == 1) {
+                    isLoggedInAdmin = true;
+                }
+            } else if (user instanceof User) {
+                User u = (User) user;
+                if ("quan_tri_vien".equalsIgnoreCase(u.getVaiTro())
+                        && u.getKichHoat() == 1) {
+                    isLoggedInAdmin = true;
+                    session.setAttribute("adminUser", u);
+                    session.setAttribute("loginUser", u);
+                }
             }
         }
 

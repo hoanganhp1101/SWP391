@@ -19,38 +19,49 @@ import java.util.UUID;
 public class PrescriptionDAO {
 
     public boolean createPrescription(Prescription prescription, List<PrescriptionDetail> details) {
-        String insertPrescriptionSQL = "INSERT INTO prescriptions (id, patient_id, doctor_id, ghi_chu) VALUES (?, ?, ?, ?)";
-        String insertDetailSQL = "INSERT INTO prescription_details (id, prescription_id, medication_id, lieu_luong, tan_suat) VALUES (?, ?, ?, ?, ?)";
+        // Khớp schema newdb.sql: bac_si_id + chan_doan (NOT NULL)
+        String insertPrescriptionSQL =
+                "INSERT INTO prescriptions (id, patient_id, bac_si_id, chan_doan, ghi_chu) VALUES (?, ?, ?, ?, ?)";
+        String insertDetailSQL =
+                "INSERT INTO prescription_details (id, prescription_id, medication_id, lieu_luong, tan_suat) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = DBContext.getConnection()) {
-            conn.setAutoCommit(false); // Bắt đầu Transaction
+            if (conn == null) {
+                return false;
+            }
+            conn.setAutoCommit(false);
 
             try (PreparedStatement psPrescription = conn.prepareStatement(insertPrescriptionSQL);
                  PreparedStatement psDetail = conn.prepareStatement(insertDetailSQL)) {
 
-                // 1. Lưu thông tin chung của đơn thuốc
                 String prescriptionId = UUID.randomUUID().toString();
+                String chanDoan = prescription.getChanDoan();
+                if (chanDoan == null || chanDoan.isBlank()) {
+                    chanDoan = "Kê đơn từ quản trị";
+                }
+
                 psPrescription.setString(1, prescriptionId);
                 psPrescription.setString(2, prescription.getPatientId());
                 psPrescription.setString(3, prescription.getBacSiId());
+                psPrescription.setString(4, chanDoan.trim());
+                psPrescription.setString(5, prescription.getGhiChu());
                 psPrescription.executeUpdate();
 
-                // 2. Lưu từng loại thuốc trong đơn
                 for (PrescriptionDetail detail : details) {
                     psDetail.setString(1, UUID.randomUUID().toString());
                     psDetail.setString(2, prescriptionId);
                     psDetail.setString(3, detail.getMedicationId());
                     psDetail.setString(4, detail.getLieuLuong());
                     psDetail.setString(5, detail.getTanSuat());
-                    psDetail.addBatch(); // Đưa vào lô để chạy 1 lần cho nhanh
+                    psDetail.addBatch();
                 }
 
-                psDetail.executeBatch(); // Thực thi lô
-                conn.commit(); // Hoàn tất Transaction
+                psDetail.executeBatch();
+                conn.commit();
                 return true;
 
             } catch (Exception e) {
-                conn.rollback(); // Nếu có lỗi thì hoàn tác (không lưu gì cả)
+                conn.rollback();
                 e.printStackTrace();
             }
         } catch (Exception e) {

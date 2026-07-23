@@ -421,59 +421,9 @@
     </style>
 </head>
 <body>
-<!-- TOPBAR -->
-<header class="topbar">
-    <div class="logo">HealthAlert</div>
-    <nav class="top-nav">
-        <a href="${pageContext.request.contextPath}/doctor-dashboard">Dashboard</a>
-        <a href="${pageContext.request.contextPath}/doctor/patient-list">Patients</a>
-        <a href="${pageContext.request.contextPath}/doctor/patient-records">Records</a>
-        <a class="active">Alerts</a>
-    </nav>
-    <div class="top-actions">
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Search medical records...">
-        </div>
-        <i class="fa-regular fa-bell top-icon"></i>
-        <i class="fa-solid fa-gear top-icon"></i>
-        <img class="avatar" src="https://i.pravatar.cc/40" alt="">
-    </div>
-</header>
-
+<jsp:include page="/WEB-INF/views/doctor/layout/topbar.jsp"/>
 <div class="layout">
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="doctor-profile">
-            <img src="https://i.pravatar.cc/60" alt="">
-            <div>
-                <h4>Dr. Smith</h4>
-                <p>Chief Surgeon</p>
-            </div>
-        </div>
-        <nav class="menu">
-            <a href="${pageContext.request.contextPath}/doctor-dashboard" class="menu-item">
-                <i class="fa-solid fa-table-cells"></i><span>Overview</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/doctor/patient-list" class="menu-item">
-                <i class="fa-solid fa-users"></i><span>Patient List</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/doctor/alerts" class="menu-item active">
-                <i class="fa-regular fa-bell"></i><span>Emergency Alerts</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/doctor/patient-records" class="menu-item">
-                <i class="fa-regular fa-clipboard"></i><span>Medical History</span>
-            </a>
-            <a href="${pageContext.request.contextPath}/doctor/analytics" class="menu-item">
-                <i class="fa-solid fa-chart-column"></i><span>Analytics</span>
-            </a>
-        </nav>
-        <div class="sidebar-bottom">
-            <button class="new-record"><i class="fa-solid fa-plus"></i> New Record</button>
-            <a class="bottom-link"><i class="fa-regular fa-circle-question"></i> Support</a>
-            <a class="bottom-link"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</a>
-        </div>
-    </aside>
+    <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
 
     <!-- MAIN -->
     <main class="main-content">

@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.controller.login;
 
+import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.UserDAO;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -132,6 +133,8 @@ public class RegisterController extends HttpServlet {
             try {
                 boolean isSuccess = dao.registerUser(newUser);
                 if (isSuccess) {
+                    // Tạo hồ sơ patients để sau đăng nhập vào đúng patient-dashboard
+                    new PatientDAO().ensurePatientProfileForUser(newUser.getId());
                     request.setAttribute("UserName", inputEmail);
                     request.setAttribute("AccountError", "Đăng ký thành công! Bạn có thể đăng nhập ngay.");
                     request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);

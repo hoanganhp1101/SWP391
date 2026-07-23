@@ -19,7 +19,7 @@ public class AdminLoginServlet extends HttpServlet {
             throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("adminUser") != null) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
+            response.sendRedirect(request.getContextPath() + "/admin-dashboard");
             return;
         }
         response.sendRedirect(request.getContextPath() + "/");
