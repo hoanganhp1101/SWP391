@@ -9,7 +9,7 @@ public class DBContext {
     private static final String PORT = "3306";
     private static final String DB_NAME = "diabcare_db";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "Tu262004@";
+    private static final String PASSWORD = "123456";
 
     public static Connection getConnection() {
         try {

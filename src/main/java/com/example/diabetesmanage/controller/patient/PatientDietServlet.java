@@ -31,7 +31,7 @@ public class PatientDietServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         PatientDAO patientDAO = new PatientDAO();
-        String patientId = patientDAO.getDemoPatientId();
+        String patientId = com.example.diabetesmanage.util.PatientPortalAuth.requirePatientId(request, response);
         
         if (patientId == null) {
             response.sendRedirect(request.getContextPath() + "/patient-dashboard");
@@ -54,7 +54,7 @@ public class PatientDietServlet extends HttpServlet {
         String action = request.getParameter("action");
         if ("generate".equals(action)) {
             PatientDAO patientDAO = new PatientDAO();
-            String patientId = patientDAO.getDemoPatientId();
+            String patientId = com.example.diabetesmanage.util.PatientPortalAuth.requirePatientId(request, response);
             
             if (patientId != null) {
                 Patient patient = patientDAO.getPatientById(patientId);

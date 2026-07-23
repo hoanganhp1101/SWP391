@@ -30,12 +30,8 @@ import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.model.AIAnalysis;
 import com.example.diabetesmanage.util.PatientPortalAuth;
 
-@WebServlet(name = "PatientDashboardServlet", urlPatterns = {"/patient-dashboard"})
-@MultipartConfig(
-        fileSizeThreshold = 1024 * 1024,
-        maxFileSize = 5 * 1024 * 1024,
-        maxRequestSize = 10 * 1024 * 1024
-)
+@WebServlet(name = "PatientDashboardServlet", urlPatterns = { "/patient-dashboard" })
+@MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 5 * 1024 * 1024, maxRequestSize = 10 * 1024 * 1024)
 public class PatientDashboardServlet extends HttpServlet {
 
     @Override
@@ -71,13 +67,16 @@ public class PatientDashboardServlet extends HttpServlet {
         for (int i = 0; i < allRecords.size(); i++) {
             HealthRecord r = allRecords.get(i);
             jsonBuilder.append("{")
-                .append("\"time\":\"").append(r.getThoiGianDo() != null ? r.getThoiGianDo().toString() : "").append("\",")
-                .append("\"glucose\":").append(r.getDuongHuyetMgdl() != null ? r.getDuongHuyetMgdl() : "null").append(",")
-                .append("\"hr\":").append(r.getNhipTim() != null ? r.getNhipTim() : "null").append(",")
-                .append("\"sys\":").append(r.getHuyetApTamThu() != null ? r.getHuyetApTamThu() : "null").append(",")
-                .append("\"dia\":").append(r.getHuyetApTamTruong() != null ? r.getHuyetApTamTruong() : "null")
-                .append("}");
-            if (i < allRecords.size() - 1) jsonBuilder.append(",");
+                    .append("\"time\":\"").append(r.getThoiGianDo() != null ? r.getThoiGianDo().toString() : "")
+                    .append("\",")
+                    .append("\"glucose\":").append(r.getDuongHuyetMgdl() != null ? r.getDuongHuyetMgdl() : "null")
+                    .append(",")
+                    .append("\"hr\":").append(r.getNhipTim() != null ? r.getNhipTim() : "null").append(",")
+                    .append("\"sys\":").append(r.getHuyetApTamThu() != null ? r.getHuyetApTamThu() : "null").append(",")
+                    .append("\"dia\":").append(r.getHuyetApTamTruong() != null ? r.getHuyetApTamTruong() : "null")
+                    .append("}");
+            if (i < allRecords.size() - 1)
+                jsonBuilder.append(",");
         }
         jsonBuilder.append("]");
         request.setAttribute("chartDataJson", jsonBuilder.toString());
@@ -193,7 +192,8 @@ public class PatientDashboardServlet extends HttpServlet {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private void redirectProfileError(HttpServletResponse response, String returnUrl, String errorMessage) throws IOException {
+    private void redirectProfileError(HttpServletResponse response, String returnUrl, String errorMessage)
+            throws IOException {
         response.sendRedirect(returnUrl + "?profileUpdated=0&openProfileModal=1&error=" +
                 URLEncoder.encode(errorMessage, StandardCharsets.UTF_8));
     }

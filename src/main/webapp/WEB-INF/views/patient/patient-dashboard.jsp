@@ -1230,11 +1230,12 @@
 
             <div class="app-container">
                 <jsp:include page="layout/sidebar.jsp">
-                    <jsp:param name="activeMenu" value="dashboard"/>
+                    <jsp:param name="activeMenu" value="dashboard" />
                 </jsp:include>
 
                 <!-- Main Content -->
-                <main class="content" style="box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.1); background-color: var(--bg-body); border-radius: 12px; margin-top: 1rem; margin-right: 1rem; margin-bottom: 1rem; width: calc(100% - 280px - 2rem);">
+                <main class="content"
+                    style="box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.1); background-color: var(--bg-body); border-radius: 12px; margin-top: 1rem; margin-right: 1rem; margin-bottom: 1rem; width: calc(100% - 280px - 2rem);">
                     <h1 class="page-title">Tổng quan sức khỏe</h1>
                     <c:if test="${param.profileUpdated == '1'}">
                         <div class="profile-message success">
@@ -1243,7 +1244,8 @@
                     </c:if>
                     <c:if test="${param.profileUpdated == '0'}">
                         <div class="profile-message error">
-                            <i class="fas fa-exclamation-circle"></i> ${not empty param.error ? param.error : 'Cập nhật hồ sơ thất bại.'}
+                            <i class="fas fa-exclamation-circle"></i> ${not empty param.error ? param.error : 'Cập nhật
+                            hồ sơ thất bại.'}
                         </div>
                     </c:if>
 
@@ -1382,7 +1384,8 @@
                                     <div style="display:flex;justify-content:space-between;margin-top:0.75rem">
                                         <span class="ai-risk-label ${riskClass}">
                                             ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao ==
-                                            'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ CAO' : 'NGUY HIỂM'))}
+                                            'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ
+                                            CAO' : 'NGUY HIỂM'))}
                                         </span>
                                         <!-- <c:if test="${aiAnalysis.doTinCay != null}">
                                             <span style="font-size:0.8rem;color:#94a3b8;font-weight:500;">Độ tin cậy:
@@ -1414,13 +1417,17 @@
                                     <h3>Biểu đồ theo dõi chỉ số</h3>
                                     <p>Chi tiết các lần đo: Đường huyết, Nhịp tim, Huyết áp</p>
                                 </div>
-                                <div class="chart-controls" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="chart-controls"
+                                    style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                                     <button class="active" id="btn-7days">7 Ngày</button>
                                     <button id="btn-30days">30 Ngày</button>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-white); padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
-                                        <input type="date" class="date-picker" id="startDatePicker" title="Từ ngày" style="border: none; background: transparent; padding: 0; outline: none; font-family: inherit; color: var(--text-dark);">
+                                    <div
+                                        style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-white); padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
+                                        <input type="date" class="date-picker" id="startDatePicker" title="Từ ngày"
+                                            style="border: none; background: transparent; padding: 0; outline: none; font-family: inherit; color: var(--text-dark);">
                                         <span style="color: var(--text-muted); font-weight: 500;">-</span>
-                                        <input type="date" class="date-picker" id="endDatePicker" title="Đến ngày" style="border: none; background: transparent; padding: 0; outline: none; font-family: inherit; color: var(--text-dark);">
+                                        <input type="date" class="date-picker" id="endDatePicker" title="Đến ngày"
+                                            style="border: none; background: transparent; padding: 0; outline: none; font-family: inherit; color: var(--text-dark);">
                                     </div>
                                 </div>
                             </div>
@@ -1459,7 +1466,9 @@
                                 </c:otherwise>
                             </c:choose>
 
-                            <a href="patient-appointments" class="btn-outline" style="display: inline-block; text-align: center; text-decoration: none;">Xem toàn bộ lịch</a>
+                            <a href="patient-appointments" class="btn-outline"
+                                style="display: inline-block; text-align: center; text-decoration: none;">Xem toàn bộ
+                                lịch</a>
                         </div>
                     </div>
 
@@ -1577,9 +1586,10 @@
                                 <label>Giới tính</label>
                                 <select class="form-control" name="gioiTinh">
                                     <option value="">-- Chọn giới tính --</option>
-                                    <option value="nam" ${patientInfo.gioiTinh == 'nam' ? 'selected' : ''}>Nam</option>
-                                    <option value="nu" ${patientInfo.gioiTinh == 'nu' ? 'selected' : ''}>Nữ</option>
-                                    <option value="khac" ${patientInfo.gioiTinh == 'khac' ? 'selected' : ''}>Khác</option>
+                                    <option value="nam" ${patientInfo.gioiTinh=='nam' ? 'selected' : '' }>Nam</option>
+                                    <option value="nu" ${patientInfo.gioiTinh=='nu' ? 'selected' : '' }>Nữ</option>
+                                    <option value="khac" ${patientInfo.gioiTinh=='khac' ? 'selected' : '' }>Khác
+                                    </option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1592,7 +1602,8 @@
                             <label>Ảnh đại diện</label>
                             <input type="file" class="form-control" name="avatarFile" id="avatarFile"
                                 accept="image/png,image/jpeg,image/gif,image/webp">
-                            <div class="profile-help-text">Chọn ảnh từ máy tính (JPG, PNG, GIF hoặc WEBP, tối đa 5MB).</div>
+                            <div class="profile-help-text">Chọn ảnh từ máy tính (JPG, PNG, GIF hoặc WEBP, tối đa 5MB).
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Địa chỉ</label>
@@ -1627,13 +1638,17 @@
                         <button class="close-btn" id="closeModalBtn"><i class="fas fa-times"></i></button>
                     </div>
                     <form action="logData" method="POST" id="newRecordForm">
-                        <div id="formErrorMsg" style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;"></div>
+                        <div id="formErrorMsg"
+                            style="color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; display: none; background: var(--danger-light); padding: 0.75rem; border-radius: 8px; border: 1px solid #fca5a5;">
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Đường huyết</label>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet" class="form-control" placeholder="VD: 110">
-                                    <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control" style="width: 100px;">
+                                    <input type="number" step="0.1" name="duong_huyet" id="duong_huyet"
+                                        class="form-control" placeholder="VD: 110">
+                                    <select name="don_vi_duong_huyet" id="don_vi_duong_huyet" class="form-control"
+                                        style="width: 100px;">
                                         <option value="mg/dL">mg/dL</option>
                                         <option value="mmol/L">mmol/L</option>
                                     </select>
@@ -1641,17 +1656,20 @@
                             </div>
                             <div class="form-group">
                                 <label>Nhịp tim (BPM)</label>
-                                <input type="number" name="nhip_tim" id="nhip_tim" class="form-control" placeholder="VD: 75">
+                                <input type="number" name="nhip_tim" id="nhip_tim" class="form-control"
+                                    placeholder="VD: 75">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>H/áp Tâm thu (mmHg)</label>
-                                <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control" placeholder="VD: 120">
+                                <input type="number" name="huyet_ap_thu" id="huyet_ap_thu" class="form-control"
+                                    placeholder="VD: 120">
                             </div>
                             <div class="form-group">
                                 <label>H/áp Tâm trương (mmHg)</label>
-                                <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control" placeholder="VD: 80">
+                                <input type="number" name="huyet_ap_truong" id="huyet_ap_truong" class="form-control"
+                                    placeholder="VD: 80">
                             </div>
                         </div>
                         <div class="form-group">
@@ -1891,19 +1909,19 @@
                 function filterByDateRange() {
                     const startVal = startDatePicker.value;
                     const endVal = endDatePicker.value;
-                    
+
                     if (startVal || endVal) {
                         btn7.classList.remove('active');
                         btn30.classList.remove('active');
-                        
+
                         let filteredData = dbData.filter(item => {
                             if (!item.time) return false;
                             const itemDate = item.time.substring(0, 10); // YYYY-MM-DD
-                            
+
                             let isValid = true;
                             if (startVal && itemDate < startVal) isValid = false;
                             if (endVal && itemDate > endVal) isValid = false;
-                            
+
                             return isValid;
                         });
                         updateChart(processData(filteredData));
@@ -2000,7 +2018,7 @@
                 const formErrorMsg = document.getElementById('formErrorMsg');
 
                 if (newRecordForm) {
-                    newRecordForm.addEventListener('submit', function(e) {
+                    newRecordForm.addEventListener('submit', function (e) {
                         const dh = document.getElementById('duong_huyet').value;
                         const unit = document.getElementById('don_vi_duong_huyet').value;
                         const hr = document.getElementById('nhip_tim').value;
@@ -2012,7 +2030,7 @@
                         // Rule 1: At least one metric
                         if (!dh && !hr && !sys && !dia) {
                             error = 'Vui lòng nhập ít nhất một chỉ số sức khỏe.';
-                        } 
+                        }
                         // Rule 2: Blood Pressure logic
                         else if ((sys && !dia) || (!sys && dia)) {
                             error = 'Vui lòng nhập đầy đủ cả Huyết áp Tâm thu và Tâm trương.';
@@ -2041,13 +2059,13 @@
                             }
                         }
 
-                        
+
                         if (error) {
                             e.preventDefault(); // Dừng submit
                             formErrorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + error;
                             formErrorMsg.style.display = 'block';
 
-                            
+
                             // Lắc nhẹ modal để báo lỗi
                             const modal = document.querySelector('.modal');
                             modal.animate([

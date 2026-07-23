@@ -74,9 +74,12 @@
             background-color: var(--bg-white);
             border-right: 1px solid var(--border);
             padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
             position: fixed;
             top: 64px;
             bottom: 0;
+            overflow-y: auto;
         }
 
         .profile-card {
@@ -95,7 +98,7 @@
             border-radius: 50%;
             margin-bottom: 1rem;
             background-color: #cbd5e1;
-            background-image: url('https://ui-avatars.com/api/?name=${patientInfo.hoTen}&background=0D8ABC&color=fff');
+            background-image: url('${not empty patientInfo.anhDaiDien ? patientInfo.anhDaiDien : "https://ui-avatars.com/api/?name=" += patientInfo.hoTen += "&background=0D8ABC&color=fff"}');
             background-size: cover;
         }
 

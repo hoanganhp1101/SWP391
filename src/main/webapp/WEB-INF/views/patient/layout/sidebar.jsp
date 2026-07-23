@@ -44,6 +44,10 @@
            class="menu-btn ${active == 'charts' ? 'active' : ''}">
             <i class="fas fa-chart-line"></i> Biểu đồ tiến triển
         </a>
+        <a href="${ctx}/patient-notifications"
+           class="menu-btn ${active == 'notifications' ? 'active' : ''}">
+            <i class="fas fa-bell"></i> Lịch sử thông báo
+        </a>
         <a href="${ctx}/patient-medical-history"
            class="menu-btn ${active == 'history' ? 'active' : ''}">
             <i class="fas fa-file-pdf"></i> Lịch sử khám bệnh
