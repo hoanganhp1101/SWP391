@@ -63,34 +63,20 @@ public class DoctorAppointmentController extends HttpServlet {
             redirect += "?status=" + statusFilter;
         }
 
-        if (Appointment.STATUS_DA_KHAM.equals(newStatus)) {
-            boolean updated = false;
-            if (appointmentId != null && !appointmentId.isBlank()) {
-                Appointment appt = appointmentDAO.findById(appointmentId, scopeDoctorId);
-                if (appt != null && Appointment.STATUS_CHO_KHAM.equals(appt.getTrangThai())) {
-                    updated = appointmentDAO.updateStatus(
-                            appointmentId, Appointment.STATUS_DA_KHAM, scopeDoctorId);
-                }
-            }
-            if (!updated) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                        "Khong the danh dau da kham (chi ap dung cho lich cho kham)");
-                return;
-            }
-            redirect += (redirect.contains("?") ? "&" : "?") + "updated=1";
-        } else if (Appointment.STATUS_HUY.equals(newStatus)) {
-            boolean updated = appointmentDAO.updateStatus(appointmentId, Appointment.STATUS_HUY, scopeDoctorId);
-            if (!updated) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                        "Khong the huy lich (chi ap dung cho lich cho kham)");
-                return;
-            }
-            redirect += (redirect.contains("?") ? "&" : "?") + "updated=1";
-        } else {
+        if (!Appointment.isAllowedStatusUpdate(newStatus)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Trạng thái không hợp lệ");
             return;
         }
 
+        boolean updated = appointmentId != null && !appointmentId.isBlank()
+                && appointmentDAO.updateStatus(appointmentId, newStatus, scopeDoctorId);
+        if (!updated) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    Appointment.statusUpdateFailureMessage(newStatus));
+            return;
+        }
+
+        redirect += (redirect.contains("?") ? "&" : "?") + "updated=1";
         response.sendRedirect(redirect);
     }
 }

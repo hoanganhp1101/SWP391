@@ -143,4 +143,22 @@ public class Appointment {
         }
         return status;
     }
+
+    /** Trạng thái đích được phép khi cập nhật lịch (Completed / Cancelled). */
+    public static boolean isAllowedStatusUpdate(String newStatus) {
+        String normalized = normalizeStatusFilter(newStatus);
+        return STATUS_DA_KHAM.equals(normalized) || STATUS_HUY.equals(normalized);
+    }
+
+    /** Thông báo lỗi khi cập nhật thất bại (giữ nguyên nội dung response hiện có). */
+    public static String statusUpdateFailureMessage(String newStatus) {
+        String normalized = normalizeStatusFilter(newStatus);
+        if (STATUS_DA_KHAM.equals(normalized)) {
+            return "Khong the danh dau da kham (chi ap dung cho lich cho kham)";
+        }
+        if (STATUS_HUY.equals(normalized)) {
+            return "Khong the huy lich (chi ap dung cho lich cho kham)";
+        }
+        return "Trạng thái không hợp lệ";
+    }
 }
