@@ -134,6 +134,14 @@ public class AIAnalysis {
         return thoiGianPhanTich;
     }
 
+    /** Hiển thị đến giây, bỏ phần thập phân (vd .7633333). */
+    public String getThoiGianPhanTichDisplay() {
+        if (thoiGianPhanTich == null) {
+            return "";
+        }
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(thoiGianPhanTich);
+    }
+
     public void setThoiGianPhanTich(Timestamp thoiGianPhanTich) {
         this.thoiGianPhanTich = thoiGianPhanTich;
     }

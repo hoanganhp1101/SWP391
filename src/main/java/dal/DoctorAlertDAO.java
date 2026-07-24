@@ -62,7 +62,14 @@ public class DoctorAlertDAO {
         String sql = """
                 SELECT a.*, u.ho_ten AS ho_ten_benh_nhan, u.so_dien_thoai AS so_dien_thoai_benh_nhan
                 """ + FROM_JOIN + filter.where + """
-                 ORDER BY a.thoi_gian_tao DESC
+                 ORDER BY
+                                                 CASE
+                                                             WHEN LOWER(a.muc_do) LIKE '%nguy%' OR LOWER(a.muc_do) LIKE '%danger%' THEN 1
+                                                             WHEN LOWER(a.muc_do) LIKE '%cao%' OR LOWER(a.muc_do) LIKE '%high%' THEN 2
+                                                             WHEN LOWER(a.muc_do) LIKE '%trung%' OR LOWER(a.muc_do) LIKE '%medium%' THEN 3
+                                                             ELSE 4
+                                                         END,
+                                                 a.thoi_gian_tao DESC
                  OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
 
@@ -257,10 +264,8 @@ public class DoctorAlertDAO {
         String searchValue = "%" + keyword.trim() + "%";
         sql.append("AND (");
         sql.append("u.ho_ten LIKE ? ");
-        sql.append("OR CONVERT(varchar(36), p.id) LIKE ? ");
-        sql.append("OR CONVERT(varchar(36), a.patient_id) LIKE ? ");
+        sql.append("OR u.so_dien_thoai LIKE ? ");
         sql.append(") ");
-        params.add(searchValue);
         params.add(searchValue);
         params.add(searchValue);
     }

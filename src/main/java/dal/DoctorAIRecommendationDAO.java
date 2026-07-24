@@ -101,8 +101,22 @@ public class DoctorAIRecommendationDAO {
             return list;
         }
 
-        List<AIAnalysis> out = new ArrayList<>();
+        // Mỗi bệnh nhân chỉ giữ bản khuyến nghị mới nhất (tránh trùng tên trên list)
+        java.util.LinkedHashMap<String, AIAnalysis> latestByPatient = new java.util.LinkedHashMap<>();
         for (AIAnalysis a : list) {
+            String key;
+            if (a.getPatientId() != null) {
+                key = a.getPatientId().toString();
+            } else if (a.getId() != null) {
+                key = a.getId().toString();
+            } else {
+                continue;
+            }
+            latestByPatient.putIfAbsent(key, a);
+        }
+
+        List<AIAnalysis> out = new ArrayList<>();
+        for (AIAnalysis a : latestByPatient.values()) {
             if (matchLevel(a, level) && matchStatus(a, status)) {
                 out.add(a);
             }
@@ -149,12 +163,12 @@ public class DoctorAIRecommendationDAO {
                 FROM ai_analysis a
                 JOIN patients p ON a.patient_id = p.id
                 LEFT JOIN users u ON p.user_id = u.id
-                WHERE a.id = ? AND p.bac_si_id = ?
+                WHERE a.id = ? AND CONVERT(nvarchar(36), p.bac_si_id) = ?
                 """;
         try (Connection conn = new DBContext().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, id.trim());
-            ps.setString(2, doctorId);
+            ps.setString(2, doctorId == null ? "" : doctorId.trim());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return mapRow(rs);
@@ -368,40 +382,128 @@ public class DoctorAIRecommendationDAO {
     }
 
     public boolean hasOpenRecommendationToday(String patientId, String syncKey) {
-        // Không phụ thuộc trang_thai để tránh lỗi khi cột chưa có
+        return findTodayId(patientId, syncKey) != null;
+    }
+
+    /** @return id khuyến nghị hôm nay của BN, hoặc null */
+    public String findTodayId(String patientId, String syncKey) {
+        TodayRow row = findTodayRow(patientId, syncKey);
+        return row == null ? null : row.id;
+    }
+
+    public TodayRow findTodayRow(String patientId, String syncKey) {
         String sql = """
-                SELECT 1 FROM ai_analysis
+                SELECT TOP 1 CONVERT(nvarchar(36), id) AS id, model_version
+                FROM ai_analysis
                 WHERE patient_id = ?
                   AND CONVERT(date, thoi_gian_phan_tich) = CONVERT(date, GETDATE())
                   AND du_lieu_dau_vao LIKE ?
+                ORDER BY thoi_gian_phan_tich DESC
                 """;
         try (Connection conn = new DBContext().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, UUID.fromString(patientId));
             ps.setString(2, "%" + syncKey + "%");
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+                if (rs.next()) {
+                    return new TodayRow(rs.getString("id"), rs.getString("model_version"));
+                }
             }
         } catch (Exception e) {
-            // fallback string id
             try (Connection conn = new DBContext().getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, patientId);
                 ps.setString(2, "%" + syncKey + "%");
                 try (ResultSet rs = ps.executeQuery()) {
-                    return rs.next();
+                    if (rs.next()) {
+                        return new TodayRow(rs.getString("id"), rs.getString("model_version"));
+                    }
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
-                return false;
             }
+        }
+        return null;
+    }
+
+    public static final class TodayRow {
+        public final String id;
+        public final String modelVersion;
+
+        public TodayRow(String id, String modelVersion) {
+            this.id = id;
+            this.modelVersion = modelVersion;
+        }
+
+        public boolean isGemini() {
+            return modelVersion != null && modelVersion.toLowerCase().startsWith("gemini");
+        }
+
+        /** Đã viết bằng Gemini mode raw — không cần force lại cùng ngày. */
+        public boolean isGeminiRaw() {
+            return modelVersion != null && modelVersion.contains("+raw");
+        }
+    }
+
+    /** Cập nhật lại nội dung phân tích/khuyến nghị (dùng khi force Gemini refresh). */
+    public String updateNarrative(String id, String doctorId, AIAnalysis item) {
+        if (id == null || item == null) {
+            return "Thiếu dữ liệu cập nhật.";
+        }
+        String sql = """
+                UPDATE a
+                SET a.phan_tich_chi_tiet = ?,
+                    a.yeu_to_nguy_co = ?,
+                    a.khuyen_nghi = ?,
+                    a.diem_nguy_co = ?,
+                    a.muc_canh_bao = ?,
+                    a.do_tin_cay = ?,
+                    a.du_lieu_dau_vao = ?,
+                    a.model_version = ?,
+                    a.tokens_su_dung = ?
+                FROM ai_analysis a
+                INNER JOIN patients p ON a.patient_id = p.id
+                WHERE CONVERT(nvarchar(36), a.id) = ?
+                  AND CONVERT(nvarchar(36), p.bac_si_id) = ?
+                """;
+        try (Connection conn = new DBContext().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            ps.setString(i++, item.getPhanTichChiTiet());
+            ps.setString(i++, item.getYeuToNguyCo());
+            ps.setString(i++, item.getKhuyenNghi());
+            if (item.getDiemNguyCo() == null) {
+                ps.setObject(i++, null);
+            } else {
+                ps.setDouble(i++, item.getDiemNguyCo());
+            }
+            ps.setString(i++, item.getMucCanhBao());
+            if (item.getDoTinCay() == null) {
+                ps.setObject(i++, null);
+            } else {
+                ps.setDouble(i++, item.getDoTinCay());
+            }
+            ps.setString(i++, item.getDuLieuDauVao());
+            ps.setString(i++, item.getModelVersion());
+            if (item.getTokensSuDung() == null) {
+                ps.setObject(i++, null);
+            } else {
+                ps.setInt(i++, item.getTokensSuDung());
+            }
+            ps.setString(i++, id.trim());
+            ps.setString(i, doctorId.trim());
+            return ps.executeUpdate() > 0 ? null : "0 rows updated";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.getMessage();
         }
     }
 
     private Filter buildSqlFilter(String doctorId, String keyword) {
         Filter f = new Filter();
-        f.where.append("WHERE p.bac_si_id = ? ");
-        f.params.add(doctorId);
+        // So khớp UUID ổn định (tránh lúc thấy list, lúc trống)
+        f.where.append("WHERE CONVERT(nvarchar(36), p.bac_si_id) = ? ");
+        f.params.add(doctorId == null ? "" : doctorId.trim());
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             String kw = "%" + keyword.trim() + "%";

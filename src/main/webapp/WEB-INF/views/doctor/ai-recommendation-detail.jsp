@@ -115,7 +115,7 @@
             <div class="card">
                 <h1><c:out value="${detail.hoTenBenhNhan}"/></h1>
                 <div class="meta">
-                    Phân tích lúc <c:out value="${detail.thoiGianPhanTich}"/> · Model <c:out value="${detail.modelVersion}"/>
+                    Phân tích lúc <c:out value="${detail.thoiGianPhanTichDisplay}"/> · Model <c:out value="${detail.modelVersion}"/>
                 </div>
 
                 <div class="kpi">

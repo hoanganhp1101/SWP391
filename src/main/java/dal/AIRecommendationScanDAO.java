@@ -9,55 +9,153 @@ import java.util.List;
 import java.util.UUID;
 import model.AIAnalysis;
 import model.ThresholdSettings;
+import service.GeminiClient;
+import service.GeminiClient.GeminiRecommendation;
+import service.GeminiRawInput;
 
 /**
- * Rule-based AI engine: đọc health_records + threshold_settings → ghi AIAnalysis.
+ * Gemini-only: gom số liệu health_records → gọi Gemini sinh cả danh sách khuyến nghị.
  */
 public class AIRecommendationScanDAO {
 
     private static final int SCAN_DAYS = 30;
-    private static final String MODEL_VERSION = "rule-engine-v1";
+    /** Nghỉ giữa các lần gọi để giảm 429 (free tier ~5 RPM). */
+    private static final long DELAY_BETWEEN_CALLS_MS = 12_000L;
 
     private final DoctorAIRecommendationDAO recommendationDAO = new DoctorAIRecommendationDAO();
+    private final GeminiClient geminiClient = new GeminiClient();
 
     public ScanResult scan(String doctorId, ThresholdSettings t) {
+        return scan(doctorId, t, false);
+    }
+
+    /**
+     * @param forceRefresh true = viết lại toàn bộ BN bằng Gemini; false = chỉ tạo BN chưa có bản hôm nay
+     */
+    public ScanResult scan(String doctorId, ThresholdSettings t, boolean forceRefresh) {
         ScanResult result = new ScanResult();
         if (doctorId == null || doctorId.isBlank() || t == null) {
+            return result;
+        }
+        result.geminiEnabled = geminiClient.isEnabled();
+        if (!result.geminiEnabled) {
+            result.error = true;
+            result.lastError = "Gemini đang tắt. Bật gemini.enabled=true và điền API key.";
+            result.lastGeminiError = result.lastError;
             return result;
         }
 
         try (Connection conn = new DBContext().getConnection()) {
             List<String> patientIds = listPatientIds(conn, doctorId);
             result.patientsScanned = patientIds.size();
+            boolean firstCall = true;
 
             for (String patientId : patientIds) {
                 PatientMetrics m = computeMetrics(conn, patientId, t);
-                if (m == null || !m.needsRecommendation()) {
+                if (m == null) {
                     result.patientsNoRisk++;
                     continue;
                 }
 
                 String syncKey = "[SYNC:" + patientId + "]";
-                if (recommendationDAO.hasOpenRecommendationToday(patientId, syncKey)) {
-                    result.skipped++;
+                DoctorAIRecommendationDAO.TodayRow today = recommendationDAO.findTodayRow(patientId, syncKey);
+                String todayId = today == null ? null : today.id;
+
+                if (todayId != null && !forceRefresh) {
+                    // Đã có bản Gemini hôm nay → giữ; bản rule cũ → ghi đè bằng Gemini
+                    if (today != null && today.isGemini()) {
+                        result.skipped++;
+                        continue;
+                    }
+                }
+
+                if (!firstCall) {
+                    try {
+                        Thread.sleep(DELAY_BETWEEN_CALLS_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+                firstCall = false;
+
+                AIAnalysis item = buildFromGemini(patientId, m, t, syncKey);
+                if (item == null) {
+                    result.insertFailed++;
+                    result.error = true;
+                    String err = geminiClient.getLastError();
+                    result.lastGeminiError = err;
+                    result.lastError = err;
+                    // 429 → dừng các BN còn lại
+                    if (err != null && (err.contains("429") || err.toLowerCase().contains("quota"))) {
+                        result.lastGeminiError = err + " | Đã dừng các BN còn lại vì quota. Đợi rồi bấm Đồng bộ lại.";
+                        break;
+                    }
                     continue;
                 }
 
-                AIAnalysis item = buildRecommendation(patientId, m, t, syncKey);
-                String insertError = recommendationDAO.insert(item);
-                if (insertError == null) {
-                    result.created++;
+                result.geminiUsed++;
+
+                if (todayId != null) {
+                    String err = recommendationDAO.updateNarrative(todayId, doctorId, item);
+                    if (err == null) {
+                        result.refreshed++;
+                    } else {
+                        result.insertFailed++;
+                        result.error = true;
+                        result.lastError = err;
+                    }
                 } else {
-                    result.insertFailed++;
-                    result.error = true;
-                    result.lastError = insertError;
+                    String insertError = recommendationDAO.insert(item);
+                    if (insertError == null) {
+                        result.created++;
+                    } else {
+                        result.insertFailed++;
+                        result.error = true;
+                        result.lastError = insertError;
+                    }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
             result.error = true;
+            result.lastError = e.getMessage();
         }
         return result;
+    }
+
+    private AIAnalysis buildFromGemini(String patientId, PatientMetrics m, ThresholdSettings t, String syncKey) {
+        GeminiRecommendation g = geminiClient.generate(toGeminiRaw(m, t));
+        if (g == null) {
+            return null;
+        }
+
+        String metricsSummary = "days=" + SCAN_DAYS
+                + "; readings=" + m.totalReadings
+                + "; avgGlucose=" + Math.round(m.avgGlucose)
+                + "; tir=" + Math.round(m.tir * 10) / 10.0
+                + "; hypo=" + m.hypoCount
+                + "; hyper=" + m.hyperCount
+                + "; danger=" + m.dangerCount
+                + "; hba1c=" + (m.hasHba1c ? m.hba1c : "n/a")
+                + "; measuredRecently=" + m.measuredRecently;
+
+        String usedModel = g.modelUsed == null ? geminiClient.getModelName() : g.modelUsed;
+
+        AIAnalysis item = new AIAnalysis();
+        item.setId(UUID.randomUUID());
+        item.setPatientId(UUID.fromString(patientId));
+        item.setDiemNguyCo(g.diemNguyCo);
+        item.setMucCanhBao(g.mucCanhBao);
+        item.setDoTinCay(0.85);
+        item.setPhanTichChiTiet(g.phanTich);
+        item.setYeuToNguyCo(g.yeuToNguyCo);
+        item.setKhuyenNghi(g.khuyenNghi);
+        item.setDuLieuDauVao(metricsSummary + "; " + syncKey);
+        item.setModelVersion("gemini+" + usedModel);
+        item.setTokensSuDung(g.tokens == null ? 0 : g.tokens);
+        item.setTrangThai("chua_xem");
+        return item;
     }
 
     private List<String> listPatientIds(Connection conn, String doctorId) throws Exception {
@@ -74,6 +172,7 @@ public class AIRecommendationScanDAO {
         return ids;
     }
 
+    /** Chỉ gom số liệu — không chấm điểm / không sinh text rule. */
     private PatientMetrics computeMetrics(Connection conn, String patientId, ThresholdSettings t) throws Exception {
         PatientMetrics m = new PatientMetrics();
 
@@ -145,124 +244,28 @@ public class AIRecommendationScanDAO {
                 }
             }
         }
-
-        // Điểm nguy cơ 0–100
-        double score = 0;
-        if (m.totalReadings > 0 && m.tir < 70) {
-            score += Math.min(35, (70 - m.tir) * 0.7);
-        }
-        score += Math.min(25, m.hypoCount * 8);
-        score += Math.min(25, m.dangerCount * 10);
-        if (m.hyperCount > 0 && m.dangerCount == 0) {
-            score += Math.min(15, m.hyperCount * 3);
-        }
-        if (m.hasHba1c && m.hba1c >= t.getHba1cPoor()) {
-            score += 20;
-        } else if (m.hasHba1c && m.hba1c >= t.getHba1cTarget()) {
-            score += 10;
-        }
-        if (!m.measuredRecently) {
-            score += 25;
-        }
-        if (m.totalReadings == 0) {
-            score += 20;
-        }
-        m.score = Math.min(100, Math.round(score));
-
-        if (m.score >= 70) {
-            m.level = "nguy_hiem";
-        } else if (m.score >= 40) {
-            m.level = "cao";
-        } else {
-            m.level = "trung_binh";
-        }
         return m;
     }
 
-    private AIAnalysis buildRecommendation(String patientId, PatientMetrics m, ThresholdSettings t, String syncKey) {
-        List<String> factors = new ArrayList<>();
-        List<String> advice = new ArrayList<>();
-        List<String> analysis = new ArrayList<>();
-
-        if (m.totalReadings > 0) {
-            analysis.add(String.format("Trong %d ngày gần nhất có %d lần đo, đường huyết TB %.0f mg/dL, TIR %.1f%% (mục tiêu ≥70%%, khoảng %d–%d).",
-                    SCAN_DAYS, m.totalReadings, m.avgGlucose, m.tir, t.getGlucoseLow(), t.getGlucoseHigh()));
-            if (m.tir < 70) {
-                factors.add(String.format("TIR thấp (%.1f%%)", m.tir));
-                advice.add("Tăng tần suất đo đúng khung giờ và rà soát chế độ ăn / carb.");
-            }
-        } else {
-            analysis.add("Chưa có dữ liệu đường huyết trong khoảng thời gian phân tích.");
-            factors.add("Thiếu dữ liệu đường huyết");
-        }
-
-        if (m.hypoCount > 0) {
-            factors.add(m.hypoCount + " lần hạ đường huyết (<" + t.getGlucoseLow() + ")");
-            advice.add("Xem lại liều insulin / thuốc hạ đường huyết; nhắc bệnh nhân mang đường hấp thu nhanh.");
-        }
-        if (m.dangerCount > 0) {
-            factors.add(m.dangerCount + " lần đường huyết nguy hiểm (≥" + t.getGlucoseDanger() + ")");
-            advice.add("Ưu tiên liên hệ bệnh nhân và kiểm tra tuân thủ điều trị.");
-        } else if (m.hyperCount > 0) {
-            factors.add(m.hyperCount + " lần vượt ngưỡng cao (>" + t.getGlucoseHigh() + ")");
-            advice.add("Theo dõi đường huyết sau ăn và cân nhắc điều chỉnh bolus nếu phù hợp.");
-        }
-
-        if (m.hasHba1c) {
-            analysis.add(String.format("HbA1c gần nhất: %.1f%% (mục tiêu <%s%%, kém ≥%s%%).",
-                    m.hba1c, formatNum(t.getHba1cTarget()), formatNum(t.getHba1cPoor())));
-            if (m.hba1c >= t.getHba1cPoor()) {
-                factors.add(String.format("HbA1c cao (%.1f%%)", m.hba1c));
-                advice.add("Ưu tiên tái khám sớm và đánh giá lại phác đồ dài hạn.");
-            } else if (m.hba1c >= t.getHba1cTarget()) {
-                factors.add(String.format("HbA1c chưa đạt mục tiêu (%.1f%%)", m.hba1c));
-                advice.add("Duy trì theo dõi sát và củng cố tuân thủ điều trị.");
-            }
-        }
-
-        if (!m.measuredRecently) {
-            factors.add("Không đo chỉ số > " + t.getDaysNoMeasure() + " ngày");
-            advice.add("Nhắc bệnh nhân đo và đồng bộ chỉ số đúng lịch.");
-        }
-
-        if (advice.isEmpty()) {
-            advice.add("Duy trì theo dõi hiện tại và tái đánh giá khi có chỉ số mới.");
-        }
-
-        StringBuilder khuyenNghi = new StringBuilder();
-        for (int i = 0; i < advice.size(); i++) {
-            khuyenNghi.append(i + 1).append(". ").append(advice.get(i));
-            if (i < advice.size() - 1) {
-                khuyenNghi.append("\n");
-            }
-        }
-
-        AIAnalysis item = new AIAnalysis();
-        item.setId(UUID.randomUUID());
-        item.setPatientId(UUID.fromString(patientId));
-        item.setDiemNguyCo((double) m.score);
-        item.setMucCanhBao(m.level);
-        item.setDoTinCay(0.75);
-        item.setPhanTichChiTiet(String.join(" ", analysis));
-        item.setYeuToNguyCo(String.join("; ", factors));
-        item.setKhuyenNghi(khuyenNghi.toString());
-        item.setDuLieuDauVao("days=" + SCAN_DAYS
-                + "; tir=" + Math.round(m.tir * 10) / 10.0
-                + "; hypo=" + m.hypoCount
-                + "; danger=" + m.dangerCount
-                + "; hba1c=" + (m.hasHba1c ? m.hba1c : "n/a")
-                + "; " + syncKey);
-        item.setModelVersion(MODEL_VERSION);
-        item.setTokensSuDung(0);
-        item.setTrangThai("chua_xem");
-        return item;
-    }
-
-    private String formatNum(double v) {
-        if (Math.abs(v - Math.rint(v)) < 0.001) {
-            return String.valueOf((int) Math.rint(v));
-        }
-        return String.format("%.1f", v);
+    private GeminiRawInput toGeminiRaw(PatientMetrics m, ThresholdSettings t) {
+        GeminiRawInput raw = new GeminiRawInput();
+        raw.scanDays = SCAN_DAYS;
+        raw.totalReadings = m.totalReadings;
+        raw.avgGlucose = m.avgGlucose;
+        raw.tirPercent = m.tir;
+        raw.hypoCount = m.hypoCount;
+        raw.hyperCount = m.hyperCount;
+        raw.dangerCount = m.dangerCount;
+        raw.hasHba1c = m.hasHba1c;
+        raw.hba1c = m.hasHba1c ? m.hba1c : null;
+        raw.measuredRecently = m.measuredRecently;
+        raw.glucoseLow = t.getGlucoseLow();
+        raw.glucoseHigh = t.getGlucoseHigh();
+        raw.glucoseDanger = t.getGlucoseDanger();
+        raw.hba1cTarget = t.getHba1cTarget();
+        raw.hba1cPoor = t.getHba1cPoor();
+        raw.daysNoMeasure = t.getDaysNoMeasure();
+        return raw;
     }
 
     private static final class PatientMetrics {
@@ -276,26 +279,15 @@ public class AIRecommendationScanDAO {
         double hba1c;
         boolean hasHba1c;
         boolean measuredRecently = true;
-        long score;
-        String level = "thap";
-
-        boolean needsRecommendation() {
-            if (score >= 20) {
-                return true;
-            }
-            return hypoCount > 0
-                    || dangerCount > 0
-                    || hyperCount > 0
-                    || !measuredRecently
-                    || totalReadings == 0
-                    || (hasHba1c && hba1c >= 7)
-                    || (totalReadings > 0 && tir < 70);
-        }
     }
 
     public static final class ScanResult {
         public int created;
         public int skipped;
+        public int refreshed;
+        public int geminiUsed;
+        public boolean geminiEnabled;
+        public String lastGeminiError;
         public int patientsScanned;
         public int patientsNoRisk;
         public int insertFailed;
@@ -308,6 +300,22 @@ public class AIRecommendationScanDAO {
 
         public int getSkipped() {
             return skipped;
+        }
+
+        public int getRefreshed() {
+            return refreshed;
+        }
+
+        public int getGeminiUsed() {
+            return geminiUsed;
+        }
+
+        public boolean isGeminiEnabled() {
+            return geminiEnabled;
+        }
+
+        public String getLastGeminiError() {
+            return lastGeminiError;
         }
 
         public int getPatientsScanned() {

@@ -32,21 +32,23 @@ public class DoctorAIRecommendationServlet extends HttpServlet {
         String doctorId = user.getId().toString();
 
         String id = request.getParameter("id");
-        // Chỉ auto-sync khi mở danh sách không lọc (level/status = all hoặc không gửi)
-        boolean hasActiveFilters = isActiveFilter(request.getParameter("level"))
-                || isActiveFilter(request.getParameter("status"))
-                || hasText(request.getParameter("keyword"))
-                || hasText(request.getParameter("page"));
-        if ((id == null || id.isBlank()) && !hasActiveFilters) {
-            ThresholdSettings thresholds = new ThresholdSettingsDAO().getForDoctor(doctorId);
-            new AIRecommendationScanDAO().scan(doctorId, thresholds);
-        }
-
         DoctorAIRecommendationDAO dao = new DoctorAIRecommendationDAO();
-        // Đảm bảo cột trạng thái tồn tại trước khi list/update
         dao.ensureStatusColumns();
 
-        if (id != null && !id.isBlank()) {
+        // Không gọi Gemini mỗi lần mở trang (gây timeout → list trống).
+        // Chỉ đọc DB; nếu chưa có bản nào thì mới scan tạo lần đầu.
+        boolean viewingDetail = id != null && !id.isBlank();
+        boolean afterSyncFlash = "1".equals(request.getParameter("synced"))
+                || "1".equals(request.getParameter("error"));
+        if (!viewingDetail && !afterSyncFlash) {
+            int existing = dao.count(doctorId, "all", "all", "");
+            if (existing == 0) {
+                ThresholdSettings thresholds = new ThresholdSettingsDAO().getForDoctor(doctorId);
+                new AIRecommendationScanDAO().scan(doctorId, thresholds, false);
+            }
+        }
+
+        if (viewingDetail) {
             AIAnalysis detail = dao.findById(id, doctorId);
             if (detail == null) {
                 response.sendRedirect(request.getContextPath() + "/doctor/ai-recommendations?error=1");
@@ -95,9 +97,11 @@ public class DoctorAIRecommendationServlet extends HttpServlet {
         String doctorId = user.getId().toString();
 
         if ("1".equals(request.getParameter("sync"))) {
+            // Đồng bộ / tạo lại = Gemini viết lại toàn bộ BN
+            boolean force = true;
             ThresholdSettings thresholds = new ThresholdSettingsDAO().getForDoctor(doctorId);
-            ScanResult scan = new AIRecommendationScanDAO().scan(doctorId, thresholds);
-            if (scan.isError() && scan.getCreated() == 0) {
+            ScanResult scan = new AIRecommendationScanDAO().scan(doctorId, thresholds, force);
+            if (scan.isError() && scan.getCreated() == 0 && scan.getRefreshed() == 0) {
                 String msg = scan.getLastError() == null ? "" : scan.getLastError();
                 if (msg.length() > 300) {
                     msg = msg.substring(0, 300);
@@ -107,12 +111,20 @@ public class DoctorAIRecommendationServlet extends HttpServlet {
                         + "&scanned=" + scan.getPatientsScanned()
                         + "&errmsg=" + java.net.URLEncoder.encode(msg, java.nio.charset.StandardCharsets.UTF_8));
             } else {
+                String geminiErr = scan.getLastGeminiError() == null ? "" : scan.getLastGeminiError();
+                if (geminiErr.length() > 400) {
+                    geminiErr = geminiErr.substring(0, 400);
+                }
                 response.sendRedirect(request.getContextPath()
                         + "/doctor/ai-recommendations?synced=1"
                         + "&created=" + scan.getCreated()
+                        + "&refreshed=" + scan.getRefreshed()
+                        + "&gemini=" + scan.getGeminiUsed()
+                        + "&geminiOn=" + (scan.isGeminiEnabled() ? "1" : "0")
                         + "&skipped=" + scan.getSkipped()
                         + "&scanned=" + scan.getPatientsScanned()
-                        + "&norisk=" + scan.getPatientsNoRisk());
+                        + "&norisk=" + scan.getPatientsNoRisk()
+                        + (geminiErr.isBlank() ? "" : "&geminiErr=" + java.net.URLEncoder.encode(geminiErr, java.nio.charset.StandardCharsets.UTF_8)));
             }
             return;
         }
@@ -147,18 +159,6 @@ public class DoctorAIRecommendationServlet extends HttpServlet {
             return "all";
         }
         return raw.trim();
-    }
-
-    private boolean hasText(String raw) {
-        return raw != null && !raw.isBlank();
-    }
-
-    /** true nếu param lọc thực sự (không phải all / trống) */
-    private boolean isActiveFilter(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return false;
-        }
-        return !"all".equalsIgnoreCase(raw.trim());
     }
 
     private int parsePage(String raw) {

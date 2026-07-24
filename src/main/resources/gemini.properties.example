@@ -1,0 +1,6 @@
+# https://aistudio.google.com/apikey
+gemini.enabled=true
+gemini.api.key=PASTE_YOUR_KEY_HERE
+gemini.model=gemini-3.1-flash-preview
+gemini.max.tokens=1024
+gemini.timeout.ms=30000

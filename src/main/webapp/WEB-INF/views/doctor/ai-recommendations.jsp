@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="vi">
@@ -119,22 +120,38 @@
         <div class="page-head">
             <div>
                 <h1>AI Recommendations</h1>
-                <p>UC 16 — Khuyến nghị sinh từ health_records + ngưỡng giám sát (rule-based)</p>
+                <p>UC 16 — Khuyến nghị do Gemini sinh từ chỉ số sức khỏe + ngưỡng bác sĩ</p>
             </div>
-            <form method="post" action="${pageContext.request.contextPath}/doctor/ai-recommendations">
+            <form method="post" action="${pageContext.request.contextPath}/doctor/ai-recommendations"
+                  onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerHTML='Đang gọi Gemini cho tất cả BN…';">
                 <input type="hidden" name="sync" value="1">
-                <button class="btn btn-secondary" type="submit"><i class="fa-solid fa-rotate"></i> Đồng bộ lại</button>
+                <button class="btn btn-primary" type="submit"
+                        title="Gọi Gemini lần lượt cho mọi bệnh nhân (có nghỉ giữa các lần để tránh hết quota). Có thể mất 1–2 phút.">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Đồng bộ Gemini (tất cả BN)
+                </button>
             </form>
         </div>
 
         <c:if test="${param.synced == '1'}">
             <div class="flash ok">
-                Đã đồng bộ trên <strong>${param.scanned}</strong> bệnh nhân phụ trách:
-                tạo <strong>${param.created}</strong> khuyến nghị mới,
-                bỏ qua <strong>${param.skipped}</strong> (đã có trong ngày),
-                <strong>${param.norisk}</strong> BN không đủ điều kiện rủi ro.
+                Gemini đã xử lý <strong>${param.scanned}</strong> bệnh nhân:
+                tạo mới <strong>${param.created}</strong>,
+                viết lại <strong>${empty param.refreshed ? 0 : param.refreshed}</strong>,
+                bỏ qua <strong>${param.skipped}</strong> (đã có bản Gemini hôm nay).
+                <br/>Số bản Gemini thành công: <strong>${empty param.gemini ? 0 : param.gemini}</strong>
+                · config: <strong>${param.geminiOn == '1' ? 'BẬT' : 'TẮT'}</strong>.
+                <br/><small>Mở trang chỉ đọc danh sách đã lưu. Bấm nút để Gemini tạo/ghi đè lại toàn bộ (có thể mất 1–2 phút).</small>
+                <c:if test="${param.geminiOn != '1'}">
+                    <br/>Bật <code>gemini.enabled=true</code> + key trong <code>gemini.properties</code> rồi restart.
+                </c:if>
+                <c:if test="${not empty param.geminiErr}">
+                    <br/><code style="white-space:pre-wrap;"><c:out value="${param.geminiErr}"/></code>
+                </c:if>
+                <c:if test="${fn:contains(param.geminiErr, '429') || fn:contains(param.geminiErr, 'quota') || fn:contains(param.geminiErr, 'Quota')}">
+                    <br/><strong>Hết quota free (429)</strong> — đợi RPM hết đỏ trên AI Studio rồi bấm lại.
+                </c:if>
                 <c:if test="${param.scanned == '0'}">
-                    <br/>Chưa có bệnh nhân nào gắn <code>bac_si_id</code> cho tài khoản này — chạy script assign-patients-to-doctor.sql.
+                    <br/>Chưa có bệnh nhân gắn <code>bac_si_id</code>.
                 </c:if>
             </div>
         </c:if>
@@ -176,7 +193,7 @@
 
             <c:choose>
                 <c:when test="${empty list}">
-                    <div class="empty">Chưa có khuyến nghị. Hệ thống sẽ sinh khi bệnh nhân có rủi ro theo ngưỡng đã cấu hình.</div>
+                    <div class="empty">Chưa có khuyến nghị. Bấm <strong>Đồng bộ Gemini (tất cả BN)</strong> để tạo danh sách (cần API key + còn quota).</div>
                 </c:when>
                 <c:otherwise>
                     <p style="color:var(--muted);font-size:13px;margin-bottom:10px;">Hiển thị ${fromIndex}–${toIndex} / ${total}</p>
@@ -195,7 +212,7 @@
                         <tbody>
                         <c:forEach var="item" items="${list}">
                             <tr>
-                                <td><c:out value="${item.thoiGianPhanTich}"/></td>
+                                <td><c:out value="${item.thoiGianPhanTichDisplay}"/></td>
                                 <td><c:out value="${item.hoTenBenhNhan}"/></td>
                                 <td class="score"><c:out value="${item.diemNguyCo}"/></td>
                                 <td><span class="badge ${item.mucCanhBaoCss}"><c:out value="${item.mucCanhBaoLabel}"/></span></td>
