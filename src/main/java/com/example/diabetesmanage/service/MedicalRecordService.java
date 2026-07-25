@@ -179,6 +179,9 @@ public class MedicalRecordService {
                         doctorUuid,
                         encounter.getNgayKham()
                 );
+                // Persist latest height/weight on the patient profile (UPDATE, not INSERT).
+                patientDAO.updateHeightAndWeight(
+                        con, patientUuid, form.getChieuCaoCm(), form.getCanNangKg());
             }
             con.commit();
         } catch (SQLException ex) {
