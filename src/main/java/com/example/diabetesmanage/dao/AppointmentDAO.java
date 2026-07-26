@@ -205,8 +205,8 @@ public class AppointmentDAO {
         if (appointmentId == null || appointmentId.isBlank()) {
             return false;
         }
-        newStatus = Appointment.normalizeStatusFilter(newStatus);
-        if (!Appointment.STATUS_DA_KHAM.equals(newStatus) && !Appointment.STATUS_HUY.equals(newStatus)) {
+        String normalizedStatus = Appointment.normalizeStatusFilter(newStatus);
+        if (!Appointment.isAllowedStatusUpdate(normalizedStatus)) {
             return false;
         }
 
@@ -214,22 +214,29 @@ public class AppointmentDAO {
             if (con == null) {
                 return false;
             }
-            try (PreparedStatement ps = con.prepareStatement(buildUpdateSql(scopeDoctorId))) {
-                bindUpdate(ps, appointmentId, newStatus, scopeDoctorId);
-                if (ps.executeUpdate() > 0) {
-                    return true;
-                }
+            if (executeStatusUpdate(con, appointmentId, normalizedStatus, scopeDoctorId)) {
+                return true;
             }
-            if (Appointment.STATUS_HUY.equals(newStatus)) {
-                try (PreparedStatement ps = con.prepareStatement(buildUpdateSql(scopeDoctorId))) {
-                    bindUpdate(ps, appointmentId, "huy", scopeDoctorId);
-                    return ps.executeUpdate() > 0;
-                }
+            // Legacy fallback: một số bản ghi cũ dùng mã "huy" thay vì "da_huy"
+            if (Appointment.STATUS_HUY.equals(normalizedStatus)) {
+                return executeStatusUpdate(con, appointmentId, "huy", scopeDoctorId);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    private boolean executeStatusUpdate(
+            Connection con,
+            String appointmentId,
+            String newStatus,
+            String scopeDoctorId
+    ) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(buildUpdateSql(scopeDoctorId))) {
+            bindUpdate(ps, appointmentId, newStatus, scopeDoctorId);
+            return ps.executeUpdate() > 0;
+        }
     }
 
     public Appointment findById(String appointmentId, String scopeDoctorId) {

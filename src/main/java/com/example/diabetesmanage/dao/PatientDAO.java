@@ -746,4 +746,51 @@ public class PatientDAO {
             return null;
         }
     }
+
+    /**
+     * Cập nhật chiều cao / cân nặng mới nhất trên hồ sơ bệnh nhân (không tạo bản ghi mới).
+     * Chỉ ghi các giá trị không null; giữ nguyên cột còn lại nếu không được gửi.
+     */
+    public boolean updateHeightAndWeight(Connection con, String patientId, Double height, Double weight)
+            throws SQLException {
+        if (con == null) {
+            throw new SQLException("Connection is required for updateHeightAndWeight");
+        }
+        if (patientId == null || patientId.isBlank()) {
+            return false;
+        }
+        if (height == null && weight == null) {
+            return false;
+        }
+        String sql =
+                "UPDATE patients SET " +
+                        "chieu_cao_cm = COALESCE(?, chieu_cao_cm), " +
+                        "can_nang_kg = COALESCE(?, can_nang_kg), " +
+                        "ngay_cap_nhat = CURRENT_TIMESTAMP " +
+                        "WHERE id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            if (height != null) {
+                ps.setDouble(1, height);
+            } else {
+                ps.setNull(1, Types.DECIMAL);
+            }
+            if (weight != null) {
+                ps.setDouble(2, weight);
+            } else {
+                ps.setNull(2, Types.DECIMAL);
+            }
+            ps.setString(3, patientId.trim());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean updateHeightAndWeight(String patientId, double height, double weight)
+            throws SQLException {
+        try (Connection con = DBContext.getConnection()) {
+            if (con == null) {
+                throw new SQLException("Không thể kết nối database");
+            }
+            return updateHeightAndWeight(con, patientId, height, weight);
+        }
+    }
 }

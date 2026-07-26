@@ -7,6 +7,7 @@ import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.MedicationDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.PrescriptionDAO;
+import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.MedicalEncounter;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
@@ -354,6 +355,59 @@ public class MedicalEncounterController extends HttpServlet {
             request.setAttribute("patient", patient);
             if (patient != null && patient.getChieuCaoCm() != null && form.getChieuCaoCm() == null) {
                 form.setChieuCaoCm(patient.getChieuCaoCm());
+            }
+            prefillFromCurrentHealthData(form, patient);
+        }
+    }
+
+    /**
+     * Nạp sẵn chỉ số hiện có của hồ sơ sức khỏe vào các ô còn trống khi mở form,
+     * để bác sĩ thấy giá trị hiện tại và chỉ sửa trường cần thay đổi.
+     */
+    private void prefillFromCurrentHealthData(EncounterCreateDTO form, Patient patient) {
+        HealthRecord latest = healthRecordDAO.getLatestByPatientId(form.getPatientId());
+        if (latest != null) {
+            if (form.getChieuCaoCm() == null) {
+                form.setChieuCaoCm(latest.getChieuCaoCm());
+            }
+            if (form.getCanNangKg() == null) {
+                form.setCanNangKg(latest.getCanNangKg());
+            }
+            if (form.getBmi() == null) {
+                form.setBmi(latest.getBmi());
+            }
+            if (form.getDuongHuyetMgdl() == null) {
+                form.setDuongHuyetMgdl(latest.getDuongHuyetMgdl());
+                if (form.getThoiDiemDoDuong() == null || form.getThoiDiemDoDuong().isBlank()) {
+                    form.setThoiDiemDoDuong(latest.getThoiDiemDoDuong());
+                }
+            }
+            if (form.getHba1cPercent() == null) {
+                form.setHba1cPercent(latest.getHba1cPercent());
+            }
+            if (form.getHuyetApTamThu() == null) {
+                form.setHuyetApTamThu(latest.getHuyetApTamThu());
+            }
+            if (form.getHuyetApTamTruong() == null) {
+                form.setHuyetApTamTruong(latest.getHuyetApTamTruong());
+            }
+            if (form.getNhipTim() == null) {
+                form.setNhipTim(latest.getNhipTim());
+            }
+            if (form.getNhietDoC() == null) {
+                form.setNhietDoC(latest.getNhietDoC());
+            }
+            if (form.getNhipTho() == null) {
+                form.setNhipTho(latest.getNhipTho());
+            }
+        }
+        if (form.getTienSuBenh() == null || form.getTienSuBenh().isBlank()) {
+            String tienSu = latest != null ? latest.getTienSuBenh() : null;
+            if ((tienSu == null || tienSu.isBlank()) && patient != null) {
+                tienSu = patient.getTienSuBenh();
+            }
+            if (tienSu != null && !tienSu.isBlank()) {
+                form.setTienSuBenh(tienSu);
             }
         }
     }

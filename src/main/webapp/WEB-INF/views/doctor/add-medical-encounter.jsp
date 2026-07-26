@@ -711,30 +711,154 @@
     };
 
     const validationRules = {
-        duongHuyetMgdl: {label: 'Đường huyết', min: 0, max: 800, range: 'Đường huyết phải nằm trong khoảng 0–800 mg/dL.'},
-        hba1cPercent: {label: 'HbA1c', min: 0, max: 20, range: 'HbA1c chỉ được nhập từ 0% đến 20%.'},
-        chieuCaoCm: {label: 'Chiều cao', min: 0, max: 250, range: 'Chiều cao phải nằm trong khoảng 0–250 cm.'},
-        canNangKg: {label: 'Cân nặng', min: 0, max: 500, range: 'Cân nặng phải nằm trong khoảng 0–500 kg.'},
-        huyetApTamThu: {label: 'Huyết áp tâm thu', min: 0, max: 300, range: 'Huyết áp tâm thu phải từ 0–300 mmHg.'},
-        huyetApTamTruong: {label: 'Huyết áp tâm trương', min: 0, max: 200, range: 'Huyết áp tâm trương phải từ 0–200 mmHg.'},
-        nhipTim: {label: 'Nhịp tim', min: 0, max: 250, range: 'Nhịp tim phải từ 0–250 bpm.'},
-        nhietDoC: {label: 'Nhiệt độ', min: 0, max: 45, range: 'Nhiệt độ cơ thể phải từ 0°C đến 45°C.'},
-        nhipTho: {label: 'Nhịp thở', min: 0, max: 80, range: 'Nhịp thở phải từ 0–80 lần/phút.'},
-        labGlucoseMau: {label: 'Đường huyết', min: 0},
-        labHba1c: {label: 'HbA1c', min: 0, max: 20, range: 'HbA1c chỉ được nhập từ 0% đến 20%.'},
-        labCholesterol: {label: 'Cholesterol', min: 0},
-        labTriglyceride: {label: 'Triglyceride', min: 0},
-        labHdl: {label: 'HDL', min: 0},
-        labLdl: {label: 'LDL', min: 0},
-        labAst: {label: 'AST', min: 0},
-        labAlt: {label: 'ALT', min: 0},
-        labUre: {label: 'Urê', min: 0},
-        labCreatinine: {label: 'Creatinine', min: 0},
-        labWbc: {label: 'WBC', min: 0},
-        labRbc: {label: 'RBC', min: 0},
-        labHgb: {label: 'HGB', min: 0},
-        labHct: {label: 'HCT', min: 0},
-        labPlt: {label: 'PLT', min: 0}
+        // Khám nội tiết
+        duongHuyetMgdl: {
+            label: 'Đường huyết',
+            min: 20,
+            max: 800,
+            range: 'Đường huyết phải nằm trong khoảng 20–800 mg/dL.'
+        },
+        hba1cPercent: {
+            label: 'HbA1c',
+            min: 3,
+            max: 20,
+            range: 'HbA1c phải nằm trong khoảng 3–20%.'
+        },
+        // Sinh hiệu
+        chieuCaoCm: {
+            label: 'Chiều cao',
+            min: 30,
+            max: 250,
+            range: 'Chiều cao phải từ 30–250 cm.'
+        },
+        canNangKg: {
+            label: 'Cân nặng',
+            min: 1,
+            max: 500,
+            range: 'Cân nặng phải từ 1–500 kg.'
+        },
+        huyetApTamThu: {
+            label: 'Huyết áp tâm thu',
+            min: 40,
+            max: 300,
+            range: 'Huyết áp tâm thu phải từ 40–300 mmHg.'
+        },
+        huyetApTamTruong: {
+            label: 'Huyết áp tâm trương',
+            min: 20,
+            max: 200,
+            range: 'Huyết áp tâm trương phải từ 20–200 mmHg.'
+        },
+        nhipTim: {
+            label: 'Nhịp tim',
+            min: 20,
+            max: 250,
+            range: 'Nhịp tim phải từ 20–250 bpm.'
+        },
+        nhietDoC: {
+            label: 'Nhiệt độ',
+            min: 30,
+            max: 45,
+            range: 'Nhiệt độ phải từ 30–45°C.'
+        },
+        nhipTho: {
+            label: 'Nhịp thở',
+            min: 5,
+            max: 80,
+            range: 'Nhịp thở phải từ 5–80 lần/phút.'
+        },
+        // Sinh hóa
+        labGlucoseMau: {
+            label: 'Đường huyết',
+            min: 20,
+            max: 800,
+            range: 'Đường huyết phải từ 20–800 mg/dL.'
+        },
+        labHba1c: {
+            label: 'HbA1c',
+            min: 3,
+            max: 20,
+            range: 'HbA1c phải từ 3–20%.'
+        },
+        labCholesterol: {
+            label: 'Cholesterol',
+            min: 1,
+            max: 1000,
+            range: 'Cholesterol phải từ 1–1000 mg/dL.'
+        },
+        labTriglyceride: {
+            label: 'Triglyceride',
+            min: 1,
+            max: 3000,
+            range: 'Triglyceride phải từ 1–3000 mg/dL.'
+        },
+        labHdl: {
+            label: 'HDL',
+            min: 1,
+            max: 200,
+            range: 'HDL phải từ 1–200 mg/dL.'
+        },
+        labLdl: {
+            label: 'LDL',
+            min: 1,
+            max: 500,
+            range: 'LDL phải từ 1–500 mg/dL.'
+        },
+        labAst: {
+            label: 'AST',
+            min: 1,
+            max: 2000,
+            range: 'AST phải từ 1–2000 U/L.'
+        },
+        labAlt: {
+            label: 'ALT',
+            min: 1,
+            max: 2000,
+            range: 'ALT phải từ 1–2000 U/L.'
+        },
+        labUre: {
+            label: 'Urê',
+            min: 0.1,
+            max: 100,
+            range: 'Urê phải từ 0.1–100 mmol/L.'
+        },
+        labCreatinine: {
+            label: 'Creatinine',
+            min: 5,
+            max: 3000,
+            range: 'Creatinine phải từ 5–3000 µmol/L.'
+        },
+        // Công thức máu
+        labWbc: {
+            label: 'WBC',
+            min: 0.1,
+            max: 200,
+            range: 'WBC phải từ 0.1–200 ×10⁹/L.'
+        },
+        labRbc: {
+            label: 'RBC',
+            min: 0.5,
+            max: 10,
+            range: 'RBC phải từ 0.5–10 ×10¹²/L.'
+        },
+        labHgb: {
+            label: 'HGB',
+            min: 10,
+            max: 250,
+            range: 'HGB phải từ 10–250 g/L.'
+        },
+        labHct: {
+            label: 'HCT',
+            min: 5,
+            max: 80,
+            range: 'HCT phải từ 5–80%.'
+        },
+        labPlt: {
+            label: 'PLT',
+            min: 1,
+            max: 2000,
+            range: 'PLT phải từ 1–2000 ×10⁹/L.'
+        }
     };
 
     function setFieldError(name, message) {
@@ -783,11 +907,20 @@
             setFieldError(name, '');
             return null;
         }
-        const value = Number(raw.replace(',', '.'));
+        const normalized = raw.replace(',', '.');
+        const value = Number(normalized);
         if (!Number.isFinite(value)) {
             const message = 'Chỉ được nhập số.';
             setFieldError(name, message);
             return message;
+        }
+        if (!INTEGER_FIELDS[name]) {
+            const decimalPart = normalized.includes('.') ? normalized.split('.')[1] : '';
+            if (decimalPart.length > 2) {
+                const message = 'Chỉ được nhập tối đa 2 chữ số sau dấu thập phân.';
+                setFieldError(name, message);
+                return message;
+            }
         }
         let message = null;
         if ((rule.min != null && value < rule.min) || (rule.max != null && value > rule.max)) {

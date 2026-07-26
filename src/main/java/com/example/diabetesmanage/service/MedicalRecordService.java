@@ -129,6 +129,8 @@ public class MedicalRecordService {
         form.setPatientId(patientUuid);
 
         if ("tai_kham_noi_tiet".equalsIgnoreCase(type)) {
+            // Partial update: trường bỏ trống giữ nguyên giá trị hiện có, không ghi đè NULL.
+            mergeWithExistingHealthData(form, patientUuid);
             validateEndocrineInsertFields(form, doctorUuid);
             // Chẩn đoán chính nhập ở Bước 2 → giữ chỗ để thỏa ràng buộc NOT NULL.
             if (isBlank(form.getChanDoanChinh())) {
@@ -179,6 +181,9 @@ public class MedicalRecordService {
                         doctorUuid,
                         encounter.getNgayKham()
                 );
+                // Persist latest height/weight on the patient profile (UPDATE, not INSERT).
+                patientDAO.updateHeightAndWeight(
+                        con, patientUuid, form.getChieuCaoCm(), form.getCanNangKg());
             }
             con.commit();
         } catch (SQLException ex) {
@@ -209,6 +214,108 @@ public class MedicalRecordService {
             return null;
         }
         return buildDetailViewFromEncounter(encounter, scopeDoctorId);
+    }
+
+    /**
+     * Partial update cho hồ sơ tái khám Nội tiết: chỉ ghi giá trị bác sĩ thực sự nhập;
+     * trường bỏ trống được điền lại bằng giá trị hiện có (health_records mới nhất /
+     * hồ sơ bệnh nhân / lần khám gần nhất) để bản ghi mới không làm mất dữ liệu cũ.
+     * BMI: chỉ tính lại khi chiều cao hoặc cân nặng thay đổi; nếu cả hai giữ nguyên
+     * thì giữ BMI hiện tại.
+     */
+    private void mergeWithExistingHealthData(EncounterCreateDTO form, String patientUuid) {
+        HealthRecord latest = healthRecordDAO.getLatestByPatientId(patientUuid);
+        Patient patient = patientDAO.getPatientById(patientUuid, null);
+
+        Double oldHeight = latest != null && latest.getChieuCaoCm() != null
+                ? latest.getChieuCaoCm()
+                : (patient != null ? patient.getChieuCaoCm() : null);
+        Double oldWeight = latest != null ? latest.getCanNangKg() : null;
+        Double oldBmi = latest != null ? latest.getBmi() : null;
+
+        boolean heightChanged = form.getChieuCaoCm() != null
+                && !numbersEqual(form.getChieuCaoCm(), oldHeight);
+        boolean weightChanged = form.getCanNangKg() != null
+                && !numbersEqual(form.getCanNangKg(), oldWeight);
+
+        if (form.getChieuCaoCm() == null) {
+            form.setChieuCaoCm(oldHeight);
+        }
+        if (form.getCanNangKg() == null) {
+            form.setCanNangKg(oldWeight);
+        }
+        if (heightChanged || weightChanged) {
+            form.setBmi(null);
+            form.calculateBmiIfNeeded();
+        } else if (form.getBmi() == null) {
+            form.setBmi(oldBmi);
+            form.calculateBmiIfNeeded();
+        }
+
+        if (latest != null) {
+            if (form.getDuongHuyetMgdl() == null) {
+                form.setDuongHuyetMgdl(latest.getDuongHuyetMgdl());
+                if (isBlank(form.getThoiDiemDoDuong())) {
+                    form.setThoiDiemDoDuong(latest.getThoiDiemDoDuong());
+                }
+            }
+            if (form.getHba1cPercent() == null) {
+                form.setHba1cPercent(latest.getHba1cPercent());
+            }
+            if (form.getHuyetApTamThu() == null) {
+                form.setHuyetApTamThu(latest.getHuyetApTamThu());
+            }
+            if (form.getHuyetApTamTruong() == null) {
+                form.setHuyetApTamTruong(latest.getHuyetApTamTruong());
+            }
+            if (form.getNhipTim() == null) {
+                form.setNhipTim(latest.getNhipTim());
+            }
+            if (form.getNhietDoC() == null) {
+                form.setNhietDoC(latest.getNhietDoC());
+            }
+            if (form.getNhipTho() == null) {
+                form.setNhipTho(latest.getNhipTho());
+            }
+        }
+
+        if (isBlank(form.getTienSuBenh())) {
+            String tienSu = latest != null ? latest.getTienSuBenh() : null;
+            if (isBlank(tienSu) && patient != null) {
+                tienSu = patient.getTienSuBenh();
+            }
+            if (!isBlank(tienSu)) {
+                form.setTienSuBenh(tienSu);
+                if (isBlank(form.getQuaTrinhBenhLy())) {
+                    form.setQuaTrinhBenhLy(tienSu);
+                }
+            }
+        }
+
+        if ((isBlank(form.getTrieuChung()) || isBlank(form.getKhamLamSang()))
+                && latest != null
+                && latest.getEncounterId() != null
+                && !latest.getEncounterId().isBlank()) {
+            HealthRecord lastVisit = healthRecordDAO.getByEncounterId(latest.getEncounterId());
+            if (lastVisit != null) {
+                if (isBlank(form.getTrieuChung()) && !isBlank(lastVisit.getTrieuChung())) {
+                    form.setTrieuChung(lastVisit.getTrieuChung());
+                    if (isBlank(form.getLyDoKham())) {
+                        form.setLyDoKham(lastVisit.getTrieuChung());
+                    }
+                }
+                if (isBlank(form.getKhamLamSang()) && !isBlank(lastVisit.getKhamLamSang())) {
+                    form.setKhamLamSang(lastVisit.getKhamLamSang());
+                }
+            }
+        }
+    }
+
+    private static boolean numbersEqual(Double a, Double b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        return Math.abs(a - b) < 0.0001;
     }
 
     private String requirePatientUuid(String patientId) throws SQLException {

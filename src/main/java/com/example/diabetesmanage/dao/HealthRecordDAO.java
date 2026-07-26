@@ -275,8 +275,9 @@ public class HealthRecordDAO {
                         "(id, encounter_id, patient_id, nhap_boi, thoi_gian_do, ngay_tao, " +
                         "duong_huyet_mgdl, thoi_diem_do_duong, huyet_ap_tam_thu, huyet_ap_tam_truong, " +
                         "nhip_tim, nhiet_do_c, nhip_tho, can_nang_kg, bmi, " +
+                        "hba1c_percent, cholesterol_mmol, triglyceride_mmol, " +
                         "carbs_g, lieu_luong_insulin_ui, loai_insulin_tiem, ghi_chu) " +
-                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             int idx = 1;
@@ -295,6 +296,9 @@ public class HealthRecordDAO {
             JdbcUtil.setInteger(ps, idx++, form.getNhipTho());
             JdbcUtil.setDouble(ps, idx++, form.getCanNangKg());
             JdbcUtil.setDouble(ps, idx++, form.getBmi());
+            JdbcUtil.setDouble(ps, idx++, form.getHba1cPercent());
+            JdbcUtil.setDouble(ps, idx++, form.getCholesterolMmol());
+            JdbcUtil.setDouble(ps, idx++, form.getTriglycerideMmol());
             JdbcUtil.setDouble(ps, idx++, form.getCarbsG());
             JdbcUtil.setInteger(ps, idx++, form.getLieuLuongInsulinUi());
             JdbcUtil.setString(ps, idx++, form.getLoaiInsulinTiem());
