@@ -96,7 +96,7 @@ public class DietPlanDAO {
 
     public DietPlan getTodayDietPlan(String patientId) {
         String sql = "SELECT dp.*, dpd.id as detail_id, dpd.food_id, dpd.bua_an, dpd.ghi_chu as detail_ghi_chu, " +
-                     "mf.ten_thuc_pham, mf.don_vi_khau_phan, mf.carbs_g, mf.calo_kcal, mf.chi_so_gi " +
+                     "mf.ten_thuc_pham, mf.loai_mon, mf.don_vi_khau_phan, mf.carbs_g, mf.calo_kcal, mf.chi_so_gi " +
                      "FROM diet_plans dp " +
                      "LEFT JOIN diet_plan_details dpd ON dp.id = dpd.diet_plan_id " +
                      "LEFT JOIN master_foods mf ON dpd.food_id = mf.id " +
@@ -138,6 +138,7 @@ public class DietPlanDAO {
                     MasterFood food = new MasterFood();
                     food.setId(rs.getString("food_id"));
                     food.setTenThucPham(rs.getString("ten_thuc_pham"));
+                    food.setLoaiMon(rs.getString("loai_mon"));
                     food.setDonViKhauPhan(rs.getString("don_vi_khau_phan"));
                     food.setCarbsG(rs.getDouble("carbs_g"));
                     food.setCaloKcal(rs.getDouble("calo_kcal"));

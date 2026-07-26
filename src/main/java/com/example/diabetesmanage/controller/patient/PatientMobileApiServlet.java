@@ -8,7 +8,7 @@ import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.util.PatientPortalAuth;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.example.diabetesmanage.util.GsonUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -43,7 +43,7 @@ public class PatientMobileApiServlet extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         
         PrintWriter out = response.getWriter();
-        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+        Gson gson = GsonUtil.getGson();
         Map<String, Object> responseData = new HashMap<>();
 
         try {

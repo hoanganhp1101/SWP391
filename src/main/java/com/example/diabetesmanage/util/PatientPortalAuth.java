@@ -28,6 +28,22 @@ public final class PatientPortalAuth {
             }
         }
         if (user == null || !"benh_nhan".equalsIgnoreCase(user.getVaiTro())) {
+            // Fix for mobile app: allow mock access without login since mobile app has no login screen yet
+            if (request.getRequestURI().contains("/api/mobile")) {
+                try (java.sql.Connection conn = com.example.diabetesmanage.context.DBContext.getConnection();
+                     java.sql.PreparedStatement ps = conn.prepareStatement("SELECT id FROM patients LIMIT 1");
+                     java.sql.ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getString("id");
+                    }
+                } catch (java.sql.SQLException e) {
+                    e.printStackTrace();
+                }
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"status\":\"error\", \"message\":\"Unauthorized\"}");
+                return null;
+            }
+
             response.sendRedirect(request.getContextPath() + "/Logincontroller");
             return null;
         }

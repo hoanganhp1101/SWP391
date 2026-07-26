@@ -151,9 +151,9 @@ public class PatientDetailPdfService {
 
         document.add(subTitle("Trieu chung", normalFont));
         addPair(document, normalFont,
-                "Dau nguc", boolLabel(hr.getChestPain()),
-                "Chong mat", boolLabel(hr.getDizziness()));
-        addField(document, "Met moi", boolLabel(hr.getFatigue()), normalFont);
+                "Dau nguc", boolLabel(hr.getChestPainBoolean()),
+                "Chong mat", boolLabel(hr.getDizzinessBoolean()));
+        addField(document, "Met moi", boolLabel(hr.getFatigueBoolean()), normalFont);
         document.add(Chunk.NEWLINE);
     }
 

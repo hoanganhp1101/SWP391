@@ -18,6 +18,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.Period;
 
 /**
  * Service gọi Google Gemini API để phân tích sức khỏe, chatbot, và tạo báo cáo.
@@ -702,11 +704,49 @@ public class GeminiService {
     }
 
     /**
-     * Dựa trên hồ sơ sức khỏe và danh sách thực phẩm, xin AI đề xuất thực đơn
+     * Tính BMR theo công thức Mifflin-St Jeor, sau đó nhân hệ số vận động để ra TDEE.
+     * Với bệnh nhân tiểu đường, thường lấy TDEE và có thể điều chỉnh giảm nhẹ (~ -10% đến -15%)
+     * nếu mục tiêu là kiểm soát cân nặng/đường huyết, theo hướng dẫn ADA (không cắt giảm quá mạnh).
      */
+    /** Tính tuổi hiện tại từ ngày sinh. */
+    private int tinhTuoiTuNgaySinh(LocalDate ngaySinh) {
+        return Period.between(ngaySinh, LocalDate.now()).getYears();
+    }
+
+    private double tinhCaloMucTieu(double canNangKg, double chieuCaoCm, int tuoi, String gioiTinh, double heSoVanDong) {
+        double bmr;
+        if ("Nam".equalsIgnoreCase(gioiTinh)) {
+            bmr = 10 * canNangKg + 6.25 * chieuCaoCm - 5 * tuoi + 5;
+        } else {
+            bmr = 10 * canNangKg + 6.25 * chieuCaoCm - 5 * tuoi - 161;
+        }
+        double tdee = bmr * heSoVanDong; // vd: 1.2 ít vận động, 1.375 vận động nhẹ, 1.55 vừa
+        return tdee;
+    }
+
     public String generateDailyDietPlan(Patient patient, HealthRecord record, List<MasterFood> foods) {
         if (foods == null || foods.isEmpty()) {
             return "[]";
+        }
+
+        // Mặc định "ít vận động" vì app hiện chưa thu thập mức độ vận động của bệnh nhân.
+        // Đây là lựa chọn thận trọng cho tính toán y tế (thà ước tính calo thấp hơn
+        // thực tế một chút còn hơn đưa ra mục tiêu quá cao). Nếu sau này có field
+        // mức độ vận động, thay HE_SO_VAN_DONG_MAC_DINH bằng giá trị lấy từ hồ sơ.
+        final double HE_SO_VAN_DONG_MAC_DINH = 1.2;
+
+        // --- Tính calo mục tiêu trước bằng code, không để AI tự suy luận ---
+        Double caloMucTieu = null;
+        Double carbMucTieuMoiBua = null;
+        if (patient != null && record != null
+                && record.getCanNangKg() != null
+                && patient.getChieuCaoCm() != null
+                && patient.getNgaySinhLocalDate() != null) {
+            int tuoi = tinhTuoiTuNgaySinh(patient.getNgaySinhLocalDate());
+            caloMucTieu = tinhCaloMucTieu(record.getCanNangKg(), patient.getChieuCaoCm(),
+                    tuoi, patient.getGioiTinh(), HE_SO_VAN_DONG_MAC_DINH);
+            // Khuyến nghị chung cho tiểu đường: ~45% năng lượng từ carbs, chia 3 bữa
+            carbMucTieuMoiBua = (caloMucTieu * 0.45 / 4) / 3; // 4 kcal/g carb, chia 3 bữa
         }
 
         StringBuilder prompt = new StringBuilder();
@@ -723,9 +763,19 @@ public class GeminiService {
             prompt.append("- BMI: ").append(record.getBmi() != null ? record.getBmi() : "Không rõ").append("\n");
         }
 
+        if (caloMucTieu != null) {
+            prompt.append(String.format("\nMỤC TIÊU NĂNG LƯỢNG: khoảng %.0f kcal/ngày (tổng 3 bữa nên nằm trong khoảng %.0f–%.0f kcal).\n",
+                    caloMucTieu, caloMucTieu * 0.9, caloMucTieu * 1.1));
+            prompt.append(String.format("MỤC TIÊU CARBS: khoảng %.0fg carbs mỗi bữa (Sáng/Trưa/Tối), không chênh lệch quá 20%%.\n",
+                    carbMucTieuMoiBua));
+        } else {
+            prompt.append("\n(Không đủ dữ liệu tuổi/giới tính để tính calo mục tiêu chính xác — hãy chọn khẩu phần trung bình, ưu tiên GI thấp.)\n");
+        }
+
         prompt.append("\nDanh sách thực phẩm (CHỈ dùng đúng id bên dưới):\n");
         for (MasterFood f : foods) {
             prompt.append("- id=\"").append(f.getId()).append("\": ").append(f.getTenThucPham())
+                    .append(" | Loại=").append(f.getLoaiMon() != null ? f.getLoaiMon() : "N/A")
                     .append(" | Carbs=").append(f.getCarbsG()).append("g")
                     .append(" | Calo=").append(f.getCaloKcal())
                     .append(" | GI=").append(f.getChiSoGI()).append("\n");
@@ -733,8 +783,10 @@ public class GeminiService {
 
         prompt.append("\nQUY TẮC:\n");
         prompt.append("1. Chỉ chọn foodId nằm trong danh sách trên. Không bịa id mới.\n");
-        prompt.append("2. Mỗi bữa (Sáng/Trưa/Tối) chọn 1–2 món, ưu tiên GI thấp, cân bằng carbs.\n");
-        prompt.append("3. Trả về DUY NHẤT một mảng JSON (không markdown, không giải thích):\n");
+        prompt.append("2. CẤU TRÚC BỮA ĂN: Mỗi bữa (Sáng/Trưa/Tối) chọn CHÍNH XÁC 1 món có Loại='mon_chinh', và có thể kèm TỐI ĐA 1 món phụ (Loại='rau_cu', 'trai_cay' hoặc 'mon_phu'). Không chọn 2 món chính trong cùng một bữa.\n");
+        prompt.append("3. PHÂN BỔ NĂNG LƯỢNG: Bữa Tối nên có tổng calo và carbs THẤP HƠN bữa Sáng và bữa Trưa.\n");
+        prompt.append("4. Tổng calo/carbs cả ngày phải bám sát mục tiêu năng lượng đã nêu ở trên (nếu có), ưu tiên GI thấp.\n");
+        prompt.append("5. Trả về DUY NHẤT một mảng JSON (không markdown, không giải thích):\n");
         prompt.append("[{\"foodId\":\"").append(foods.get(0).getId())
                 .append("\",\"buaAn\":\"Sáng\",\"ghiChu\":\"Gợi ý\"}]\n");
 
@@ -746,15 +798,55 @@ public class GeminiService {
             return "[]";
         }
 
-        String cleaned = rawResponse.trim();
-        if (cleaned.startsWith("```json")) {
-            cleaned = cleaned.substring(7);
-        } else if (cleaned.startsWith("```")) {
-            cleaned = cleaned.substring(3);
+        String cleaned = trichXuatJsonArray(rawResponse);
+        if (cleaned == null) {
+            System.out.println("[GeminiService] Không tìm thấy JSON array hợp lệ trong response.");
+            return "[]";
         }
-        if (cleaned.endsWith("```")) {
-            cleaned = cleaned.substring(0, cleaned.length() - 3);
+
+        // Kiểm tra tất cả foodId trả về đều nằm trong danh sách gốc — bắt buộc,
+        // để tránh AI hallucinate id không tồn tại gây lỗi ở tầng dưới.
+        String hopLe = locFoodIdHopLe(cleaned, foods);
+        return hopLe;
+    }
+
+    /**
+     * Trích nội dung từ dấu '[' đầu tiên đến ']' cuối cùng, thay vì chỉ cắt tiền tố ```json.
+     * Chịu được trường hợp model trả về có khoảng trắng/giải thích thừa quanh JSON.
+     */
+    private String trichXuatJsonArray(String raw) {
+        int start = raw.indexOf('[');
+        int end = raw.lastIndexOf(']');
+        if (start == -1 || end == -1 || end < start) {
+            return null;
         }
-        return cleaned.trim();
+        return raw.substring(start, end + 1).trim();
+    }
+
+    /**
+     * Lọc bỏ các phần tử có foodId không nằm trong danh sách food gốc.
+     * Đây là bước validation bắt buộc cho một ứng dụng y tế — không tin tưởng
+     * hoàn toàn output của LLM dù đã yêu cầu trong prompt.
+     */
+    private String locFoodIdHopLe(String jsonArrayStr, List<MasterFood> foods) {
+        try {
+            com.google.gson.JsonArray arr = com.google.gson.JsonParser.parseString(jsonArrayStr).getAsJsonArray();
+            com.google.gson.JsonArray ketQua = new com.google.gson.JsonArray();
+            java.util.Set<String> idHopLe = new java.util.HashSet<>();
+            for (MasterFood f : foods) idHopLe.add(f.getId());
+
+            for (com.google.gson.JsonElement el : arr) {
+                com.google.gson.JsonObject obj = el.getAsJsonObject();
+                if (obj.has("foodId") && idHopLe.contains(obj.get("foodId").getAsString())) {
+                    ketQua.add(obj);
+                } else {
+                    System.out.println("[GeminiService] Bỏ qua foodId không hợp lệ: " + obj);
+                }
+            }
+            return ketQua.toString();
+        } catch (Exception e) {
+            System.out.println("[GeminiService] Lỗi parse JSON, trả về mảng rỗng: " + e.getMessage());
+            return "[]";
+        }
     }
 }

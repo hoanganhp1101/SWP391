@@ -223,9 +223,9 @@
                     Cập nhật bệnh án thành công!
                 </div>
             </c:if>
-            <c:if test="${param.error == 'true'}">
+            <c:if test="${not empty param.error}">
                 <div style="background-color: var(--danger-light); color: var(--danger); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 500;">
-                    Đã có lỗi xảy ra. Vui lòng thử lại.
+                    ${param.error}
                 </div>
             </c:if>
 
@@ -518,11 +518,11 @@
                     </div>
                     <div class="form-group">
                         <label>Chiều cao (cm)</label>
-                        <input type="number" step="0.1" name="chieuCaoCm" class="form-control" value="${patientInfo.chieuCaoCm}">
+                        <input type="number" step="0.1" name="chieuCaoCm" min="20" max="300" class="form-control" value="${patientInfo.chieuCaoCm}">
                     </div>
                     <div class="form-group">
                         <label>Cân nặng (kg)</label>
-                        <input type="number" step="0.1" name="canNangKg" id="canNangKg" class="form-control" value="${latestRecord.canNangKg}">
+                        <input type="number" step="0.1" name="canNangKg" id="canNangKg" min="10" max="300" class="form-control" value="${latestRecord.canNangKg}">
                     </div>
                 </div>
                 
@@ -530,21 +530,21 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Huyết áp tâm thu</label>
-                        <input type="number" name="huyetApTamThu" id="huyetApTamThu" class="form-control" placeholder="VD: 120" value="${latestRecord.huyetApTamThu}">
+                        <input type="number" name="huyetApTamThu" id="huyetApTamThu" min="50" max="250" class="form-control" placeholder="VD: 120" value="${latestRecord.huyetApTamThu}">
                     </div>
                     <div class="form-group">
                         <label>Huyết áp tâm trương</label>
-                        <input type="number" name="huyetApTamTruong" id="huyetApTamTruong" class="form-control" placeholder="VD: 80" value="${latestRecord.huyetApTamTruong}">
+                        <input type="number" name="huyetApTamTruong" id="huyetApTamTruong" min="30" max="150" class="form-control" placeholder="VD: 80" value="${latestRecord.huyetApTamTruong}">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nhịp tim (BPM)</label>
-                        <input type="number" name="nhipTim" id="nhipTim" class="form-control" placeholder="VD: 75" value="${latestRecord.nhipTim}">
+                        <input type="number" name="nhipTim" id="nhipTim" min="30" max="250" class="form-control" placeholder="VD: 75" value="${latestRecord.nhipTim}">
                     </div>
                     <div class="form-group">
                         <label>Đường huyết (mg/dL)</label>
-                        <input type="number" step="0.1" name="duongHuyetMgdl" id="duongHuyetMgdl" class="form-control" placeholder="VD: 90.0" value="${latestRecord.duongHuyetMgdl}">
+                        <input type="number" step="0.1" name="duongHuyetMgdl" id="duongHuyetMgdl" min="0" max="1000" class="form-control" placeholder="VD: 90.0" value="${latestRecord.duongHuyetMgdl}">
                     </div>
                 </div>
 
@@ -552,17 +552,17 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>HbA1c (%)</label>
-                        <input type="number" step="0.1" name="hba1c" id="hba1c" class="form-control" placeholder="VD: 6.5" value="${latestRecord.hba1cPercent}">
+                        <input type="number" step="0.1" name="hba1c" id="hba1c" min="2" max="30" class="form-control" placeholder="VD: 6.5" value="${latestRecord.hba1cPercent}">
                     </div>
                     <div class="form-group">
                         <label>Cholesterol (mmol/L)</label>
-                        <input type="number" step="0.1" name="cholesterol" id="cholesterol" class="form-control" placeholder="VD: 5.2" value="${latestRecord.cholesterolMmol}">
+                        <input type="number" step="0.1" name="cholesterol" id="cholesterol" min="0" max="30" class="form-control" placeholder="VD: 5.2" value="${latestRecord.cholesterolMmol}">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Triglyceride (mmol/L)</label>
-                        <input type="number" step="0.1" name="triglyceride" id="triglyceride" class="form-control" placeholder="VD: 1.7" value="${latestRecord.triglycerideMmol}">
+                        <input type="number" step="0.1" name="triglyceride" id="triglyceride" min="0" max="30" class="form-control" placeholder="VD: 1.7" value="${latestRecord.triglycerideMmol}">
                     </div>
                     <div class="form-group">
                     </div>

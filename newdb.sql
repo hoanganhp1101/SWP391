@@ -358,6 +358,7 @@ CREATE TABLE master_medications (
 CREATE TABLE master_foods (
                               id              CHAR(36)        NOT NULL DEFAULT (UUID()),
                               ten_thuc_pham   VARCHAR(200)    NOT NULL,
+                              loai_mon        VARCHAR(20),
                               don_vi_khau_phan VARCHAR(100)   NOT NULL COMMENT '100g, 1 bát, 1 quả...',
                               carbs_g         DECIMAL(5,2)    NOT NULL COMMENT 'Lượng Carbohydrate',
                               calo_kcal       DECIMAL(5,2)    DEFAULT NULL,
@@ -598,17 +599,17 @@ INSERT INTO medical_documents (id, patient_id, bac_si_id, loai_tai_lieu, trang_t
 INSERT INTO patient_assignments (id, patient_id, doctor_id, trang_thai)
 VALUES (UUID(), @patient_profile_id, @doctor_id, 1);
 
-INSERT INTO master_foods (id, ten_thuc_pham, don_vi_khau_phan, carbs_g, calo_kcal, chi_so_gi, trang_thai) VALUES
-('f1', 'Cơm trắng', '1 bát vừa (130g)', 36.5, 170.0, 73.0, 1),
-('f2', 'Phở bò', '1 bát', 60.0, 350.0, 65.0, 1),
-('f3', 'Bánh mì thịt', '1 ổ', 45.0, 380.0, 71.0, 1),
-('f4', 'Táo tây', '1 quả vừa (150g)', 20.6, 78.0, 36.0, 1),
-('f5', 'Sữa tươi không đường', '1 hộp (180ml)', 9.0, 110.0, 31.0, 1),
-('f6', 'Cơm gạo lứt', '1 bát con', 30.0, 150.0, 55.0, 1),
-('f7', 'Ức gà luộc', '100g', 0.0, 165.0, 0.0, 1),
-('f8', 'Salad dưa chuột cà chua', '1 đĩa', 8.0, 45.0, 20.0, 1),
-('f9', 'Sữa chua không đường', '1 hộp (100g)', 6.0, 60.0, 35.0, 1),
-('f10', 'Rau muống xào tỏi', '1 đĩa', 6.0, 100.0, 15.0, 1);
+INSERT INTO master_foods (id, ten_thuc_pham, loai_mon, don_vi_khau_phan, carbs_g, calo_kcal, chi_so_gi, trang_thai) VALUES
+('f1', 'Cơm trắng', 'mon_chinh', '1 bát vừa (130g)', 36.5, 170.0, 73.0, 1),
+('f2', 'Phở bò', 'mon_chinh', '1 bát', 60.0, 350.0, 65.0, 1),
+('f3', 'Bánh mì thịt', 'mon_chinh', '1 ổ', 45.0, 380.0, 71.0, 1),
+('f4', 'Táo tây', 'trai_cay', '1 quả vừa (150g)', 20.6, 78.0, 36.0, 1),
+('f5', 'Sữa tươi không đường', 'mon_phu', '1 hộp (180ml)', 9.0, 110.0, 31.0, 1),
+('f6', 'Cơm gạo lứt', 'mon_chinh', '1 bát con', 30.0, 150.0, 55.0, 1),
+('f7', 'Ức gà luộc', 'mon_chinh', '100g', 0.0, 165.0, 0.0, 1),
+('f8', 'Salad dưa chuột cà chua', 'rau_cu', '1 đĩa', 8.0, 45.0, 20.0, 1),
+('f9', 'Sữa chua không đường', 'mon_phu', '1 hộp (100g)', 6.0, 60.0, 35.0, 1),
+('f10', 'Rau muống xào tỏi', 'rau_cu', '1 đĩa', 6.0, 100.0, 15.0, 1);
 
 INSERT INTO master_medications (id, ten_thuoc, hoat_chat, don_vi_tinh, loai_thuoc, huong_dan_goc, trang_thai) VALUES
 ('m1', 'Metformin 500mg', 'Metformin hydrochloride', 'Viên', 'Uống', 'Uống sau bữa ăn, không nhai hoặc nghiền nát.', 1),
