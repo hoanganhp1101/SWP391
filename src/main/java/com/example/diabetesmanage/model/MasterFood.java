@@ -6,6 +6,7 @@ public class MasterFood {
 
     private String id;
     private String tenThucPham;
+    private String loaiMon;
     private String donViKhauPhan;
     private double carbsG;
     private Double caloKcal;
@@ -20,6 +21,7 @@ public class MasterFood {
     // Constructor không có id
 
     public MasterFood(String tenThucPham,
+                      String loaiMon,
                       String donViKhauPhan,
                       double carbsG,
                       Double caloKcal,
@@ -27,6 +29,7 @@ public class MasterFood {
                       boolean trangThai) {
 
         this.tenThucPham = tenThucPham;
+        this.loaiMon = loaiMon;
         this.donViKhauPhan = donViKhauPhan;
         this.carbsG = carbsG;
         this.caloKcal = caloKcal;
@@ -38,6 +41,7 @@ public class MasterFood {
 
     public MasterFood(String id,
                       String tenThucPham,
+                      String loaiMon,
                       String donViKhauPhan,
                       double carbsG,
                       Double caloKcal,
@@ -47,6 +51,7 @@ public class MasterFood {
 
         this.id = id;
         this.tenThucPham = tenThucPham;
+        this.loaiMon = loaiMon;
         this.donViKhauPhan = donViKhauPhan;
         this.carbsG = carbsG;
         this.caloKcal = caloKcal;
@@ -73,6 +78,14 @@ public class MasterFood {
 
     public void setTenThucPham(String tenThucPham) {
         this.tenThucPham = tenThucPham;
+    }
+
+    public String getLoaiMon() {
+        return loaiMon;
+    }
+
+    public void setLoaiMon(String loaiMon) {
+        this.loaiMon = loaiMon;
     }
 
     public String getDonViKhauPhan() {
@@ -128,6 +141,7 @@ public class MasterFood {
         return "MasterFood{" +
                 "id='" + id + '\'' +
                 ", tenThucPham='" + tenThucPham + '\'' +
+                ", loaiMon='" + loaiMon + '\'' +
                 ", donViKhauPhan='" + donViKhauPhan + '\'' +
                 ", carbsG=" + carbsG +
                 ", caloKcal=" + caloKcal +

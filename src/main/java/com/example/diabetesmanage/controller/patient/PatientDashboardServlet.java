@@ -8,6 +8,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.util.List;
+import java.time.LocalDate;
+import java.util.regex.Pattern;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -144,9 +146,28 @@ public class PatientDashboardServlet extends HttpServlet {
             return;
         }
 
+        // Validate Email
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (!Pattern.matches(emailRegex, email)) {
+            redirectProfileError(response, returnUrl, "Email không hợp lệ.");
+            return;
+        }
+
+        // Validate Phone Number
+        String phoneRegex = "^0[0-9]{9}$";
+        if (!Pattern.matches(phoneRegex, soDienThoai)) {
+            redirectProfileError(response, returnUrl, "Số điện thoại không hợp lệ (phải bắt đầu bằng 0 và gồm 10 chữ số).");
+            return;
+        }
+
         Date ngaySinh;
         try {
             ngaySinh = Date.valueOf(ngaySinhRaw);
+            LocalDate birthDate = ngaySinh.toLocalDate();
+            if (birthDate.isAfter(LocalDate.now())) {
+                redirectProfileError(response, returnUrl, "Ngày sinh không được lớn hơn ngày hiện tại.");
+                return;
+            }
         } catch (IllegalArgumentException e) {
             redirectProfileError(response, returnUrl, "Ngày sinh không hợp lệ.");
             return;

@@ -66,8 +66,8 @@ public class PatientPrescriptionServlet extends HttpServlet {
             if (dateParam != null && !dateParam.trim().isEmpty()) {
                 try {
                     targetDate = Date.valueOf(dateParam);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } catch (IllegalArgumentException e) {
+                    // Invalid format, silently default to today
                 }
             }
             
@@ -95,7 +95,7 @@ public class PatientPrescriptionServlet extends HttpServlet {
         
         String dateParam = request.getParameter("date");
         if (dateParam != null && !dateParam.trim().isEmpty()) {
-            try { targetDate = Date.valueOf(dateParam); } catch (Exception e) {}
+            try { targetDate = Date.valueOf(dateParam); } catch (IllegalArgumentException e) { /* ignore */ }
         }
         
         List<MedicationLog> checklist = logDAO.getChecklistByDate(patientId, targetDate);
@@ -127,7 +127,9 @@ public class PatientPrescriptionServlet extends HttpServlet {
                 if (dateStr != null && !dateStr.trim().isEmpty()) {
                     try {
                         targetDate = Date.valueOf(dateStr);
-                    } catch (Exception e) {}
+                    } catch (IllegalArgumentException e) {
+                        // ignore
+                    }
                 }
                 
                 boolean success = logDAO.toggleMedicationStatus(patientId, medicationId, targetDate);

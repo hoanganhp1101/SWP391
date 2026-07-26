@@ -1573,6 +1573,7 @@
                             <div class="form-group">
                                 <label>Số điện thoại</label>
                                 <input type="text" class="form-control" name="soDienThoai" required
+                                    pattern="^0[0-9]{9}$" title="Số điện thoại phải bắt đầu bằng 0 và gồm 10 chữ số"
                                     value="${patientInfo.soDienThoai != null ? patientInfo.soDienThoai : ''}">
                             </div>
                             <div class="form-group">

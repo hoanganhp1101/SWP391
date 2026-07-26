@@ -2,9 +2,11 @@ package com.example.diabetesmanage.controller.patient;
 
 import java.io.IOException;
 import java.io.File;
-import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -75,8 +77,9 @@ public class PatientMedicalProfileServlet extends HttpServlet {
         if (p != null) {
             p.setGioiTinh(request.getParameter("gioiTinh"));
             String chieuCaoStr = request.getParameter("chieuCaoCm");
-            if (chieuCaoStr != null && !chieuCaoStr.isEmpty()) {
-                p.setChieuCaoCm(Double.parseDouble(chieuCaoStr));
+            Double parsedHeight = parseSafeDouble(chieuCaoStr);
+            if (parsedHeight != null && parsedHeight > 0 && parsedHeight < 300) {
+                p.setChieuCaoCm(parsedHeight);
             }
             p.setDiaChi(request.getParameter("diaChi"));
             p.setBaoHiemYTe(request.getParameter("baoHiemYTe"));
@@ -87,7 +90,11 @@ public class PatientMedicalProfileServlet extends HttpServlet {
 
             String ngayChanDoanStr = request.getParameter("ngayChanDoanTieuDuong");
             if (ngayChanDoanStr != null && !ngayChanDoanStr.isEmpty()) {
-                p.setNgayChanDoanTieuDuong(Date.valueOf(ngayChanDoanStr));
+                try {
+                    p.setNgayChanDoanTieuDuong(Date.valueOf(ngayChanDoanStr));
+                } catch (IllegalArgumentException e) {
+                    // Ignore invalid date format
+                }
             }
 
             patientDAO.updatePatientMedicalProfile(p);
@@ -110,14 +117,21 @@ public class PatientMedicalProfileServlet extends HttpServlet {
                     (triglycerideStr != null && !triglycerideStr.isEmpty());
 
             if (hasVitals) {
-                Double weight = (canNangStr != null && !canNangStr.isEmpty()) ? Double.parseDouble(canNangStr) : null;
-                Integer systole = (systoleStr != null && !systoleStr.isEmpty()) ? Integer.parseInt(systoleStr) : null;
-                Integer diastole = (diastoleStr != null && !diastoleStr.isEmpty()) ? Integer.parseInt(diastoleStr) : null;
-                Integer heartRate = (heartRateStr != null && !heartRateStr.isEmpty()) ? Integer.parseInt(heartRateStr) : null;
-                Double glucose = (glucoseStr != null && !glucoseStr.isEmpty()) ? Double.parseDouble(glucoseStr) : null;
-                Double hba1c = (hba1cStr != null && !hba1cStr.isEmpty()) ? Double.parseDouble(hba1cStr) : null;
-                Double cholesterol = (cholesterolStr != null && !cholesterolStr.isEmpty()) ? Double.parseDouble(cholesterolStr) : null;
-                Double triglyceride = (triglycerideStr != null && !triglycerideStr.isEmpty()) ? Double.parseDouble(triglycerideStr) : null;
+                Double weight = parseSafeDouble(canNangStr);
+                Integer systole = parseSafeInteger(systoleStr);
+                Integer diastole = parseSafeInteger(diastoleStr);
+                Integer heartRate = parseSafeInteger(heartRateStr);
+                Double glucose = parseSafeDouble(glucoseStr);
+                Double hba1c = parseSafeDouble(hba1cStr);
+                Double cholesterol = parseSafeDouble(cholesterolStr);
+                Double triglyceride = parseSafeDouble(triglycerideStr);
+
+                // Basic range validation
+                if (weight != null && (weight < 20 || weight > 300)) weight = null;
+                if (systole != null && (systole < 50 || systole > 250)) systole = null;
+                if (diastole != null && (diastole < 30 || diastole > 150)) diastole = null;
+                if (heartRate != null && (heartRate < 30 || heartRate > 250)) heartRate = null;
+                if (hba1c != null && (hba1c < 2 || hba1c > 30)) hba1c = null;
 
                 Double bmi = null;
                 if (weight != null && p.getChieuCaoCm() != null && p.getChieuCaoCm() > 0) {
@@ -132,6 +146,18 @@ public class PatientMedicalProfileServlet extends HttpServlet {
 
         Part filePart = request.getPart("pdfFile");
         if (filePart != null && filePart.getSize() > 0 && p != null) {
+            if (filePart.getSize() > 10 * 1024 * 1024) {
+                response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=" + 
+                        URLEncoder.encode("Tệp đính kèm không được vượt quá 10MB.", StandardCharsets.UTF_8));
+                return;
+            }
+            String contentType = filePart.getContentType();
+            if (contentType == null || !contentType.equals("application/pdf")) {
+                response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=" + 
+                        URLEncoder.encode("Chỉ hỗ trợ tải lên tệp PDF.", StandardCharsets.UTF_8));
+                return;
+            }
+            
             String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
             if (fileName.toLowerCase().endsWith(".pdf")) {
                 String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "documents";
@@ -157,5 +183,23 @@ public class PatientMedicalProfileServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/patient-medical-profile?success=true");
+    }
+
+    private Double parseSafeDouble(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try {
+            return Double.parseDouble(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Integer parseSafeInteger(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }
