@@ -27,7 +27,7 @@ import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.model.MedicalDocument;
 import com.example.diabetesmanage.util.PatientPortalAuth;
 
-@WebServlet(name = "PatientMedicalProfileServlet", urlPatterns = {"/patient-medical-profile"})
+@WebServlet(name = "PatientMedicalProfileServlet", urlPatterns = { "/patient-medical-profile" })
 @MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 1024 * 1024 * 10, maxRequestSize = 1024 * 1024 * 11)
 public class PatientMedicalProfileServlet extends HttpServlet {
 
@@ -127,11 +127,16 @@ public class PatientMedicalProfileServlet extends HttpServlet {
                 Double triglyceride = parseSafeDouble(triglycerideStr);
 
                 // Basic range validation
-                if (weight != null && (weight < 20 || weight > 300)) weight = null;
-                if (systole != null && (systole < 50 || systole > 250)) systole = null;
-                if (diastole != null && (diastole < 30 || diastole > 150)) diastole = null;
-                if (heartRate != null && (heartRate < 30 || heartRate > 250)) heartRate = null;
-                if (hba1c != null && (hba1c < 2 || hba1c > 30)) hba1c = null;
+                if (weight != null && (weight < 20 || weight > 300))
+                    weight = null;
+                if (systole != null && (systole < 50 || systole > 250))
+                    systole = null;
+                if (diastole != null && (diastole < 30 || diastole > 150))
+                    diastole = null;
+                if (heartRate != null && (heartRate < 30 || heartRate > 250))
+                    heartRate = null;
+                if (hba1c != null && (hba1c < 2 || hba1c > 30))
+                    hba1c = null;
 
                 Double bmi = null;
                 if (weight != null && p.getChieuCaoCm() != null && p.getChieuCaoCm() > 0) {
@@ -140,27 +145,29 @@ public class PatientMedicalProfileServlet extends HttpServlet {
                     bmi = Math.round(bmi * 10.0) / 10.0;
                 }
                 HealthRecordDAO hrDAO = new HealthRecordDAO();
-                hrDAO.insertExtractedHealthRecord(patientId, weight, bmi, systole, diastole, heartRate, glucose, hba1c, cholesterol, triglyceride);
+                hrDAO.insertExtractedHealthRecord(patientId, weight, bmi, systole, diastole, heartRate, glucose, hba1c,
+                        cholesterol, triglyceride);
             }
         }
 
         Part filePart = request.getPart("pdfFile");
         if (filePart != null && filePart.getSize() > 0 && p != null) {
             if (filePart.getSize() > 10 * 1024 * 1024) {
-                response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=" + 
+                response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=" +
                         URLEncoder.encode("Tệp đính kèm không được vượt quá 10MB.", StandardCharsets.UTF_8));
                 return;
             }
             String contentType = filePart.getContentType();
             if (contentType == null || !contentType.equals("application/pdf")) {
-                response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=" + 
+                response.sendRedirect(request.getContextPath() + "/patient-medical-profile?error=" +
                         URLEncoder.encode("Chỉ hỗ trợ tải lên tệp PDF.", StandardCharsets.UTF_8));
                 return;
             }
-            
+
             String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
             if (fileName.toLowerCase().endsWith(".pdf")) {
-                String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "documents";
+                String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator
+                        + "documents";
                 File uploadDir = new File(uploadPath);
                 if (!uploadDir.exists()) {
                     uploadDir.mkdirs();
@@ -172,7 +179,8 @@ public class PatientMedicalProfileServlet extends HttpServlet {
                 MedicalDocument doc = new MedicalDocument();
                 doc.setPatientId(patientId);
                 doc.setBacSiId(p.getBacSiId());
-                doc.setLoaiTaiLieu(request.getParameter("loaiTaiLieu") != null ? request.getParameter("loaiTaiLieu") : "Bệnh án ngoài");
+                doc.setLoaiTaiLieu(request.getParameter("loaiTaiLieu") != null ? request.getParameter("loaiTaiLieu")
+                        : "Bệnh án ngoài");
                 doc.setTrangThai("Hoàn thành");
                 doc.setFileUrl("uploads/documents/" + newFileName);
                 doc.setNgayThucHien(new java.sql.Date(System.currentTimeMillis()));
@@ -186,7 +194,8 @@ public class PatientMedicalProfileServlet extends HttpServlet {
     }
 
     private Double parseSafeDouble(String value) {
-        if (value == null || value.trim().isEmpty()) return null;
+        if (value == null || value.trim().isEmpty())
+            return null;
         try {
             return Double.parseDouble(value.trim());
         } catch (NumberFormatException e) {
@@ -195,7 +204,8 @@ public class PatientMedicalProfileServlet extends HttpServlet {
     }
 
     private Integer parseSafeInteger(String value) {
-        if (value == null || value.trim().isEmpty()) return null;
+        if (value == null || value.trim().isEmpty())
+            return null;
         try {
             return Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
