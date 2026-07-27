@@ -783,7 +783,7 @@ public class GeminiService {
 
         prompt.append("\nQUY TẮC:\n");
         prompt.append("1. Chỉ chọn foodId nằm trong danh sách trên. Không bịa id mới.\n");
-        prompt.append("2. CẤU TRÚC BỮA ĂN: Mỗi bữa (Sáng/Trưa/Tối) chọn CHÍNH XÁC 1 món có Loại='mon_chinh', và có thể kèm TỐI ĐA 1 món phụ (Loại='rau_cu', 'trai_cay' hoặc 'mon_phu'). Không chọn 2 món chính trong cùng một bữa.\n");
+        prompt.append("2. CẤU TRÚC BỮA ĂN: Mỗi bữa (Sáng/Trưa/Tối) chọn CHÍNH XÁC 1 món có Loại='mon_chinh', và có thể kèm TỐI ĐA 2 món phụ (Loại='rau_cu', 'trai_cay' hoặc 'mon_phu'). Không chọn 2 món chính trong cùng một bữa.\n");
         prompt.append("3. PHÂN BỔ NĂNG LƯỢNG: Bữa Tối nên có tổng calo và carbs THẤP HƠN bữa Sáng và bữa Trưa.\n");
         prompt.append("4. Tổng calo/carbs cả ngày phải bám sát mục tiêu năng lượng đã nêu ở trên (nếu có), ưu tiên GI thấp.\n");
         prompt.append("5. Trả về DUY NHẤT một mảng JSON (không markdown, không giải thích):\n");
