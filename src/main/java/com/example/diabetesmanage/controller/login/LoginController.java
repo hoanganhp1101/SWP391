@@ -13,7 +13,7 @@ import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.Encode;
 
 /**
- * LoginController — xử lý đăng nhập với hashed password. URL: /Logincontroller
+ * LoginController — đăng nhập bằng email + mật khẩu; portal theo {@code users.role} trong DB.
  */
 @WebServlet(name = "Logincontroller", urlPatterns = {"/Logincontroller"})
 public class LoginController extends HttpServlet {
@@ -53,47 +53,22 @@ public class LoginController extends HttpServlet {
             session = request.getSession(true);
         }
 
-        // Chỉ cho phép forward khi đã đăng nhập đúng role
-        if (service.equals("admin")) {
-            User current = (User) session.getAttribute("user");
-            if (current == null || !"quan_tri_vien".equalsIgnoreCase(normalizeRole(current.getVaiTro()))) {
-                response.sendRedirect(request.getContextPath() + "/Logincontroller");
-                return;
-            }
-            response.sendRedirect(request.getContextPath() + "/admin-dashboard");
-            return;
-        }
-        if (service.equals("user")) {
-            User current = (User) session.getAttribute("user");
-            if (current == null || !"benh_nhan".equalsIgnoreCase(normalizeRole(current.getVaiTro()))) {
-                response.sendRedirect(request.getContextPath() + "/Logincontroller");
-                return;
-            }
-            response.sendRedirect(request.getContextPath() + "/patient-dashboard");
-            return;
-        }
-
-        // ── Xử lý đăng nhập ──────────────────────────────────────────────────
         if (service.equals("checkaccount")) {
             String inputUser = request.getParameter("UserName");
             String inputPass = request.getParameter("password");
 
-            // Giữ lại giá trị đã nhập để hiển thị lại nếu lỗi
             request.setAttribute("UserName", inputUser);
 
             boolean hasError = false;
 
-            // Validate username / email
             if (inputUser == null || inputUser.isBlank()) {
-                request.setAttribute("emailError", "Vui lòng nhập email hoặc tên đăng nhập");
+                request.setAttribute("emailError", "Vui lòng nhập email");
                 hasError = true;
-
             } else if (inputUser.length() < 6 || inputUser.length() > 100) {
-                request.setAttribute("emailError", "Email/username phải nằm trong khoảng từ 6-100 ký tự");
+                request.setAttribute("emailError", "Email phải nằm trong khoảng từ 6-100 ký tự");
                 hasError = true;
             }
 
-            // Validate password
             if (inputPass == null || inputPass.isBlank()) {
                 request.setAttribute("passError", "Vui lòng nhập mật khẩu");
                 hasError = true;
@@ -122,7 +97,7 @@ public class LoginController extends HttpServlet {
             }
 
             if (user == null) {
-                request.setAttribute("AccountError", "Email/tên đăng nhập hoặc mật khẩu không đúng");
+                request.setAttribute("AccountError", "Email hoặc mật khẩu không đúng.");
                 request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
                 return;
             }
@@ -135,12 +110,11 @@ public class LoginController extends HttpServlet {
 
             String role = normalizeRole(user.getVaiTro());
             if (!isSupportedRole(role)) {
-                request.setAttribute("AccountError", "Vai trò không được hỗ trợ đăng nhập.");
+                request.setAttribute("AccountError", "Tài khoản không có vai trò hợp lệ. Liên hệ quản trị.");
                 request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
                 return;
             }
 
-            // Bệnh nhân phải có hồ sơ patients trước khi vào portal
             if ("benh_nhan".equalsIgnoreCase(role)) {
                 String patientId = new PatientDAO().ensurePatientProfileForUser(user.getId());
                 if (patientId == null) {
@@ -149,8 +123,14 @@ public class LoginController extends HttpServlet {
                     return;
                 }
             }
+            if ("bac_si".equalsIgnoreCase(role)) {
+                if (!UserDAO.getInstance().ensureDoctorProfile(user.getId())) {
+                    request.setAttribute("AccountError", "Không tạo được hồ sơ bác sĩ. Vui lòng liên hệ quản trị.");
+                    request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+                    return;
+                }
+            }
 
-            // Xoay session để xóa quyền/role cũ (tránh adminUser sót → vào sai cổng)
             session = rotateSession(request, session);
             session.setAttribute("user", user);
             session.setAttribute("loginUser", user);
@@ -159,14 +139,13 @@ public class LoginController extends HttpServlet {
             if ("quan_tri_vien".equalsIgnoreCase(role)) {
                 session.setAttribute("adminUser", user);
                 session.setAttribute("status", 1);
-                response.sendRedirect(request.getContextPath() + "/admin-dashboard");
             } else if ("benh_nhan".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 2);
-                response.sendRedirect(request.getContextPath() + "/patient-dashboard");
             } else if ("bac_si".equalsIgnoreCase(role)) {
                 session.setAttribute("status", 3);
-                response.sendRedirect(request.getContextPath() + "/doctor-dashboard");
             }
+
+            redirectByRole(response, request.getContextPath(), role);
         }
     }
 

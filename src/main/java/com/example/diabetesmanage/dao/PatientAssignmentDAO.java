@@ -71,7 +71,8 @@ public class PatientAssignmentDAO {
         Map<String, String> map = new HashMap<>();
         // Kết hợp (JOIN) bảng patient_assignments với bảng users (chứa thông tin bác sĩ)
         String sql = "SELECT pa.patient_id, u.ho_ten FROM patient_assignments pa " +
-                "JOIN doctors u ON pa.doctor_id = u.id " +
+                "JOIN doctors d ON pa.doctor_id = d.id " +
+                "JOIN users u ON d.id = u.id " +
                 "WHERE pa.trang_thai = true";
 
         try (Connection conn = DBContext.getConnection();

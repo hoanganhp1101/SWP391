@@ -23,7 +23,6 @@ import jakarta.servlet.http.HttpSession;
         "/admin/assign",
         "/RecordController",
         "/ai-report",
-        "/api/patient/health-records",
         "/admin/*"
 })
 public class AdminSecurityFilter implements Filter {
@@ -34,13 +33,6 @@ public class AdminSecurityFilter implements Filter {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
-        String path = httpRequest.getServletPath();
-
-        // Legacy admin login path redirects via AdminLoginServlet; still allow through filter.
-        if ("/admin/login".equals(path)) {
-            chain.doFilter(request, response);
-            return;
-        }
 
         HttpSession session = httpRequest.getSession(false);
         boolean isLoggedInAdmin = false;

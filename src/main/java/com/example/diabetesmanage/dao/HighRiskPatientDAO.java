@@ -33,8 +33,8 @@ public class HighRiskPatientDAO {
     private List<HighRiskPatient> getPatientsWithLatestMetrics(String keyword) {
         List<HighRiskPatient> patients = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT p.id AS patient_id, p.ho_ten, p.email, p.so_dien_thoai, p.loai_tieu_duong, " +
-                "doctor.ho_ten AS doctor_name, " +
+                "SELECT p.id AS patient_id, p.patient_code, u.ho_ten, u.email, u.so_dien_thoai, p.loai_tieu_duong, " +
+                "du.ho_ten AS doctor_name, " +
                 "(SELECT hr.duong_huyet_mgdl FROM health_records hr WHERE hr.patient_id = p.id AND hr.duong_huyet_mgdl IS NOT NULL ORDER BY hr.thoi_gian_do DESC LIMIT 1) AS latest_glucose, " +
                 "(SELECT hr.hba1c_percent FROM health_records hr WHERE hr.patient_id = p.id AND hr.hba1c_percent IS NOT NULL ORDER BY hr.thoi_gian_do DESC LIMIT 1) AS latest_hba1c, " +
                 "(SELECT hr.huyet_ap_tam_thu FROM health_records hr WHERE hr.patient_id = p.id AND hr.huyet_ap_tam_thu IS NOT NULL ORDER BY hr.thoi_gian_do DESC LIMIT 1) AS latest_systolic, " +
@@ -44,13 +44,16 @@ public class HighRiskPatientDAO {
                 "(SELECT COUNT(*) FROM alerts a WHERE a.patient_id = p.id AND a.muc_do IN ('cao', 'nguy_hiem') AND a.thoi_gian_tao >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS recent_alert_count, " +
                 "(SELECT COUNT(*) FROM alerts a WHERE a.patient_id = p.id AND a.da_doc_bs = 0 AND a.muc_do IN ('cao', 'nguy_hiem')) AS unread_doctor_alert_count " +
                 "FROM patients p " +
+                "JOIN users u ON p.id = u.id " +
                 "LEFT JOIN doctors doctor ON p.bac_si_id = doctor.id " +
-                "WHERE p.kich_hoat = 1");
+                "LEFT JOIN users du ON doctor.id = du.id " +
+                "WHERE u.kich_hoat = 1");
         List<String> params = new ArrayList<>();
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (p.ho_ten LIKE ? OR p.email LIKE ? OR p.so_dien_thoai LIKE ?)");
+            sql.append(" AND (u.ho_ten LIKE ? OR u.email LIKE ? OR u.so_dien_thoai LIKE ? OR p.patient_code LIKE ?)");
             String searchPattern = "%" + keyword.trim() + "%";
+            params.add(searchPattern);
             params.add(searchPattern);
             params.add(searchPattern);
             params.add(searchPattern);
@@ -78,6 +81,7 @@ public class HighRiskPatientDAO {
     private HighRiskPatient mapPatient(ResultSet rs) throws Exception {
         HighRiskPatient patient = new HighRiskPatient();
         patient.setPatientId(rs.getString("patient_id"));
+        patient.setPatientCode(rs.getString("patient_code"));
         patient.setPatientName(rs.getString("ho_ten"));
         patient.setEmail(rs.getString("email"));
         patient.setPhone(rs.getString("so_dien_thoai"));

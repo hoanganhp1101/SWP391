@@ -1,8 +1,13 @@
 package com.example.diabetesmanage.model;
 
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class AIAnalysis {
+    private static final DateTimeFormatter DISPLAY_TIME =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
     private String id;
     private String patientId;
     private String healthRecordId;
@@ -21,6 +26,7 @@ public class AIAnalysis {
     private String ghiChuBs;
     private String xuLyBoi;
     private String hoTenBenhNhan;
+    private String patientCode;
 
     public AIAnalysis() {}
 
@@ -74,4 +80,67 @@ public class AIAnalysis {
 
     public String getHoTenBenhNhan() { return hoTenBenhNhan; }
     public void setHoTenBenhNhan(String hoTenBenhNhan) { this.hoTenBenhNhan = hoTenBenhNhan; }
+
+    public String getPatientCode() { return patientCode; }
+    public void setPatientCode(String patientCode) { this.patientCode = patientCode; }
+
+    public String getMaBenhNhanDisplay() {
+        if (patientCode != null && !patientCode.isBlank()) {
+            return patientCode.trim();
+        }
+        return "—";
+    }
+
+    /** Nhãn mức cảnh báo tiếng Việt cho JSP. */
+    public String getMucCanhBaoLabel() {
+        String level = mucCanhBao == null ? "" : mucCanhBao.trim().toLowerCase();
+        return switch (level) {
+            case "nguy_hiem" -> "Nguy hiểm";
+            case "cao" -> "Cao";
+            case "trung_binh" -> "Trung bình";
+            case "an_toan", "thap", "low" -> "An toàn";
+            default -> level.isBlank() ? "Chưa rõ" : mucCanhBao;
+        };
+    }
+
+    /** CSS class badge: level-high | level-medium | level-low */
+    public String getMucCanhBaoCss() {
+        String level = mucCanhBao == null ? "" : mucCanhBao.trim().toLowerCase();
+        return switch (level) {
+            case "nguy_hiem", "cao" -> "level-high";
+            case "trung_binh" -> "level-medium";
+            default -> "level-low";
+        };
+    }
+
+    public String getTrangThaiLabel() {
+        String state = trangThai == null || trangThai.isBlank() ? "chua_xem" : trangThai.trim();
+        return switch (state) {
+            case "da_xem" -> "Đã xem";
+            case "da_ap_dung" -> "Đã áp dụng";
+            case "bo_qua" -> "Bỏ qua";
+            case "chua_xem" -> "Chưa xem";
+            default -> state;
+        };
+    }
+
+    public String getThoiGianPhanTichDisplay() {
+        if (thoiGianPhanTich == null) {
+            return "—";
+        }
+        return DISPLAY_TIME.format(
+                thoiGianPhanTich.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+    }
+
+    /** Tóm tắt dữ liệu đầu vào, tránh dump JSON dài gây lỗi/UI vỡ. */
+    public String getDuLieuDauVaoDisplay() {
+        if (duLieuDauVao == null || duLieuDauVao.isBlank()) {
+            return "Không có dữ liệu đầu vào.";
+        }
+        String text = duLieuDauVao.trim();
+        if (text.length() > 800) {
+            return text.substring(0, 800) + "…";
+        }
+        return text;
+    }
 }

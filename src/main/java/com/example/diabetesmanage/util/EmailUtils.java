@@ -35,7 +35,7 @@ public class EmailUtils {
         });
 
         Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(SENDER_EMAIL, "Fashion Warehouse System"));
+        message.setFrom(new InternetAddress(SENDER_EMAIL, "HealthAlert"));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
         message.setSubject(subject);
         message.setContent(htmlBody, "text/html; charset=utf-8");

@@ -280,27 +280,22 @@
         .alert-detail { display: none; }
         .alert-detail.active { display: block; }
 
-        .detail-patient { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+        .detail-patient { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
         .detail-patient .name { font-size: 20px; font-weight: 800; }
+        .detail-patient .phone {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: 0.02em;
+        }
         .patient-code { color: var(--muted); font-size: 13px; }
 
-        .contact-icons { display: flex; gap: 6px; margin-left: auto; }
-
-        .icon-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            border-radius: 999px;
-            border: 1px solid #cfd8e3;
-            background: #fff;
-            text-decoration: none;
-            font-size: 15px;
-            color: #374151;
+        .item-name .phone {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--primary);
+            margin-left: 6px;
         }
-
-        .icon-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
 
         .detail-title { font-size: 18px; font-weight: 800; margin: 14px 0 8px; }
         .detail-content { color: #4b5563; line-height: 1.55; margin-bottom: 14px; }
@@ -502,15 +497,10 @@
                                             </c:choose>
                                         </span>
                                         <c:if test="${not empty a.soDienThoaiBenhNhan}">
-                                            <span class="contact-icons">
-                                                <a href="tel:${a.soDienThoaiBenhNhan}" class="icon-btn" title="Gọi điện" aria-label="Gọi bệnh nhân"><i class="fa-solid fa-phone"></i></a>
-                                                <c:if test="${not empty a.zaloPhone}">
-                                                    <a href="https://zalo.me/${a.zaloPhone}" target="_blank" rel="noopener noreferrer" class="icon-btn" title="Nhắn Zalo" aria-label="Nhắn Zalo"><i class="fa-regular fa-comment-dots"></i></a>
-                                                </c:if>
-                                            </span>
+                                            <span class="phone"><c:out value="${a.soDienThoaiBenhNhan}" /></span>
                                         </c:if>
                                     </div>
-                                    <div class="patient-code">Mã bệnh nhân: <c:out value="${a.patientId}" /></div>
+                                    <div class="patient-code">Mã bệnh nhân: <c:out value="${a.maBenhNhanDisplay}" /></div>
 
                                     <div class="detail-title"><c:out value="${a.tieuDe}" /></div>
                                     <div class="detail-content"><c:out value="${a.noiDung}" /></div>
@@ -582,6 +572,9 @@
                                             <c:when test="${not empty a.hoTenBenhNhan}"><c:out value="${a.hoTenBenhNhan}" /></c:when>
                                             <c:otherwise>Chưa có tên bệnh nhân</c:otherwise>
                                         </c:choose>
+                                        <c:if test="${not empty a.soDienThoaiBenhNhan}">
+                                            <span class="phone"><c:out value="${a.soDienThoaiBenhNhan}" /></span>
+                                        </c:if>
                                     </div>
                                     <div class="item-title"><c:out value="${a.tieuDe}" /></div>
                                     <div class="item-meta">

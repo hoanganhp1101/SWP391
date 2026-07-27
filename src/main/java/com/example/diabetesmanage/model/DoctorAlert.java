@@ -20,6 +20,8 @@ public class DoctorAlert {
 
     private String hoTenBenhNhan;
     private String soDienThoaiBenhNhan;
+    /** Mã hiển thị (BN0001), khác UUID nội bộ patientId. */
+    private String patientCode;
     private Double duongHuyet;
 
     public DoctorAlert() {
@@ -108,6 +110,15 @@ public class DoctorAlert {
     public void setHoTenBenhNhan(String hoTenBenhNhan) { this.hoTenBenhNhan = hoTenBenhNhan; }
     public String getSoDienThoaiBenhNhan() { return soDienThoaiBenhNhan; }
     public void setSoDienThoaiBenhNhan(String soDienThoaiBenhNhan) { this.soDienThoaiBenhNhan = soDienThoaiBenhNhan; }
+    public String getPatientCode() { return patientCode; }
+    public void setPatientCode(String patientCode) { this.patientCode = patientCode; }
+    /** Ưu tiên patient_code; không fallback UUID ra UI. */
+    public String getMaBenhNhanDisplay() {
+        if (patientCode != null && !patientCode.isBlank()) {
+            return patientCode.trim();
+        }
+        return "—";
+    }
     public Double getDuongHuyet() { return duongHuyet; }
     public void setDuongHuyet(Double duongHuyet) { this.duongHuyet = duongHuyet; }
 

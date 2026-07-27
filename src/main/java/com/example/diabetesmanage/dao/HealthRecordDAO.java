@@ -24,8 +24,8 @@ public class HealthRecordDAO {
                 "SELECT hr.*, " +
                         "p.patient_code, " +
                         "p.loai_tieu_duong, " +
-                        "p.ho_ten AS patient_ho_ten, " +
-                        "nu.ho_ten AS nhap_boi_ho_ten " +
+                        "pu.ho_ten AS patient_ho_ten, " +
+                        "nuu.ho_ten AS nhap_boi_ho_ten " +
                         "FROM health_records hr " +
                         "INNER JOIN ( " +
                         "    SELECT patient_id, " +
@@ -39,8 +39,9 @@ public class HealthRecordDAO {
                         "    GROUP BY patient_id " +
                         ") hr_latest ON hr.id = hr_latest.latest_id " +
                         "JOIN patients p ON hr.patient_id = p.id " +
+                        "JOIN users pu ON p.id = pu.id " +
                         "LEFT JOIN doctors doc ON p.bac_si_id = doc.id " +
-                        "LEFT JOIN patients nu ON hr.nhap_boi = nu.id " +
+                        "LEFT JOIN users nuu ON hr.nhap_boi = nuu.id " +
                         "WHERE (? IS NULL OR doc.id = ?) " +
                         "ORDER BY COALESCE(hr.thoi_gian_do, hr.ngay_tao) DESC";
 
@@ -78,14 +79,15 @@ public class HealthRecordDAO {
         String sql =
                 "SELECT hr.*, " +
                         "p.patient_code, p.loai_tieu_duong, p.tien_su_benh, p.chieu_cao_cm, " +
-                        "p.ho_ten AS patient_name, " +
-                        "nu.ho_ten AS nhap_boi_name, " +
+                        "pu.ho_ten AS patient_name, " +
+                        "nuu.ho_ten AS nhap_boi_name, " +
                         "me.ly_do_kham, me.qua_trinh_benh_ly, me.kham_lam_sang, " +
                         "me.chan_doan_chinh, me.chan_doan_phu, me.huong_xu_tri, " +
                         "rx.huong_dieu_tri, rx.che_do_an, rx.luyen_tap, rx.ghi_chu AS rx_ghi_chu " +
                         "FROM health_records hr " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "LEFT JOIN patients nu ON hr.nhap_boi = nu.id " +
+                        "JOIN users pu ON p.id = pu.id " +
+                        "LEFT JOIN users nuu ON hr.nhap_boi = nuu.id " +
                         "LEFT JOIN medical_encounters me ON hr.encounter_id = me.id " +
                         "LEFT JOIN prescriptions rx ON rx.encounter_id = me.id " +
                         "WHERE hr.encounter_id = ? " +
@@ -174,11 +176,12 @@ public class HealthRecordDAO {
         String sql =
                 "SELECT hr.*, " +
                         "p.patient_code, p.loai_tieu_duong, p.tien_su_benh, p.chieu_cao_cm, " +
-                        "p.ho_ten AS patient_name, " +
-                        "nu.ho_ten AS nhap_boi_name " +
+                        "pu.ho_ten AS patient_name, " +
+                        "nuu.ho_ten AS nhap_boi_name " +
                         "FROM health_records hr " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "LEFT JOIN patients nu ON hr.nhap_boi = nu.id " +
+                        "JOIN users pu ON p.id = pu.id " +
+                        "LEFT JOIN users nuu ON hr.nhap_boi = nuu.id " +
                         "WHERE hr.patient_id = ? " +
                         "ORDER BY hr.ngay_tao DESC " +
                         "LIMIT 1";
@@ -653,21 +656,6 @@ public class HealthRecordDAO {
             e.printStackTrace();
         }
         return list;
-    }
-
-    public int getDailyCarbsToday(String patientId) {
-        String sql = "SELECT SUM(carbs_g) as total_carbs FROM health_records WHERE patient_id = ? AND DATE(thoi_gian_do) = CURRENT_DATE";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, patientId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("total_carbs");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 
     public List<HealthRecord> getRecentDailyRecords(String patientId) {

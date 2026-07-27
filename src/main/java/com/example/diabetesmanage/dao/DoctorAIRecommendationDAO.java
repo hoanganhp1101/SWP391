@@ -19,6 +19,7 @@ public class DoctorAIRecommendationDAO {
     private static final String FROM_JOIN = """
             FROM ai_analysis a
             JOIN patients p ON a.patient_id = p.id
+            JOIN users u ON p.id = u.id
             """;
 
     /**
@@ -48,7 +49,7 @@ public class DoctorAIRecommendationDAO {
             String doctorId, String level, String status, String keyword) {
         Filter filter = buildSqlFilter(doctorId, keyword);
         String sql = """
-                SELECT a.*, p.ho_ten AS ho_ten_benh_nhan
+                SELECT a.*, u.ho_ten AS ho_ten_benh_nhan, p.patient_code AS patient_code
                 """ + FROM_JOIN + filter.where + """
                  ORDER BY a.thoi_gian_phan_tich DESC
                 """;
@@ -120,9 +121,10 @@ public class DoctorAIRecommendationDAO {
             return null;
         }
         String sql = """
-                SELECT a.*, p.ho_ten AS ho_ten_benh_nhan
+                SELECT a.*, u.ho_ten AS ho_ten_benh_nhan, p.patient_code AS patient_code
                 FROM ai_analysis a
                 JOIN patients p ON a.patient_id = p.id
+                JOIN users u ON p.id = u.id
                 WHERE a.id = ? AND p.bac_si_id = ?
                 """;
         try (Connection connection = DBContext.getConnection();
@@ -238,15 +240,6 @@ public class DoctorAIRecommendationDAO {
         }
     }
 
-    public boolean hasOpenRecommendationToday(String patientId, String syncKey) {
-        return findTodayId(patientId, syncKey) != null;
-    }
-
-    public String findTodayId(String patientId, String syncKey) {
-        TodayRow row = findTodayRow(patientId, syncKey);
-        return row == null ? null : row.id;
-    }
-
     public TodayRow findTodayRow(String patientId, String syncKey) {
         String sql = """
                 SELECT id, model_version
@@ -330,10 +323,12 @@ public class DoctorAIRecommendationDAO {
         if (keyword != null && !keyword.trim().isEmpty()) {
             String value = "%" + keyword.trim() + "%";
             filter.where.append("""
-                    AND (p.ho_ten LIKE ?
+                    AND (u.ho_ten LIKE ?
+                         OR p.patient_code LIKE ?
                          OR JSON_UNQUOTE(a.khuyen_nghi) LIKE ?
                          OR JSON_UNQUOTE(a.yeu_to_nguy_co) LIKE ?)
                     """);
+            filter.params.add(value);
             filter.params.add(value);
             filter.params.add(value);
             filter.params.add(value);
@@ -366,6 +361,11 @@ public class DoctorAIRecommendationDAO {
             item.setHoTenBenhNhan(resultSet.getString("ho_ten_benh_nhan"));
         } catch (SQLException ignored) {
             // Một số truy vấn nội bộ không lấy tên bệnh nhân.
+        }
+        try {
+            item.setPatientCode(resultSet.getString("patient_code"));
+        } catch (SQLException ignored) {
+            // Một số truy vấn nội bộ không lấy patient_code.
         }
         return item;
     }

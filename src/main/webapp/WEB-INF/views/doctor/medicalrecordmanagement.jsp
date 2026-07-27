@@ -411,7 +411,54 @@
 
             <div class="page-header">
                 <h1>Quản lý hồ sơ khám bệnh</h1>
-                <p>Danh sách và quản lý medical encounter</p>
+                <p>Danh sách hồ sơ · Import PDF để bệnh nhân xem trong Lịch sử khám bệnh</p>
+            </div>
+
+            <c:if test="${not empty flashSuccess}">
+                <div style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:14px 20px;border-radius:12px;margin-bottom:16px;">
+                    <i class="fa-solid fa-circle-check"></i> <c:out value="${flashSuccess}"/>
+                </div>
+            </c:if>
+            <c:if test="${not empty flashError}">
+                <div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:14px 20px;border-radius:12px;margin-bottom:16px;">
+                    <c:out value="${flashError}"/>
+                </div>
+            </c:if>
+
+            <div class="card" style="margin-bottom:16px;padding:20px;">
+                <h3 style="margin:0 0 12px;font-size:16px;">Import PDF cho bệnh nhân</h3>
+                <form method="post"
+                      action="${pageContext.request.contextPath}/doctor/patient-records"
+                      enctype="multipart/form-data"
+                      style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                    <input type="hidden" name="action" value="import">
+                    <div>
+                        <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">Bệnh nhân</label>
+                        <select name="patientId" required style="min-width:220px;height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 10px;">
+                            <option value="">-- Chọn bệnh nhân --</option>
+                            <c:forEach var="p" items="${assignedPatients}">
+                                <option value="${p.id}">
+                                    <c:out value="${not empty p.patientCode ? p.patientCode : p.id}"/>
+                                    —
+                                    <c:out value="${not empty p.hoTen ? p.hoTen : (not empty p.user ? p.user.hoTen : '')}"/>
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">Loại tài liệu</label>
+                        <input type="text" name="loaiTaiLieu" placeholder="VD: Kết quả xét nghiệm"
+                               style="min-width:200px;height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 10px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">File PDF</label>
+                        <input type="file" name="pdfFile" accept="application/pdf,.pdf" required
+                               style="height:40px;">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="height:40px;">
+                        <i class="fa-solid fa-file-import"></i> Import
+                    </button>
+                </form>
             </div>
 
             <div class="card">

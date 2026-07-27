@@ -50,11 +50,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="h4 mb-0 fw-bold text-gray-800">Danh sách Bệnh nhân</h2>
-                <p class="text-muted small mb-0">Quản lý và cập nhật hồ sơ bệnh nhân.</p>
+                <p class="text-muted small mb-0">Quản lý hồ sơ bệnh nhân. Tài khoản bệnh nhân chỉ đăng ký từ trang Đăng nhập.</p>
             </div>
-            <button class="btn btn-primary shadow-sm rounded-pill px-4" style="background-color: var(--primary-blue); border:none;" data-bs-toggle="modal" data-bs-target="#formModal" onclick="openAddModal()">
-                <i class="fas fa-plus me-1"></i> Thêm Bệnh nhân
-            </button>
         </div>
 
         <div class="custom-card flex-grow-1 p-0 overflow-hidden">
@@ -139,11 +136,11 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="${pageContext.request.contextPath}/patient-manager" method="post">
-                <input type="hidden" name="action" id="formAction" value="add">
+                <input type="hidden" name="action" id="formAction" value="update">
                 <input type="hidden" name="id" id="formId">
 
                 <div class="modal-header text-white" style="background-color: var(--primary-blue);">
-                    <h5 class="modal-title" id="formModalTitle">Thêm Bệnh nhân mới</h5>
+                    <h5 class="modal-title" id="formModalTitle">Chỉnh sửa Hồ sơ</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -205,18 +202,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/script.js"></script>
 <script>
-    function openAddModal() {
-        document.getElementById('formModalTitle').innerText = "Thêm Bệnh nhân mới";
-        document.getElementById('formAction').value = "add";
-        document.getElementById('formSubmitBtn').innerText = "Thêm mới";
-
-        document.getElementById('inputName').value = "";
-        document.getElementById('inputPhone').value = "";
-        document.getElementById('inputDob').value = "";
-        document.getElementById('inputEmail').value = "";
-        document.getElementById('inputType').value = "Type 2";
-    }
-
     function openEditModal(id, name, email, phone, dob, type) {
         document.getElementById('formModalTitle').innerText = "Chỉnh sửa Hồ sơ";
         document.getElementById('formAction').value = "update";

@@ -106,21 +106,29 @@ public class DoctorAIRecommendationServlet extends HttpServlet {
         }
 
         String id = request.getParameter("id");
+        if (id == null || id.isBlank()) {
+            response.sendRedirect(request.getContextPath()
+                    + "/doctor/ai-recommendations?error=1&errmsg="
+                    + encode("Thiếu mã khuyến nghị."));
+            return;
+        }
+
+        String status = request.getParameter("status");
         String updateError = new DoctorAIRecommendationDAO().updateStatus(
-                id,
+                id.trim(),
                 doctorId,
-                request.getParameter("status"),
+                status,
                 request.getParameter("ghiChu"),
-                doctor.getId()
+                doctorId
         );
         if (updateError == null) {
             response.sendRedirect(request.getContextPath()
-                    + "/doctor/ai-recommendations?id=" + encode(id) + "&saved=1");
+                    + "/doctor/ai-recommendations?id=" + encode(id.trim()) + "&saved=1");
             return;
         }
 
         response.sendRedirect(request.getContextPath()
-                + "/doctor/ai-recommendations?id=" + encode(id)
+                + "/doctor/ai-recommendations?id=" + encode(id.trim())
                 + "&error=1&errmsg=" + encode(shorten(updateError, 400)));
     }
 

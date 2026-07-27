@@ -45,7 +45,7 @@
                 <table class="table table-hover custom-table mb-0 align-middle">
                     <thead class="table-light">
                     <tr>
-                        <th class="ps-4">ID Bệnh nhân</th>
+                        <th class="ps-4">Mã bệnh nhân</th>
                         <th>Họ tên Bệnh nhân</th>
                         <th>Bác sĩ phụ trách hiện tại</th>
                         <th class="text-end pe-4">Thao tác</th>
@@ -54,7 +54,7 @@
                     <tbody>
                     <c:forEach var="patient" items="${patientList}">
                         <tr>
-                            <td class="ps-4 text-muted">${patient.id}</td>
+                            <td class="ps-4 text-muted"><c:out value="${patient.maBenhNhanDisplay}"/></td>
                             <td class="fw-bold">${patient.hoTen}</td>
 
                             <td>

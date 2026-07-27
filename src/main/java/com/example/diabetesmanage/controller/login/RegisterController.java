@@ -1,6 +1,5 @@
 package com.example.diabetesmanage.controller.login;
 
-import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.UserDAO;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -9,14 +8,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.Encode;
 
 
 /**
- * RegisterController — xử lý đăng ký tài khoản hệ thống Diabetes Support
- * System. URL: /RegisterController
+ * Đăng ký công khai — chỉ tạo tài khoản bệnh nhân ({@code benh_nhan}).
+ * Bác sĩ / quản trị viên chỉ được admin tạo qua /admin/users.
  */
 @WebServlet(name = "RegisterController", urlPatterns = {"/RegisterController"})
 public class RegisterController extends HttpServlet {
@@ -30,7 +28,6 @@ public class RegisterController extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         request.setCharacterEncoding("UTF-8");
 
-        HttpSession session = request.getSession(true);
         String service = request.getParameter("service");
 
         // 1. Hiển thị trang đăng ký công khai (Khi truy cập qua đường dẫn /RegisterController trực tiếp)

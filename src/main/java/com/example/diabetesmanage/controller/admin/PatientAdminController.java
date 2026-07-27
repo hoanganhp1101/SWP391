@@ -65,9 +65,9 @@ public class PatientAdminController extends HttpServlet {
             if (action.equals("delete")) {
                 String id = request.getParameter("id");
                 patientDAO.deletePatient(id);
-            }
-            else if (action.equals("add") || action.equals("update")) {
+            } else if (action.equals("update")) {
                 Patient p = new Patient();
+                p.setId(request.getParameter("id"));
                 p.setTenBenhNhan(request.getParameter("hoTen"));
                 p.setEmail(request.getParameter("email"));
                 p.setSoDienThoai(request.getParameter("soDienThoai"));
@@ -77,14 +77,9 @@ public class PatientAdminController extends HttpServlet {
                 if (ngaySinhStr != null && !ngaySinhStr.isEmpty()) {
                     p.setNgaySinh(Date.valueOf(ngaySinhStr));
                 }
-
-                if (action.equals("add")) {
-                    patientDAO.addPatient(p);
-                } else {
-                    p.setId(request.getParameter("id"));
-                    patientDAO.updatePatient(p);
-                }
+                patientDAO.updatePatient(p);
             }
+            // Không tạo tài khoản bệnh nhân ở đây — chỉ đăng ký từ trang login/register.
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -24,10 +24,7 @@ public class DashboardDAO {
 
     // 2. Đếm số nhân viên y tế (Bác sĩ, quản trị viên) đang hoạt động
     public int getActiveStaffCount() {
-        String sql = "SELECT COUNT(id) FROM ("
-                + "SELECT id FROM doctors WHERE kich_hoat = 1 "
-                + "UNION ALL SELECT id FROM admins WHERE kich_hoat = 1"
-                + ") AS staff";
+        String sql = "SELECT COUNT(id) FROM users WHERE kich_hoat = 1 AND role IN ('bac_si', 'quan_tri_vien')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

@@ -1,5 +1,4 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -9,21 +8,52 @@
     <title>Chi tiết khuyến nghị AI</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        :root { --primary:#1557d5; --muted:#6b7280; --line:#e5e7eb; --bg:#f5f7fb; }
-        body { margin:0; font-family:"Segoe UI",Inter,Arial,sans-serif; background:var(--bg); color:#1f2937; }
-        .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; margin-bottom:16px; }
-        .meta { color:var(--muted); font-size:14px; margin-bottom:12px; }
-        .section h3 { margin:0 0 8px; font-size:16px; }
-        .section p, .section pre { white-space:pre-wrap; line-height:1.5; margin:0; font-family:inherit; font-size:14px; }
-        .actions { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
-        .field label { display:block; font-size:12px; font-weight:700; margin-bottom:4px; }
-        .field select, .field textarea { width:100%; border:1px solid #cfd8e3; border-radius:10px; padding:10px; box-sizing:border-box; }
-        .btn { height:40px; padding:0 16px; border-radius:10px; border:none; font-weight:700; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; }
-        .btn-primary { background:var(--primary); color:#fff; }
-        .btn-secondary { background:#fff; border:1px solid var(--line); color:#374151; }
-        .flash { padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:600; }
-        .flash.ok { background:#dcfce7; color:#166534; }
-        .flash.err { background:#fee2e2; color:#991b1b; }
+        :root {
+            --primary: #1557d5; --danger: #dc2626; --ink: #1f2937; --muted: #6b7280;
+            --line: #e5e7eb; --bg: #f5f7fb;
+        }
+        .back {
+            display: inline-flex; gap: 8px; align-items: center; color: var(--primary);
+            text-decoration: none; font-weight: 600; margin-bottom: 14px;
+        }
+        .flash { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-weight: 600; }
+        .flash.ok { background: #dcfce7; color: #166534; }
+        .flash.err { background: #fee2e2; color: #991b1b; }
+        .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+        .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+        .card h1 { font-size: 24px; margin-bottom: 6px; color: var(--ink); }
+        .meta { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+        .kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+        .kpi-item { background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+        .kpi-item .label { font-size: 12px; color: var(--muted); }
+        .kpi-item .value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+        .section { margin-top: 18px; }
+        .section h3 { font-size: 15px; margin-bottom: 8px; }
+        .section p, .section pre {
+            white-space: pre-wrap; line-height: 1.55; font-size: 14px; color: #374151;
+            font-family: inherit; background: #f8fafc; border-radius: 10px; padding: 12px;
+            border: 1px solid var(--line); margin: 0;
+        }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .level-high { background: #fee2e2; color: #991b1b; }
+        .level-medium { background: #ffedd5; color: #9a3412; }
+        .level-low { background: #dcfce7; color: #166534; }
+        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+        select, textarea {
+            width: 100%; border: 1px solid #cfd8e3; border-radius: 10px; padding: 10px 12px; font-size: 14px;
+        }
+        textarea { min-height: 100px; resize: vertical; }
+        .field { margin-bottom: 14px; }
+        .btn {
+            height: 42px; padding: 0 16px; border-radius: 10px; border: none; font-weight: 700;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-secondary { background: #fff; border: 1px solid #cfd8e3; color: #374151; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+        @media (max-width: 960px) {
+            .grid, .kpi { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -31,52 +61,116 @@
 <div class="layout">
     <jsp:include page="/WEB-INF/views/doctor/layout/sidebar.jsp"/>
     <main class="main-content">
-        <c:if test="${param.saved == '1'}"><div class="flash ok">Đã cập nhật trạng thái.</div></c:if>
-        <c:if test="${param.error == '1'}"><div class="flash err">Không cập nhật được. ${fn:escapeXml(param.errmsg)}</div></c:if>
+        <a class="back" href="${pageContext.request.contextPath}/doctor/ai-recommendations">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+        </a>
 
-        <div class="card">
-            <h1 style="margin:0 0 8px;">${fn:escapeXml(detail.hoTenBenhNhan)}</h1>
-            <div class="meta">
-                Mức: <strong>${detail.mucCanhBao}</strong> · Điểm: <strong>${detail.diemNguyCo}</strong>
-                · ${detail.thoiGianPhanTich} · Model: ${detail.modelVersion}
+        <c:if test="${param.saved == '1'}"><div class="flash ok">Đã cập nhật trạng thái khuyến nghị.</div></c:if>
+        <c:if test="${param.error == '1'}">
+            <div class="flash err">
+                Không thể cập nhật.
+                <c:if test="${not empty param.errmsg}"><br/><small><c:out value="${param.errmsg}"/></small></c:if>
+                <c:if test="${empty param.errmsg}"> Vui lòng thử lại.</c:if>
             </div>
-        </div>
+        </c:if>
 
-        <div class="card section">
-            <h3>Phân tích</h3>
-            <p>${fn:escapeXml(detail.phanTichChiTiet)}</p>
-        </div>
-        <div class="card section">
-            <h3>Yếu tố nguy cơ</h3>
-            <pre>${fn:escapeXml(detail.yeuToNguyCo)}</pre>
-        </div>
-        <div class="card section">
-            <h3>Khuyến nghị</h3>
-            <pre>${fn:escapeXml(detail.khuyenNghi)}</pre>
-        </div>
+        <c:choose>
+            <c:when test="${empty detail}">
+                <div class="card">
+                    <h1>Không tìm thấy khuyến nghị</h1>
+                    <p class="meta">Khuyến nghị không tồn tại hoặc không thuộc bệnh nhân của bạn.</p>
+                    <a class="btn btn-secondary" href="${pageContext.request.contextPath}/doctor/ai-recommendations">
+                        Về danh sách
+                    </a>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <div class="grid">
+                    <div class="card">
+                        <h1><c:out value="${detail.hoTenBenhNhan}" default="Bệnh nhân"/></h1>
+                        <div class="meta">
+                            Mã BN <c:out value="${detail.maBenhNhanDisplay}"/>
+                            · Phân tích lúc <c:out value="${detail.thoiGianPhanTichDisplay}"/>
+                            · Model <c:out value="${empty detail.modelVersion ? '—' : detail.modelVersion}"/>
+                        </div>
 
-        <div class="card">
-            <form method="post" action="${pageContext.request.contextPath}/doctor/ai-recommendations">
-                <input type="hidden" name="id" value="${detail.id}">
-                <div class="field" style="margin-bottom:12px;">
-                    <label for="status">Trạng thái xử lý</label>
-                    <select id="status" name="status">
-                        <option value="chua_xem" ${detail.trangThai == 'chua_xem' || empty detail.trangThai ? 'selected' : ''}>Chưa xem</option>
-                        <option value="da_xem" ${detail.trangThai == 'da_xem' ? 'selected' : ''}>Đã xem</option>
-                        <option value="da_ap_dung" ${detail.trangThai == 'da_ap_dung' ? 'selected' : ''}>Đã áp dụng</option>
-                        <option value="bo_qua" ${detail.trangThai == 'bo_qua' ? 'selected' : ''}>Bỏ qua</option>
-                    </select>
+                        <div class="kpi">
+                            <div class="kpi-item">
+                                <div class="label">Điểm nguy cơ</div>
+                                <div class="value"><c:out value="${detail.diemNguyCo}"/></div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="label">Mức cảnh báo</div>
+                                <div class="value">
+                                    <span class="badge ${detail.mucCanhBaoCss}">
+                                        <c:out value="${detail.mucCanhBaoLabel}"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="label">Trạng thái</div>
+                                <div class="value" style="font-size:16px;">
+                                    <c:out value="${detail.trangThaiLabel}"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <h3>Yếu tố nguy cơ</h3>
+                            <p><c:out value="${empty detail.yeuToNguyCo ? 'Chưa có dữ liệu.' : detail.yeuToNguyCo}"/></p>
+                        </div>
+                        <div class="section">
+                            <h3>Phân tích chi tiết</h3>
+                            <p><c:out value="${empty detail.phanTichChiTiet ? 'Chưa có phân tích.' : detail.phanTichChiTiet}"/></p>
+                        </div>
+                        <div class="section">
+                            <h3>Khuyến nghị</h3>
+                            <pre><c:out value="${empty detail.khuyenNghi ? 'Chưa có khuyến nghị.' : detail.khuyenNghi}"/></pre>
+                        </div>
+                        <div class="section">
+                            <h3>Dữ liệu đầu vào (tóm tắt)</h3>
+                            <p><c:out value="${detail.duLieuDauVaoDisplay}"/></p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom:14px;">Quản lý khuyến nghị</h3>
+                        <form method="post" action="${pageContext.request.contextPath}/doctor/ai-recommendations"
+                              accept-charset="UTF-8">
+                            <input type="hidden" name="id" value="<c:out value='${detail.id}'/>">
+                            <div class="field">
+                                <label for="status">Cập nhật trạng thái</label>
+                                <select id="status" name="status" required>
+                                    <option value="da_xem" ${detail.trangThai == 'da_xem' ? 'selected' : ''}>Đã xem</option>
+                                    <option value="da_ap_dung" ${detail.trangThai == 'da_ap_dung' ? 'selected' : ''}>Đã áp dụng</option>
+                                    <option value="bo_qua" ${detail.trangThai == 'bo_qua' ? 'selected' : ''}>Bỏ qua</option>
+                                    <option value="chua_xem" ${detail.trangThai == 'chua_xem' || empty detail.trangThai ? 'selected' : ''}>Chưa xem</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="ghiChu">Ghi chú bác sĩ (tuỳ chọn)</label>
+                                <textarea id="ghiChu" name="ghiChu"
+                                          placeholder="VD: Đã gọi nhắc bệnh nhân tái khám..."
+                                          maxlength="2000"></textarea>
+                            </div>
+                            <c:if test="${not empty detail.ghiChuBs}">
+                                <div class="section" style="margin-top:0;margin-bottom:14px;">
+                                    <h3>Ghi chú trước đó</h3>
+                                    <pre><c:out value="${detail.ghiChuBs}"/></pre>
+                                </div>
+                            </c:if>
+                            <div class="actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk"></i> Lưu
+                                </button>
+                                <a class="btn btn-secondary"
+                                   href="${pageContext.request.contextPath}/doctor/alerts">Xem Alerts</a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="field" style="margin-bottom:12px;">
-                    <label for="ghiChu">Ghi chú bác sĩ</label>
-                    <textarea id="ghiChu" name="ghiChu" rows="3" placeholder="Ghi chú thêm (tuỳ chọn)">${fn:escapeXml(detail.ghiChuBs)}</textarea>
-                </div>
-                <div class="actions">
-                    <button class="btn btn-primary" type="submit">Lưu</button>
-                    <a class="btn btn-secondary" href="${pageContext.request.contextPath}/doctor/ai-recommendations">Quay lại</a>
-                </div>
-            </form>
-        </div>
+            </c:otherwise>
+        </c:choose>
     </main>
 </div>
 </body>

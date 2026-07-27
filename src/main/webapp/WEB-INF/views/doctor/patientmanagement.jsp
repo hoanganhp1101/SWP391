@@ -356,12 +356,22 @@
             border:none;
             border-radius:10px;
             cursor:pointer;
-        }
-
-        .edit-btn{
             background:#eff6ff;
             color:#2563eb;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            text-decoration:none;
         }
+
+        .page-alert{
+            margin:0 32px 16px;
+            padding:12px 16px;
+            border-radius:12px;
+            font-size:14px;
+        }
+        .page-alert.error{ background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; }
+        .page-alert.success{ background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; }
 
         /* Filter dùng chung: xem /assets/css/filters.css */
     </style>
@@ -385,6 +395,13 @@
                 <h1>Quản lý bệnh nhân</h1>
                 <p>Danh sách và quản lý thông tin bệnh nhân</p>
             </div>
+
+            <c:if test="${not empty flashError}">
+                <div class="page-alert error"><c:out value="${flashError}"/></div>
+            </c:if>
+            <c:if test="${not empty flashSuccess}">
+                <div class="page-alert success"><c:out value="${flashSuccess}"/></div>
+            </c:if>
 
             <div class="table-card">
 
@@ -622,18 +639,12 @@
 
                                 <td>
                                     <div class="action-buttons">
-
-                                        <form method="post"
-                                              action="${pageContext.request.contextPath}/doctor/patient-list"
-                                              style="display:inline;">
-                                            <input type="hidden" name="id" value="${p.id}">
-                                            <button type="submit" class="edit-btn" title="Xem chi tiết">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button>
-                                        </form>
-
+                                        <a class="edit-btn"
+                                           href="${pageContext.request.contextPath}/doctor/patient-list?id=${p.id}"
+                                           title="Xem chi tiết">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
                                     </div>
-
                                 </td>
 
                             </tr>

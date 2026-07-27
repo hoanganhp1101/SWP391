@@ -82,6 +82,14 @@ public class Patient {
         this.patientCode = patientCode;
     }
 
+    /** Mã hiển thị BN… — không dùng UUID. */
+    public String getMaBenhNhanDisplay() {
+        if (patientCode != null && !patientCode.isBlank()) {
+            return patientCode.trim();
+        }
+        return "—";
+    }
+
     public User getUser() {
         return user;
     }

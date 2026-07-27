@@ -154,9 +154,9 @@ public class UserManagementServlet extends HttpServlet {
                 && (!requirePassword || !isBlank(request.getParameter("matKhau")));
     }
 
+    /** Admin chỉ được tạo/sửa role nhân sự; bệnh nhân tự đăng ký. */
     private boolean isValidRole(String role) {
-        return "quan_tri_vien".equals(role) || "bac_si".equals(role)
-                || "y_ta".equals(role) || "benh_nhan".equals(role);
+        return "quan_tri_vien".equals(role) || "bac_si".equals(role);
     }
 
     private boolean isBlank(String value) {

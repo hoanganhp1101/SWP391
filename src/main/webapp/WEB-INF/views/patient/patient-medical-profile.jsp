@@ -235,8 +235,8 @@
                 
                 <div class="grid-3" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
                     <div class="info-group">
-                        <div class="info-label">Mã bệnh nhân (ID)</div>
-                        <div class="info-value">${patientInfo.id.substring(0,8)}...</div>
+                        <div class="info-label">Mã bệnh nhân</div>
+                        <div class="info-value"><c:out value="${patientInfo.maBenhNhanDisplay}"/></div>
                     </div>
                     <div class="info-group">
                         <div class="info-label">Họ và tên</div>

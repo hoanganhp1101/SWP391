@@ -111,7 +111,7 @@
                                             <img src="https://ui-avatars.com/api/?name=${p.tenBenhNhan}&background=random&color=fff" class="rounded-circle" width="32" height="32">
                                             <div>
                                                 <div class="fw-bold" style="font-size:0.85rem;"><c:out value="${p.tenBenhNhan}"/></div>
-                                                <div class="text-muted" style="font-size:0.7rem;">ID: <c:out value="${p.id}"/></div>
+                                                <div class="text-muted" style="font-size:0.7rem;">Mã BN: <c:out value="${p.maBenhNhanDisplay}"/></div>
                                             </div>
                                         </div>
                                     </td>

@@ -44,7 +44,7 @@
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary btn-sm fw-medium px-3 rounded-pill" style="background-color: var(--primary-blue); border:none;" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                    <i class="fas fa-plus me-1"></i> Thêm người dùng mới
+                    <i class="fas fa-plus me-1"></i> Thêm bác sĩ / quản trị
                 </button>
             </div>
         </div>
@@ -229,7 +229,7 @@
             <form action="${pageContext.request.contextPath}/admin/users" method="POST">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addUserModalLabel">Thêm người dùng mới</h5>
+                    <h5 class="modal-title" id="addUserModalLabel">Thêm bác sĩ hoặc quản trị viên</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
                 <div class="modal-body">
@@ -251,6 +251,7 @@
                             <option value="bac_si">Bác sĩ</option>
                             <option value="quan_tri_vien">Quản trị viên</option>
                         </select>
+                        <div class="form-text">Bệnh nhân chỉ đăng ký từ trang Đăng nhập / Đăng ký.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Mật khẩu khởi tạo</label>

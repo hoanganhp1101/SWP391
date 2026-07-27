@@ -74,25 +74,24 @@ class UserManagementServletTest {
     }
 
     @Test
-    void administratorCanCreatePatientUser() throws Exception {
+    void createPatientRoleIsRejectedWithoutDaoWrite() throws Exception {
         UserDAO dao = mock(UserDAO.class);
         UserManagementServlet servlet = new UserManagementServlet(dao);
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
-        when(request.getSession()).thenReturn(mock(HttpSession.class));
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
         when(request.getContextPath()).thenReturn("");
         when(request.getParameter("action")).thenReturn("create");
         when(request.getParameter("hoTen")).thenReturn("Patient A");
         when(request.getParameter("email")).thenReturn("patient@example.com");
         when(request.getParameter("vaiTro")).thenReturn("benh_nhan");
         when(request.getParameter("matKhau")).thenReturn("secret");
-        when(dao.addUser(any())).thenReturn(true);
 
         servlet.doPost(request, response);
 
-        verify(dao).addUser(argThat(user -> "Patient A".equals(user.getHoTen())
-                && "benh_nhan".equals(user.getVaiTro())
-                && "secret".equals(user.getMatKhauHash())));
+        verify(dao, never()).addUser(any());
+        verify(session).setAttribute(eq("flashType"), eq("danger"));
         verify(response).sendRedirect("/admin/users");
     }
 }

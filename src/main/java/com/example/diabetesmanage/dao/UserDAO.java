@@ -10,15 +10,21 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Auth + quản lý tài khoản trên bảng {@code users} (cột {@code role}).
+ * Hồ sơ bác sĩ/bệnh nhân: {@code doctors}/{@code patients} cùng UUID.
+ */
 public class UserDAO {
 
     private static UserDAO instance;
 
-    private static final String ACCOUNT_COLUMNS =
-            "id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi";
+    private static final String USER_COLUMNS =
+            "id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, "
+                    + "role AS vai_tro, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi";
 
     public static synchronized UserDAO getInstance() {
         if (instance == null) {
@@ -31,15 +37,10 @@ public class UserDAO {
         if (userId == null || userId.isBlank()) {
             return null;
         }
-        String sql =
-                "SELECT ho_ten FROM doctors WHERE id = ? " +
-                "UNION ALL SELECT ho_ten FROM admins WHERE id = ? " +
-                "UNION ALL SELECT ho_ten FROM patients WHERE id = ? LIMIT 1";
+        String sql = "SELECT ho_ten FROM users WHERE id = ? LIMIT 1";
         try (Connection con = DBContext.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, userId);
-            ps.setString(2, userId);
-            ps.setString(3, userId);
             ResultSet rs = ps.executeQuery();
             return rs.next() ? rs.getString("ho_ten") : null;
         } catch (SQLException e) {
@@ -52,9 +53,8 @@ public class UserDAO {
         if (!isValidRole(role)) {
             return List.of();
         }
-        String table = tableForRole(role.trim());
         List<User> userList = new ArrayList<>();
-        String sql = "SELECT " + ACCOUNT_COLUMNS + ", ? AS vai_tro FROM " + table;
+        String sql = "SELECT " + USER_COLUMNS + " FROM users WHERE role = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, role.trim());
@@ -73,21 +73,14 @@ public class UserDAO {
         if (email == null || email.trim().isEmpty()) {
             return null;
         }
-        String sql =
-                "SELECT " + ACCOUNT_COLUMNS + ", 'bac_si' AS vai_tro FROM doctors WHERE email = ? " +
-                "UNION ALL SELECT " + ACCOUNT_COLUMNS + ", 'quan_tri_vien' AS vai_tro FROM admins WHERE email = ? " +
-                "UNION ALL SELECT " + ACCOUNT_COLUMNS + ", 'benh_nhan' AS vai_tro FROM patients WHERE email = ? " +
-                "LIMIT 1";
+        String sql = "SELECT " + USER_COLUMNS + " FROM users WHERE email = ? LIMIT 1";
         try {
             Connection conn = DBContext.getConnection();
             if (conn == null) {
                 throw new IllegalStateException("Không kết nối được MySQL. Kiểm tra DBContext và dịch vụ MySQL.");
             }
             try (conn; PreparedStatement ps = conn.prepareStatement(sql)) {
-                String trimmed = email.trim();
-                ps.setString(1, trimmed);
-                ps.setString(2, trimmed);
-                ps.setString(3, trimmed);
+                ps.setString(1, email.trim());
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return mapResultSetToUser(rs);
@@ -101,71 +94,135 @@ public class UserDAO {
         return null;
     }
 
+    public User getUserById(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String sql = "SELECT " + USER_COLUMNS + " FROM users WHERE id = ? LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, userId.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapResultSetToUser(rs) : null;
+            }
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "getUserById error", e);
+            return null;
+        }
+    }
+
+    /**
+     * Đăng nhập theo email + mật khẩu. Vai trò lấy từ cột {@code users.role}.
+     */
     public User checkLogin(String email, String hashedPassword) {
         if (email == null || hashedPassword == null) {
             return null;
         }
-        User user = getUserByEmail(email);
-        if (user == null) {
-            return null;
-        }
-        if (hashedPassword.trim().equalsIgnoreCase(user.getMatKhauHash().trim())) {
-            return user;
+        String sql = "SELECT " + USER_COLUMNS + " FROM users WHERE email = ? AND mat_khau_hash = ? LIMIT 1";
+        try {
+            Connection conn = DBContext.getConnection();
+            if (conn == null) {
+                throw new IllegalStateException("Không kết nối được MySQL. Kiểm tra DBContext và dịch vụ MySQL.");
+            }
+            try (conn; PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, email.trim());
+                ps.setString(2, hashedPassword.trim());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return mapResultSetToUser(rs);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            Logger.getLogger(UserDAO.class.getName()).log(Level.SEVERE, "checkLogin error", e);
+            throw new IllegalStateException("Lỗi truy vấn người dùng khi đăng nhập.", e);
         }
         return null;
     }
 
     public boolean updatePassword(String userId, String hashedPassword) {
-        if (userId == null || userId.isBlank()) {
+        if (userId == null || userId.isBlank() || hashedPassword == null) {
             return false;
         }
-        return updateInRoleTables(userId, "mat_khau_hash = ?", hashedPassword);
+        String sql = "UPDATE users SET mat_khau_hash = ?, ngay_cap_nhat = NOW() WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, hashedPassword);
+            ps.setString(2, userId.trim());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean isEmailExists(String email) {
         return getUserByEmail(email) != null;
     }
 
+    /**
+     * Đăng ký bệnh nhân: insert {@code users} + {@code patients} cùng id.
+     */
     public boolean registerUser(User user) {
         if (user.getId() == null || user.getId().isBlank()) {
-            user.setId(java.util.UUID.randomUUID().toString());
+            user.setId(UUID.randomUUID().toString());
         }
-        String sql = "INSERT INTO patients (id, ho_ten, email, so_dien_thoai, mat_khau_hash, kich_hoat, ngay_sinh, loai_tieu_duong, ngay_tao) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement st = conn.prepareStatement(sql)) {
-            st.setString(1, user.getId());
-            st.setString(2, user.getHoTen());
-            st.setString(3, user.getEmail());
-            st.setString(4, user.getSoDienThoai());
-            st.setString(5, user.getMatKhauHash());
-            st.setBoolean(6, user.isKichHoat());
-            st.setDate(7, java.sql.Date.valueOf("2000-01-01"));
-            st.setString(8, "Type 2");
-            st.setTimestamp(9, user.getNgayTao() != null ? user.getNgayTao() : new Timestamp(System.currentTimeMillis()));
-            return st.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
+        user.setVaiTro("benh_nhan");
 
-    public User authenticateAdmin(String email, String rawPassword) {
-        String sql = "SELECT " + ACCOUNT_COLUMNS + ", 'quan_tri_vien' AS vai_tro FROM admins "
-                + "WHERE email = ? AND mat_khau_hash = ? AND kich_hoat = 1";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            ps.setString(2, hashSHA256(rawPassword));
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToUser(rs);
+        String insertUser = "INSERT INTO users (id, ho_ten, email, so_dien_thoai, mat_khau_hash, kich_hoat, role, ngay_tao) "
+                + "VALUES (?, ?, ?, ?, ?, ?, 'benh_nhan', ?)";
+        String insertPatient = "INSERT INTO patients (id, patient_code, ngay_sinh, loai_tieu_duong, ngay_tao) "
+                + "VALUES (?, ?, '2000-01-01', 'Type 2', NOW())";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement st = conn.prepareStatement(insertUser)) {
+                st.setString(1, user.getId());
+                st.setString(2, user.getHoTen());
+                st.setString(3, user.getEmail());
+                st.setString(4, user.getSoDienThoai());
+                st.setString(5, user.getMatKhauHash());
+                st.setBoolean(6, user.isKichHoat());
+                st.setTimestamp(7, user.getNgayTao() != null
+                        ? user.getNgayTao() : new Timestamp(System.currentTimeMillis()));
+                if (st.executeUpdate() <= 0) {
+                    conn.rollback();
+                    return false;
                 }
             }
-        } catch (SQLException e) {
-            System.err.println("Lỗi khi xác thực đăng nhập Admin: " + e.getMessage());
+
+            try (PreparedStatement st = conn.prepareStatement(insertPatient)) {
+                st.setString(1, user.getId());
+                st.setString(2, nextPatientCode(conn));
+                if (st.executeUpdate() <= 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ignored) {
+                }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ignored) {
+                }
+            }
         }
-        return null;
     }
 
     public String hashSHA256(String input) {
@@ -185,11 +242,10 @@ public class UserDAO {
     }
 
     public boolean updateUser(User u) {
-        if (u == null || u.getId() == null || u.getVaiTro() == null) {
+        if (u == null || u.getId() == null) {
             return false;
         }
-        String table = tableForRole(u.getVaiTro());
-        String sql = "UPDATE " + table + " SET ho_ten = ?, email = ?, so_dien_thoai = ?, ngay_cap_nhat = NOW() WHERE id = ?";
+        String sql = "UPDATE users SET ho_ten = ?, email = ?, so_dien_thoai = ?, ngay_cap_nhat = NOW() WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, u.getHoTen());
@@ -204,19 +260,15 @@ public class UserDAO {
     }
 
     public int getTotalUsersCount(String role, String status, String keyword) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM (");
-        sql.append(buildUnionSelect(false));
-        sql.append(") AS all_accounts WHERE 1=1");
-        List<Object> params = buildFilterParams(sql, role, status, keyword, false);
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users WHERE 1=1");
+        List<Object> params = buildFilterParams(sql, role, status, keyword);
         return queryCount(sql.toString(), params);
     }
 
     public List<User> getFilteredUsers(String role, String status, String keyword, int offset, int limit) {
         List<User> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT * FROM (");
-        sql.append(buildUnionSelect(true));
-        sql.append(") AS all_accounts WHERE 1=1");
-        List<Object> params = buildFilterParams(sql, role, status, keyword, false);
+        StringBuilder sql = new StringBuilder("SELECT " + USER_COLUMNS + " FROM users WHERE 1=1");
+        List<Object> params = buildFilterParams(sql, role, status, keyword);
         sql.append(" ORDER BY ngay_tao DESC LIMIT ? OFFSET ?");
         params.add(limit);
         params.add(offset);
@@ -235,85 +287,122 @@ public class UserDAO {
         return list;
     }
 
+    /**
+     * Admin tạo bác sĩ / quản trị viên. Bệnh nhân chỉ qua {@link #registerUser(User)}.
+     */
     public boolean addUser(User u) {
         if (u == null || u.getVaiTro() == null) {
             return false;
         }
-        String table = tableForRole(u.getVaiTro());
-        String sql = "INSERT INTO " + table
-                + " (id, ho_ten, email, so_dien_thoai, mat_khau_hash, kich_hoat, ngay_tao) "
-                + "VALUES (?, ?, ?, ?, ?, 1, NOW())";
-        if ("patients".equals(table)) {
-            sql = "INSERT INTO patients (id, ho_ten, email, so_dien_thoai, mat_khau_hash, kich_hoat, ngay_sinh, loai_tieu_duong, ngay_tao) "
-                    + "VALUES (?, ?, ?, ?, ?, 1, '2000-01-01', 'Type 2', NOW())";
+        String role = u.getVaiTro().trim();
+        if (!"quan_tri_vien".equals(role) && !"bac_si".equals(role)) {
+            return false;
         }
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, java.util.UUID.randomUUID().toString());
-            ps.setString(2, u.getHoTen());
-            ps.setString(3, u.getEmail());
-            ps.setString(4, u.getSoDienThoai());
-            ps.setString(5, hashSHA256(u.getMatKhauHash()));
-            return ps.executeUpdate() > 0;
+        String id = UUID.randomUUID().toString();
+        String hashed = hashSHA256(u.getMatKhauHash());
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            String insertUser = "INSERT INTO users (id, ho_ten, email, so_dien_thoai, mat_khau_hash, kich_hoat, role, ngay_tao) "
+                    + "VALUES (?, ?, ?, ?, ?, 1, ?, NOW())";
+            try (PreparedStatement ps = conn.prepareStatement(insertUser)) {
+                ps.setString(1, id);
+                ps.setString(2, u.getHoTen());
+                ps.setString(3, u.getEmail());
+                ps.setString(4, u.getSoDienThoai());
+                ps.setString(5, hashed);
+                ps.setString(6, role);
+                if (ps.executeUpdate() <= 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            if ("bac_si".equals(role)) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "INSERT INTO doctors (id, chuyen_khoa) VALUES (?, NULL)")) {
+                    ps.setString(1, id);
+                    if (ps.executeUpdate() <= 0) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            conn.commit();
+            return true;
         } catch (SQLException e) {
             System.err.println("Lỗi khi thêm user mới: " + e.getMessage());
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ignored) {
+                }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ignored) {
+                }
+            }
         }
-        return false;
     }
 
     public boolean updateUserStatus(String userId, int status) {
         if (userId == null || userId.isBlank()) {
             return false;
         }
-        if (updateStatusInTable("doctors", userId, status)) {
-            return true;
-        }
-        if (updateStatusInTable("admins", userId, status)) {
-            return true;
-        }
-        return updateStatusInTable("patients", userId, status);
-    }
-
-    private boolean updateStatusInTable(String table, String userId, int status) {
-        String sql = "UPDATE " + table + " SET kich_hoat = ?, ngay_cap_nhat = NOW() WHERE id = ?";
+        String sql = "UPDATE users SET kich_hoat = ?, ngay_cap_nhat = NOW() WHERE id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, status);
             ps.setString(2, userId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("Lỗi khi cập nhật trạng thái " + table + ": " + e.getMessage());
+            System.err.println("Lỗi khi cập nhật trạng thái user: " + e.getMessage());
         }
         return false;
     }
 
-    private boolean updateInRoleTables(String userId, String setClause, String value) {
-        for (String table : List.of("doctors", "admins", "patients")) {
-            String sql = "UPDATE " + table + " SET " + setClause + ", ngay_cap_nhat = NOW() WHERE id = ?";
-            try (Connection conn = DBContext.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, value);
-                ps.setString(2, userId);
-                if (ps.executeUpdate() > 0) {
-                    return true;
-                }
-            } catch (SQLException ignored) {
-                // try next table
+    /** Đảm bảo có dòng doctors cho user bác sĩ. */
+    public boolean ensureDoctorProfile(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return false;
+        }
+        String sql = "INSERT IGNORE INTO doctors (id, chuyen_khoa) VALUES (?, NULL)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, userId.trim());
+            ps.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private String nextPatientCode(Connection conn) throws SQLException {
+        String sql = "SELECT LPAD(COALESCE(MAX(CAST(SUBSTRING(patient_code, 3) AS UNSIGNED)), 0) + 1, 4, '0') AS next_num "
+                + "FROM patients WHERE patient_code REGEXP '^BN[0-9]+$'";
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next() && rs.getString("next_num") != null) {
+                return "BN" + rs.getString("next_num");
             }
         }
-        return false;
+        return "BN" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
     }
 
-    private String buildUnionSelect(boolean includeRole) {
-        return "SELECT " + ACCOUNT_COLUMNS + ", 'bac_si' AS vai_tro FROM doctors " +
-                "UNION ALL SELECT " + ACCOUNT_COLUMNS + ", 'quan_tri_vien' AS vai_tro FROM admins " +
-                "UNION ALL SELECT " + ACCOUNT_COLUMNS + ", 'benh_nhan' AS vai_tro FROM patients";
-    }
-
-    private List<Object> buildFilterParams(StringBuilder sql, String role, String status, String keyword, boolean forCount) {
+    private List<Object> buildFilterParams(StringBuilder sql, String role, String status, String keyword) {
         List<Object> params = new ArrayList<>();
         if (isValidRole(role)) {
-            sql.append(" AND vai_tro = ?");
+            sql.append(" AND role = ?");
             params.add(role.trim());
         }
         if (isValidStatus(status)) {
@@ -351,16 +440,6 @@ public class UserDAO {
         }
     }
 
-    private String tableForRole(String role) {
-        if ("bac_si".equals(role)) {
-            return "doctors";
-        }
-        if ("quan_tri_vien".equals(role)) {
-            return "admins";
-        }
-        return "patients";
-    }
-
     private boolean isValidRole(String role) {
         if (role == null) {
             return false;
@@ -368,7 +447,6 @@ public class UserDAO {
         String normalizedRole = role.trim();
         return "quan_tri_vien".equals(normalizedRole)
                 || "bac_si".equals(normalizedRole)
-                || "y_ta".equals(normalizedRole)
                 || "benh_nhan".equals(normalizedRole);
     }
 

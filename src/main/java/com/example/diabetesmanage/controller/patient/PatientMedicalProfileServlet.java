@@ -181,7 +181,7 @@ public class PatientMedicalProfileServlet extends HttpServlet {
                 doc.setBacSiId(p.getBacSiId());
                 doc.setLoaiTaiLieu(request.getParameter("loaiTaiLieu") != null ? request.getParameter("loaiTaiLieu")
                         : "Bệnh án ngoài");
-                doc.setTrangThai("Hoàn thành");
+                doc.setTrangThai("hoan_thanh");
                 doc.setFileUrl("uploads/documents/" + newFileName);
                 doc.setNgayThucHien(new java.sql.Date(System.currentTimeMillis()));
 

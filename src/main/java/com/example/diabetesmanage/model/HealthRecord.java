@@ -551,6 +551,13 @@ public class HealthRecord {
         return thoiGianDo;
     }
 
+    /** Hiển thị an toàn cho JSP (tránh EL dùng toán tử &lt; trong attribute). */
+    public String getThoiGianDoDisplay() {
+        return thoiGianDo == null
+                ? null
+                : thoiGianDo.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
     public void setThoiGianDo(LocalDateTime thoiGianDo) {
         this.thoiGianDo = thoiGianDo;
     }
@@ -561,6 +568,12 @@ public class HealthRecord {
 
     public LocalDateTime getNgayTao() {
         return ngayTao;
+    }
+
+    public String getNgayTaoDisplay() {
+        return ngayTao == null
+                ? null
+                : ngayTao.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
     public void setNgayTao(LocalDateTime ngayTao) {

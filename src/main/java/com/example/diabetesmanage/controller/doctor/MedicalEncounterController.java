@@ -3,11 +3,13 @@ package com.example.diabetesmanage.controller.doctor;
 import com.example.diabetesmanage.context.DBContext;
 import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.LabResultDAO;
+import com.example.diabetesmanage.dao.MedicalDocumentDAO;
 import com.example.diabetesmanage.dao.MedicalEncounterDAO;
 import com.example.diabetesmanage.dao.MedicationDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dao.PrescriptionDAO;
 import com.example.diabetesmanage.model.HealthRecord;
+import com.example.diabetesmanage.model.MedicalDocument;
 import com.example.diabetesmanage.model.MedicalEncounter;
 import com.example.diabetesmanage.model.Patient;
 import com.example.diabetesmanage.model.User;
@@ -19,12 +21,16 @@ import com.example.diabetesmanage.util.DoctorLayoutHelper;
 
 import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -32,8 +38,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @WebServlet("/doctor/patient-records")
+@MultipartConfig(maxFileSize = 10 * 1024 * 1024, maxRequestSize = 12 * 1024 * 1024)
 public class MedicalEncounterController extends HttpServlet {
 
     private final MedicalEncounterDAO encounterDAO = new MedicalEncounterDAO();
@@ -44,6 +52,8 @@ public class MedicalEncounterController extends HttpServlet {
     private final PrescriptionDAO prescriptionDAO = new PrescriptionDAO();
     private final LabResultDAO labResultDAO = new LabResultDAO();
     private final EncounterAiAnalysis aiService = new EncounterAiAnalysis();
+    private final MedicalDocumentDAO medicalDocumentDAO = new MedicalDocumentDAO();
+    private final MedicalRecordPdfService pdfService = new MedicalRecordPdfService();
     private final Gson gson = new Gson();
 
     @Override
@@ -52,6 +62,11 @@ public class MedicalEncounterController extends HttpServlet {
 
         User user = AuthContext.requirePatientDataAccess(request, response);
         if (user == null) {
+            return;
+        }
+
+        if ("detail".equals(request.getParameter("action"))) {
+            viewDetail(request, response);
             return;
         }
 
@@ -66,9 +81,14 @@ public class MedicalEncounterController extends HttpServlet {
         List<MedicalEncounter> records = encounterDAO.searchEncounters(
                 scopeDoctorId, startDate, endDate, keyword, type, status, patientId);
 
+        List<Patient> assignedPatients = patientDAO.searchPatients(
+                null, null, null, null, null, null, null, null, null, scopeDoctorId);
+
         DoctorLayoutHelper.prepare(request, user, "records");
         request.setAttribute("records", records);
         request.setAttribute("patientId", patientId);
+        request.setAttribute("assignedPatients", assignedPatients);
+        consumeFlash(request);
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecordmanagement.jsp")
                 .forward(request, response);
     }
@@ -98,6 +118,12 @@ public class MedicalEncounterController extends HttpServlet {
                 break;
             case "form":
                 form(request, response);
+                break;
+            case "share":
+                shareToPatient(request, response);
+                break;
+            case "import":
+                importDocument(request, response);
                 break;
 
             default:
@@ -156,8 +182,189 @@ public class MedicalEncounterController extends HttpServlet {
         DoctorLayoutHelper.prepare(request, user, "records");
         request.setAttribute("encounter", encounter);
         request.setAttribute("detailView", detailView);
+        consumeFlash(request);
         request.getRequestDispatcher("/WEB-INF/views/doctor/medicalrecorddetail.jsp")
                 .forward(request, response);
+    }
+
+    /**
+     * Xuất PDF hồ sơ khám → lưu medical_documents để bệnh nhân xem ở Lịch sử khám bệnh.
+     */
+    private void shareToPatient(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        User user = AuthContext.requirePatientDataAccess(request, response);
+        if (user == null) {
+            return;
+        }
+
+        String encounterId = request.getParameter("id");
+        if (encounterId == null || encounterId.isBlank()) {
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+        if (!AuthContext.ensureEncounterAccess(user, patientDAO, encounterDAO, encounterId, response)) {
+            return;
+        }
+
+        String scopeDoctorId = AuthContext.scopeDoctorId(user);
+        MedicalEncounter encounter = encounterDAO.getEncounterById(encounterId, scopeDoctorId);
+        if (encounter == null) {
+            encounter = encounterDAO.getEncounterById(encounterId, null);
+        }
+        MedicalEncounterDTO detailView = medicalRecordService.loadMedicalRecordDetail(encounterId, scopeDoctorId);
+        if (encounter == null || detailView == null) {
+            setFlash(request, "error", "Không tìm thấy hồ sơ để chia sẻ.");
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+
+        try {
+            byte[] pdfBytes = pdfService.generateMedicalRecordPdf(
+                    detailView, MedicalRecordPdfService.PdfExportType.FULL);
+            String relativeUrl = storePdfBytes(pdfBytes,
+                    "hs_" + safeFilePart(detailView.getRecordCode()) + "_" + System.currentTimeMillis() + ".pdf");
+
+            MedicalDocument doc = new MedicalDocument();
+            doc.setPatientId(encounter.getPatientId());
+            doc.setBacSiId(encounter.getBacSiId() != null ? encounter.getBacSiId() : user.getId());
+            doc.setLoaiTaiLieu("Hồ sơ khám bệnh"
+                    + (detailView.getRecordCode() != null ? " - " + detailView.getRecordCode() : ""));
+            doc.setTrangThai("hoan_thanh");
+            doc.setFileUrl(relativeUrl);
+            if (encounter.getNgayKham() != null) {
+                doc.setNgayThucHien(Date.valueOf(encounter.getNgayKham().toLocalDate()));
+            } else {
+                doc.setNgayThucHien(new Date(System.currentTimeMillis()));
+            }
+
+            if (!medicalDocumentDAO.addDocument(doc)) {
+                setFlash(request, "error", "Không lưu được tài liệu cho bệnh nhân.");
+            } else {
+                setFlash(request, "success",
+                        "Đã gửi hồ sơ cho bệnh nhân. Bệnh nhân xem tại mục Lịch sử khám bệnh.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            setFlash(request, "error", "Không tạo được PDF để chia sẻ: " + e.getMessage());
+        }
+
+        response.sendRedirect(request.getContextPath()
+                + "/doctor/patient-records?action=detail&id=" + encounterId);
+    }
+
+    /**
+     * Bác sĩ import PDF bên ngoài → bệnh nhân xem được.
+     */
+    private void importDocument(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
+        User user = AuthContext.requireDoctor(request, response);
+        if (user == null) {
+            return;
+        }
+
+        String patientId = request.getParameter("patientId");
+        String loaiTaiLieu = request.getParameter("loaiTaiLieu");
+        if (patientId == null || patientId.isBlank()) {
+            setFlash(request, "error", "Vui lòng chọn bệnh nhân.");
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+        if (!AuthContext.ensurePatientAccess(user, patientDAO, patientId, response)) {
+            return;
+        }
+
+        Part filePart = request.getPart("pdfFile");
+        if (filePart == null || filePart.getSize() <= 0) {
+            setFlash(request, "error", "Vui lòng chọn tệp PDF.");
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+        if (filePart.getSize() > 10 * 1024 * 1024) {
+            setFlash(request, "error", "Tệp không được vượt quá 10MB.");
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+        String contentType = filePart.getContentType();
+        String submitted = filePart.getSubmittedFileName();
+        boolean isPdf = (contentType != null && contentType.equalsIgnoreCase("application/pdf"))
+                || (submitted != null && submitted.toLowerCase().endsWith(".pdf"));
+        if (!isPdf) {
+            setFlash(request, "error", "Chỉ hỗ trợ tệp PDF.");
+            response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+            return;
+        }
+
+        try {
+            String fileName = "import_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + ".pdf";
+            String relativeUrl = storeUploadedPdf(filePart, fileName);
+
+            MedicalDocument doc = new MedicalDocument();
+            doc.setPatientId(patientId.trim());
+            doc.setBacSiId(user.getId());
+            doc.setLoaiTaiLieu(loaiTaiLieu == null || loaiTaiLieu.isBlank()
+                    ? "Tài liệu khám bệnh" : loaiTaiLieu.trim());
+            doc.setTrangThai("hoan_thanh");
+            doc.setFileUrl(relativeUrl);
+            doc.setNgayThucHien(new Date(System.currentTimeMillis()));
+
+            if (!medicalDocumentDAO.addDocument(doc)) {
+                setFlash(request, "error", "Import thất bại khi lưu database.");
+            } else {
+                setFlash(request, "success", "Đã import PDF. Bệnh nhân có thể xem trong Lịch sử khám bệnh.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            setFlash(request, "error", "Import thất bại: " + e.getMessage());
+        }
+        response.sendRedirect(request.getContextPath() + "/doctor/patient-records");
+    }
+
+    private String storePdfBytes(byte[] pdfBytes, String fileName) throws IOException {
+        Path dir = Path.of(getServletContext().getRealPath("/uploads/documents"));
+        Files.createDirectories(dir);
+        Path target = dir.resolve(fileName);
+        Files.write(target, pdfBytes);
+        return "uploads/documents/" + fileName;
+    }
+
+    private String storeUploadedPdf(Part filePart, String fileName) throws IOException {
+        Path dir = Path.of(getServletContext().getRealPath("/uploads/documents"));
+        Files.createDirectories(dir);
+        Path target = dir.resolve(fileName);
+        filePart.write(target.toString());
+        return "uploads/documents/" + fileName;
+    }
+
+    private static String safeFilePart(String value) {
+        if (value == null || value.isBlank()) {
+            return "record";
+        }
+        return value.replaceAll("[^a-zA-Z0-9_-]", "_");
+    }
+
+    private void setFlash(HttpServletRequest request, String type, String message) {
+        HttpSession session = request.getSession(true);
+        session.setAttribute("flashType", type);
+        session.setAttribute("flashMessage", message);
+    }
+
+    private void consumeFlash(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return;
+        }
+        Object type = session.getAttribute("flashType");
+        Object message = session.getAttribute("flashMessage");
+        session.removeAttribute("flashType");
+        session.removeAttribute("flashMessage");
+        if (message == null) {
+            return;
+        }
+        if ("success".equals(type)) {
+            request.setAttribute("flashSuccess", message);
+        } else {
+            request.setAttribute("flashError", message);
+        }
     }
 
     private void analyze(HttpServletRequest request, HttpServletResponse response) throws IOException {

@@ -138,7 +138,7 @@
                                         <td>
                                             <c:choose>
                                                 <c:when test="${not empty doc.fileUrl && doc.fileUrl != '#'}">
-                                                    <a href="${doc.fileUrl}" class="btn-pdf" target="_blank" rel="noopener">
+                                                    <a href="${pageContext.request.contextPath}/${doc.fileUrl}" class="btn-pdf" target="_blank" rel="noopener">
                                                         <i class="fas fa-eye"></i> Xem PDF
                                                     </a>
                                                 </c:when>

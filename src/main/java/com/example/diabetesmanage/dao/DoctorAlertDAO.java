@@ -15,15 +15,8 @@ public class DoctorAlertDAO {
     private static final String FROM_JOIN = """
             FROM alerts a
             LEFT JOIN patients p ON a.patient_id = p.id
+            LEFT JOIN users u ON p.id = u.id
             """;
-
-    public List<DoctorAlert> getAllAlerts() {
-        return getAlerts(null, null, null, null, 1, Integer.MAX_VALUE, null);
-    }
-
-    public int countAlerts(String severity, String status, String alertType, String keyword) {
-        return countAlerts(severity, status, alertType, keyword, null);
-    }
 
     public int countAlerts(String severity, String status, String alertType, String keyword, String doctorId) {
         FilterQuery filter = buildFilter(severity, status, alertType, keyword, doctorId);
@@ -46,10 +39,6 @@ public class DoctorAlertDAO {
         return 0;
     }
 
-    public List<DoctorAlert> getAlerts(String severity, String status, String alertType, String keyword, int page, int pageSize) {
-        return getAlerts(severity, status, alertType, keyword, page, pageSize, null);
-    }
-
     public List<DoctorAlert> getAlerts(String severity, String status, String alertType, String keyword, int page, int pageSize, String doctorId) {
         List<DoctorAlert> list = new ArrayList<>();
         FilterQuery filter = buildFilter(severity, status, alertType, keyword, doctorId);
@@ -59,7 +48,8 @@ public class DoctorAlertDAO {
         int offset = (safePage - 1) * safePageSize;
 
         String sql = """
-                SELECT a.*, p.ho_ten AS ho_ten_benh_nhan, p.so_dien_thoai AS so_dien_thoai_benh_nhan
+                SELECT a.*, u.ho_ten AS ho_ten_benh_nhan, u.so_dien_thoai AS so_dien_thoai_benh_nhan,
+                       p.patient_code AS patient_code
                 """ + FROM_JOIN + filter.where + """
                  ORDER BY
                     CASE
@@ -139,6 +129,7 @@ public class DoctorAlertDAO {
         alert.setThoiGianXuLy(rs.getTimestamp("thoi_gian_xu_ly"));
         alert.setHoTenBenhNhan(rs.getString("ho_ten_benh_nhan"));
         alert.setSoDienThoaiBenhNhan(rs.getString("so_dien_thoai_benh_nhan"));
+        alert.setPatientCode(rs.getString("patient_code"));
         return alert;
     }
 
@@ -261,11 +252,13 @@ public class DoctorAlertDAO {
 
         String searchValue = "%" + keyword.trim() + "%";
         sql.append("AND (");
-        sql.append("p.ho_ten LIKE ? ");
-        sql.append("OR p.so_dien_thoai LIKE ? ");
+        sql.append("u.ho_ten LIKE ? ");
+        sql.append("OR u.so_dien_thoai LIKE ? ");
+        sql.append("OR p.patient_code LIKE ? ");
         sql.append("OR CAST(p.id AS CHAR) LIKE ? ");
         sql.append("OR CAST(a.patient_id AS CHAR) LIKE ? ");
         sql.append(") ");
+        params.add(searchValue);
         params.add(searchValue);
         params.add(searchValue);
         params.add(searchValue);

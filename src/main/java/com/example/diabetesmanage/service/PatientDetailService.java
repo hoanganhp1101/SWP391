@@ -33,19 +33,57 @@ public class PatientDetailService {
     public DetailBundle load(String patientId, String scopeDoctorId,
                              LocalDate fromDate, LocalDate toDate) {
         DetailBundle bundle = new DetailBundle();
+        bundle.history = List.of();
         if (patientId == null || patientId.isBlank()) {
             return bundle;
         }
         String trimmedId = patientId.trim();
-        bundle.patient = patientDAO.getPatientById(trimmedId, scopeDoctorId);
-        bundle.encounter = encounterDAO.getLatestEncounterByPatient(trimmedId, scopeDoctorId);
-        if (fromDate != null && toDate != null) {
-            bundle.history = encounterDAO.getHistoryByPatientAndDateRange(
-                    trimmedId, scopeDoctorId, fromDate, toDate);
-        } else {
-            bundle.history = encounterDAO.getHistoryByPatientId(trimmedId, scopeDoctorId);
+        try {
+            bundle.patient = patientDAO.getPatientById(trimmedId, scopeDoctorId);
+            if (bundle.patient == null && scopeDoctorId != null) {
+                bundle.patient = patientDAO.getPatientById(trimmedId, null);
+            }
+            if (bundle.patient == null) {
+                bundle.patient = patientDAO.getPatientById(trimmedId);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        bundle.healthRecord = buildHealthRecord(trimmedId, scopeDoctorId, bundle.patient, bundle.encounter);
+        if (bundle.patient == null) {
+            return bundle;
+        }
+
+        try {
+            bundle.encounter = encounterDAO.getLatestEncounterByPatient(trimmedId, scopeDoctorId);
+            if (bundle.encounter == null && scopeDoctorId != null) {
+                bundle.encounter = encounterDAO.getLatestEncounterByPatient(trimmedId, null);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            if (fromDate != null && toDate != null) {
+                bundle.history = encounterDAO.getHistoryByPatientAndDateRange(
+                        trimmedId, scopeDoctorId, fromDate, toDate);
+            } else {
+                bundle.history = encounterDAO.getHistoryByPatientId(trimmedId, scopeDoctorId);
+            }
+            if (bundle.history == null) {
+                bundle.history = List.of();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            bundle.history = List.of();
+        }
+
+        try {
+            bundle.healthRecord = buildHealthRecord(
+                    trimmedId, scopeDoctorId, bundle.patient, bundle.encounter);
+        } catch (Exception e) {
+            e.printStackTrace();
+            bundle.healthRecord = null;
+        }
         return bundle;
     }
 

@@ -7,62 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chi tiết bệnh nhân - HealthAlert</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/filters.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/doctor-layout.css">
     <style>
-        *{ margin:0; padding:0; box-sizing:border-box; font-family:Inter, sans-serif; }
-        body{ background:#f5f6fa; }
-        .layout{ display:flex; height:calc(100vh - 80px); }
-        .topbar{
-            height:80px; background:white; display:flex; align-items:center;
-            padding:0 48px; border-bottom:1px solid #e5e7eb;
-        }
-        .sidebar{
-            width:240px; background:#fff; border-right:1px solid #e5e7eb;
-            display:flex; flex-direction:column;
-        }
-        .doctor-profile{ padding:28px 20px; display:flex; align-items:center; gap:12px; }
-        .doctor-profile img{ width:42px; height:42px; border-radius:10px; object-fit:cover; }
-        .doctor-profile h4{ font-size:16px; color:#1554c7; }
-        .doctor-profile p{ font-size:12px; color:#666; }
-        .menu{ padding:0 16px; }
-        .menu-item{
-            display:flex; align-items:center; gap:14px; height:52px;
-            margin-bottom:8px; padding:0 16px; border-radius:12px;
-            color:#374151; text-decoration:none; cursor:pointer;
-        }
-        .menu-item i{ font-size:18px; }
-        .menu-item.active{ background:#1557d5; color:white; font-weight:600; }
-        .sidebar-bottom{ margin-top:auto; padding:20px 16px; }
-        .new-record{
-            width:100%; height:48px; border:none; border-radius:10px;
-            background:#0d4bb5; color:white; font-size:15px; font-weight:600; cursor:pointer;
-        }
-        .new-record i{ margin-right:8px; }
-        .bottom-link{
-            display:flex; align-items:center; gap:12px; padding:14px 12px;
-            text-decoration:none; color:#374151; cursor:pointer;
-        }
-        .main-content{ flex:1; overflow-y:auto; }
-        .logo{ font-size:20px; font-weight:700; color:#0d4bb5; }
-        .top-nav{ display:flex; gap:36px; margin-left:40px; }
-        .top-actions{ display:flex; align-items:center; gap:22px; margin-left:auto; }
-        .top-nav a{ color:#555; cursor:pointer; font-size:16px; text-decoration:none; }
-        .top-nav .active{ color:#1557d5; font-weight:600; position:relative; }
-        .top-nav .active::after{
-            content:""; position:absolute; left:0; bottom:-28px;
-            width:100%; height:3px; background:#1557d5;
-        }
-        .search-box{
-            width:290px; height:42px; display:flex; align-items:center;
-            padding:0 16px; border:1px solid #d1d5db; border-radius:10px; background:#fff;
-        }
-        .search-box i{ color:#777; }
-        .search-box input{
-            border:none; outline:none; width:100%; margin-left:10px; font-size:14px;
-        }
-        .icon-btn{ font-size:22px; color:#4b5563; cursor:pointer; }
-        .avatar{ width:38px; height:38px; border-radius:50%; object-fit:cover; }
-        .page-content{ padding:32px; }
+        .page-content{ padding:4px 4px 32px; }
         .page-header{ margin-bottom:24px; }
         .page-header-row{
             display:flex; align-items:flex-start; justify-content:space-between;
@@ -175,11 +122,34 @@
     <main class="main-content">
         <div class="page-content">
 
+            <c:if test="${not empty detailError}">
+                <div class="hr-error-banner" style="margin:0 0 20px;">
+                    <c:out value="${detailError}"/>
+                    <div style="margin-top:10px;">
+                        <a href="${pageContext.request.contextPath}/doctor/patient-list">← Quay lại danh sách</a>
+                    </div>
+                </div>
+            </c:if>
+
+            <c:if test="${empty patient}">
+                <div class="hr-empty-state" style="margin:0;">
+                    Không có dữ liệu bệnh nhân để hiển thị.
+                    <div style="margin-top:12px;">
+                        <a href="${pageContext.request.contextPath}/doctor/patient-list">← Quay lại danh sách</a>
+                    </div>
+                </div>
+            </c:if>
+
+            <c:if test="${not empty patient}">
             <div class="page-header">
                 <div class="page-header-row">
                     <div>
                         <h1>Chi tiết bệnh nhân</h1>
-                        <p>${patient.user.hoTen} · ${patient.patientCode}</p>
+                        <p>
+                            <c:out value="${not empty patient.hoTen ? patient.hoTen : (not empty patient.user ? patient.user.hoTen : '')}"/>
+                            ·
+                            <c:out value="${patient.patientCode}"/>
+                        </p>
                     </div>
                     <c:if test="${not empty patient.id}">
                         <c:url var="exportPdfUrl" value="/doctor/export-patient-pdf">
@@ -214,11 +184,11 @@
                     </div>
                     <div class="form-group">
                         <label>Họ và tên</label>
-                        <input type="text" value="${patient.user.hoTen}" readonly>
+                        <input type="text" value="${not empty patient.user ? patient.user.hoTen : patient.hoTen}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Ngày sinh</label>
-                        <input type="date" value="${patient.ngaySinh}" readonly>
+                        <input type="date" value="${not empty ngaySinhIso ? ngaySinhIso : patient.ngaySinh}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Tuổi</label>
@@ -230,11 +200,11 @@
                     </div>
                     <div class="form-group">
                         <label>Số điện thoại</label>
-                        <input type="text" value="${patient.user.soDienThoai}" readonly>
+                        <input type="text" value="${not empty patient.user ? patient.user.soDienThoai : patient.soDienThoai}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" value="${patient.user.email}" readonly>
+                        <input type="email" value="${not empty patient.user ? patient.user.email : patient.email}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Địa chỉ</label>
@@ -262,11 +232,11 @@
                     </div>
                     <div class="form-group">
                         <label>Ngày chẩn đoán tiểu đường</label>
-                        <input type="date" value="${patient.ngayChanDoanTieuDuong}" readonly>
+                        <input type="date" value="${not empty ngayChanDoanIso ? ngayChanDoanIso : patient.ngayChanDoanTieuDuong}" readonly>
                     </div>
                     <div class="form-group">
                         <label>Cập nhật lần cuối</label>
-                        <input type="text" value="${patient.ngayCapNhat}" readonly>
+                        <input type="text" value="${not empty ngayCapNhatDisplay ? ngayCapNhatDisplay : patient.ngayCapNhat}" readonly>
                     </div>
                 </div>
             </div>
@@ -295,11 +265,11 @@
                         <c:set var="hrEmpty" value="Chưa có dữ liệu"/>
                         <c:set var="hrThoiGianDo" value="${hrEmpty}"/>
                         <c:if test="${hr.thoiGianDo != null}">
-                            <c:set var="hrThoiGianDo" value="${hr.thoiGianDo.dayOfMonth}/${hr.thoiGianDo.monthValue}/${hr.thoiGianDo.year} ${hr.thoiGianDo.hour}:${hr.thoiGianDo.minute < 10 ? '0' : ''}${hr.thoiGianDo.minute}"/>
+                            <c:set var="hrThoiGianDo" value="${hr.thoiGianDoDisplay}"/>
                         </c:if>
                         <c:set var="hrNgayTao" value="${hrEmpty}"/>
                         <c:if test="${hr.ngayTao != null}">
-                            <c:set var="hrNgayTao" value="${hr.ngayTao.dayOfMonth}/${hr.ngayTao.monthValue}/${hr.ngayTao.year} ${hr.ngayTao.hour}:${hr.ngayTao.minute < 10 ? '0' : ''}${hr.ngayTao.minute}"/>
+                            <c:set var="hrNgayTao" value="${hr.ngayTaoDisplay}"/>
                         </c:if>
                         <c:set var="hrThoiDiemDo" value="${hrEmpty}"/>
                         <c:if test="${hr.thoiDiemDoDuong eq 'luc_doi'}"><c:set var="hrThoiDiemDo" value="Lúc đói"/></c:if>
@@ -311,15 +281,16 @@
                         <c:if test="${hr.huyetApTamThu != null && hr.huyetApTamTruong != null}"><c:set var="hrHuyetAp" value="${hr.huyetApTamThu} / ${hr.huyetApTamTruong}"/></c:if>
                         <c:if test="${hr.huyetApTamThu != null && hr.huyetApTamTruong == null}"><c:set var="hrHuyetAp" value="${hr.huyetApTamThu} / —"/></c:if>
                         <c:if test="${hr.huyetApTamThu == null && hr.huyetApTamTruong != null}"><c:set var="hrHuyetAp" value="— / ${hr.huyetApTamTruong}"/></c:if>
+                        <%-- getChestPain()/getDizziness()/getFatigue() trả Integer (0/1); dùng *Boolean để so sánh an toàn --%>
                         <c:set var="hrChestPain" value="${hrEmpty}"/>
-                        <c:if test="${hr.chestPain == true}"><c:set var="hrChestPain" value="Có"/></c:if>
-                        <c:if test="${hr.chestPain == false}"><c:set var="hrChestPain" value="Không"/></c:if>
+                        <c:if test="${hr.chestPainBoolean eq true}"><c:set var="hrChestPain" value="Có"/></c:if>
+                        <c:if test="${hr.chestPainBoolean eq false}"><c:set var="hrChestPain" value="Không"/></c:if>
                         <c:set var="hrDizziness" value="${hrEmpty}"/>
-                        <c:if test="${hr.dizziness == true}"><c:set var="hrDizziness" value="Có"/></c:if>
-                        <c:if test="${hr.dizziness == false}"><c:set var="hrDizziness" value="Không"/></c:if>
+                        <c:if test="${hr.dizzinessBoolean eq true}"><c:set var="hrDizziness" value="Có"/></c:if>
+                        <c:if test="${hr.dizzinessBoolean eq false}"><c:set var="hrDizziness" value="Không"/></c:if>
                         <c:set var="hrFatigue" value="${hrEmpty}"/>
-                        <c:if test="${hr.fatigue == true}"><c:set var="hrFatigue" value="Có"/></c:if>
-                        <c:if test="${hr.fatigue == false}"><c:set var="hrFatigue" value="Không"/></c:if>
+                        <c:if test="${hr.fatigueBoolean eq true}"><c:set var="hrFatigue" value="Có"/></c:if>
+                        <c:if test="${hr.fatigueBoolean eq false}"><c:set var="hrFatigue" value="Không"/></c:if>
 
                         <div class="card-header card-header-sub">
                             <h3>Thông tin chung</h3>
@@ -327,7 +298,7 @@
                         <div class="form-container">
                             <div class="form-group">
                                 <label>Người nhập</label>
-                                <input type="text" readonly value="${not empty hr.nhapBoi.hoTen ? hr.nhapBoi.hoTen : 'Chưa có dữ liệu'}">
+                                <input type="text" readonly value="${(hr.nhapBoi != null && not empty hr.nhapBoi.hoTen) ? hr.nhapBoi.hoTen : 'Chưa có dữ liệu'}">
                             </div>
                             <div class="form-group">
                                 <label>Thời gian đo</label>
@@ -676,7 +647,7 @@
                                         <td>
                                             <c:choose>
                                                 <c:when test="${item.ngayKham != null}">
-                                                    ${item.ngayKham.dayOfMonth}/${item.ngayKham.monthValue}/${item.ngayKham.year}
+                                                    <c:out value="${item.ngayKhamDisplay}"/>
                                                 </c:when>
                                                 <c:otherwise>—</c:otherwise>
                                             </c:choose>
@@ -726,6 +697,8 @@
                     </c:otherwise>
                 </c:choose>
             </div>
+
+            </c:if>
 
         </div>
     </main>

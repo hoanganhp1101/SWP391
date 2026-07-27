@@ -71,7 +71,7 @@
             <img src="https://ui-avatars.com/api/?name=${patient.tenBenhNhan}&background=ffffff&color=0d6efd&size=120"
                  class="rounded-circle border border-4 border-white shadow-sm mb-3" alt="Avatar">
             <h2 class="fw-bold mb-1"><c:out value="${patient.tenBenhNhan}" default="Chưa cập nhật tên" /></h2>
-            <p class="mb-0 opacity-75"><i class="fas fa-fingerprint me-1"></i> ID: ${patient.id}</p>
+            <p class="mb-0 opacity-75"><i class="fas fa-id-card me-1"></i> Mã BN: <c:out value="${patient.maBenhNhanDisplay}"/></p>
         </div>
 
         <div class="card-body p-5">
@@ -208,7 +208,7 @@
                 <i class="fas fa-file-medical-alt me-2"></i>Ghi chú lâm sàng
             </h5>
             <div class="alert alert-light border text-muted fst-italic p-4" role="alert">
-                Hồ sơ bệnh nhân đã được liên kết với cơ sở dữ liệu (UUID: ${patient.id}). Các chỉ số đo đường huyết và thông báo AI sẽ được tích hợp vào khu vực này trong các bản cập nhật module tiếp theo.
+                Hồ sơ bệnh nhân đã được liên kết với cơ sở dữ liệu (mã <c:out value="${patient.maBenhNhanDisplay}"/>). Các chỉ số đo đường huyết và thông báo AI sẽ được tích hợp vào khu vực này trong các bản cập nhật module tiếp theo.
             </div>
         </div>
     </div>

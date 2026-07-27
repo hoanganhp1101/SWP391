@@ -88,12 +88,26 @@
             <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách hồ sơ khám bệnh
         </a>
         <div class="export-actions">
-            <a class="btn-export primary"
+            <form method="post" action="${pageContext.request.contextPath}/doctor/patient-records" style="display:inline;">
+                <input type="hidden" name="action" value="share">
+                <input type="hidden" name="id" value="${detailView.recordId}">
+                <button type="submit" class="btn-export primary" title="Tạo PDF và gửi vào Lịch sử khám bệnh của bệnh nhân">
+                    <i class="fa-solid fa-share-from-square"></i> Gửi cho bệnh nhân
+                </button>
+            </form>
+            <a class="btn-export"
                href="${pageContext.request.contextPath}/doctor/record-export-pdf?id=${detailView.recordId}&type=full">
                 <i class="fa-solid fa-file-pdf"></i> Xuất PDF
             </a>
         </div>
     </div>
+
+    <c:if test="${not empty flashSuccess}">
+        <div class="success-banner"><i class="fa-solid fa-circle-check"></i> <c:out value="${flashSuccess}"/></div>
+    </c:if>
+    <c:if test="${not empty flashError}">
+        <div class="alert-banner"><c:out value="${flashError}"/></div>
+    </c:if>
 
     <c:if test="${param.success eq '1'}">
         <div class="success-banner">

@@ -109,18 +109,21 @@
                     <tbody>
                     <c:forEach var="item" items="${list}">
                         <tr>
-                            <td>${fn:escapeXml(item.hoTenBenhNhan)}</td>
+                            <td>
+                                <div><c:out value="${item.hoTenBenhNhan}"/></div>
+                                <div style="font-size:12px;color:#6b7280;">Mã BN: <c:out value="${item.maBenhNhanDisplay}"/></div>
+                            </td>
                             <td>
                                 <c:choose>
                                     <c:when test="${item.mucCanhBao == 'nguy_hiem'}"><span class="badge danger">Nguy hiểm</span></c:when>
                                     <c:when test="${item.mucCanhBao == 'cao'}"><span class="badge high">Cao</span></c:when>
                                     <c:when test="${item.mucCanhBao == 'trung_binh'}"><span class="badge mid">Trung bình</span></c:when>
-                                    <c:otherwise><span class="badge ok">${item.mucCanhBao}</span></c:otherwise>
+                                    <c:otherwise><span class="badge ok"><c:out value="${item.mucCanhBaoLabel}"/></span></c:otherwise>
                                 </c:choose>
                             </td>
-                            <td>${item.diemNguyCo}</td>
-                            <td>${empty item.trangThai ? 'chua_xem' : item.trangThai}</td>
-                            <td>${item.thoiGianPhanTich}</td>
+                            <td><c:out value="${item.diemNguyCo}"/></td>
+                            <td><c:out value="${item.trangThaiLabel}"/></td>
+                            <td><c:out value="${item.thoiGianPhanTichDisplay}"/></td>
                             <td><a href="${pageContext.request.contextPath}/doctor/ai-recommendations?id=${item.id}">Chi tiết</a></td>
                         </tr>
                     </c:forEach>

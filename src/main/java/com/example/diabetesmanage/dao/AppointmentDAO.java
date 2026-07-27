@@ -18,7 +18,8 @@ public class AppointmentDAO {
 
     public List<Appointment> getUpcomingAppointments(String patientId) {
         String sql = "SELECT a.*, u.ho_ten AS bac_si_name " +
-                "FROM appointments a LEFT JOIN doctors u ON a.bac_si_id = u.id " +
+                "FROM appointments a LEFT JOIN doctors d ON a.bac_si_id = d.id "
+                + "LEFT JOIN users u ON d.id = u.id " +
                 "WHERE a.patient_id = ? AND a.trang_thai = 'cho_kham' " +
                 "ORDER BY a.thoi_gian_hen ASC LIMIT 5";
         List<Appointment> list = new ArrayList<>();
@@ -37,7 +38,8 @@ public class AppointmentDAO {
 
     public List<Appointment> getAppointmentsByPatient(String patientId) {
         String sql = "SELECT a.*, u.ho_ten AS bac_si_name " +
-                "FROM appointments a LEFT JOIN doctors u ON a.bac_si_id = u.id " +
+                "FROM appointments a LEFT JOIN doctors d ON a.bac_si_id = d.id "
+                + "LEFT JOIN users u ON d.id = u.id " +
                 "WHERE a.patient_id = ? ORDER BY a.thoi_gian_hen DESC";
         List<Appointment> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
@@ -90,8 +92,9 @@ public class AppointmentDAO {
     }
 
     public List<User> getAvailableDoctors() {
-        String sql = "SELECT id, ho_ten, email, so_dien_thoai, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi, 'bac_si' AS vai_tro " +
-                "FROM doctors WHERE kich_hoat = 1 ORDER BY ho_ten";
+        String sql = "SELECT d.id, u.ho_ten, u.email, u.so_dien_thoai, u.anh_dai_dien, u.kich_hoat, "
+                + "u.ngay_tao, u.ngay_cap_nhat, u.lan_dang_nhap_cuoi, 'bac_si' AS vai_tro "
+                + "FROM doctors d JOIN users u ON d.id = u.id WHERE u.kich_hoat = 1 ORDER BY u.ho_ten";
         List<User> doctors = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -134,13 +137,15 @@ public class AppointmentDAO {
 
     private static final String SELECT_BASE =
             "SELECT a.*, " +
-                    "COALESCE(p.patient_code, LEFT(p.id, 8)) AS patient_code, " +
-                    "p.ho_ten AS patient_name, " +
-                    "bs.ho_ten AS doctor_name, " +
+                    "p.patient_code AS patient_code, " +
+                    "pu.ho_ten AS patient_name, " +
+                    "du.ho_ten AS doctor_name, " +
                     "a.tieu_de AS noi_dung_kham " +
                     "FROM appointments a " +
                     "JOIN patients p ON a.patient_id = p.id " +
+                    "JOIN users pu ON p.id = pu.id " +
                     "LEFT JOIN doctors bs ON a.bac_si_id = bs.id " +
+                    "LEFT JOIN users du ON bs.id = du.id " +
                     "WHERE 1=1 ";
 
     public List<Appointment> findAll(
@@ -164,8 +169,8 @@ public class AppointmentDAO {
         }
         if (hasKeyword) {
             sql.append("AND (a.tieu_de LIKE ? " +
-                    "OR p.ho_ten LIKE ? " +
-                    "OR COALESCE(p.patient_code, LEFT(p.id, 8)) LIKE ?) ");
+                    "OR pu.ho_ten LIKE ? " +
+                    "OR p.patient_code LIKE ?) ");
         }
         sql.append("ORDER BY a.thoi_gian_hen DESC");
 
@@ -238,36 +243,6 @@ public class AppointmentDAO {
         }
     }
 
-    public Appointment findById(String appointmentId, String scopeDoctorId) {
-        if (appointmentId == null || appointmentId.isBlank()) {
-            return null;
-        }
-
-        StringBuilder sql = new StringBuilder(SELECT_BASE + "AND a.id = ? ");
-        if (scopeDoctorId != null) {
-            sql.append("AND (a.bac_si_id = ? OR p.bac_si_id = ?) ");
-        }
-
-        try (
-                Connection con = DBContext.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql.toString())
-        ) {
-            if (con == null) {
-                return null;
-            }
-            int idx = 1;
-            ps.setString(idx++, appointmentId);
-            bindDoctorScope(ps, idx, scopeDoctorId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return map(rs);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     private String buildUpdateSql(String scopeDoctorId) {
         StringBuilder sql = new StringBuilder(
                 "UPDATE appointments a " +
@@ -309,12 +284,7 @@ public class AppointmentDAO {
         a.setId(rs.getString("id"));
         a.setPatientId(rs.getString("patient_id"));
         String patientCode = rs.getString("patient_code");
-        if (patientCode == null || patientCode.isBlank()) {
-            String patientId = rs.getString("patient_id");
-            patientCode = patientId != null && patientId.length() >= 8
-                    ? patientId.substring(0, 8).toUpperCase() : "N/A";
-        }
-        a.setPatientCode(patientCode);
+        a.setPatientCode(patientCode == null || patientCode.isBlank() ? null : patientCode.trim());
         a.setPatientName(rs.getString("patient_name"));
         a.setBacSiId(rs.getString("bac_si_id"));
         a.setDoctorName(rs.getString("doctor_name"));

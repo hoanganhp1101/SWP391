@@ -6,6 +6,7 @@ import java.util.List;
 
 public class HighRiskPatient {
     private String patientId;
+    private String patientCode;
     private String patientName;
     private String email;
     private String phone;
@@ -25,6 +26,14 @@ public class HighRiskPatient {
 
     public String getPatientId() { return patientId; }
     public void setPatientId(String patientId) { this.patientId = patientId; }
+    public String getPatientCode() { return patientCode; }
+    public void setPatientCode(String patientCode) { this.patientCode = patientCode; }
+    public String getMaBenhNhanDisplay() {
+        if (patientCode != null && !patientCode.isBlank()) {
+            return patientCode.trim();
+        }
+        return "—";
+    }
     public String getPatientName() { return patientName; }
     public void setPatientName(String patientName) { this.patientName = patientName; }
     public String getEmail() { return email; }

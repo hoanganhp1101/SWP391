@@ -11,7 +11,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class PatientDAO {
 
@@ -54,11 +53,12 @@ public class PatientDAO {
                     "p.bac_si_id AS assigned_doctor_id, " +
                     "TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS patient_age, " +
                     "p.id AS patient_user_id, " +
-                    "p.ho_ten AS patient_user_name, " +
-                    "p.email AS patient_user_email, " +
-                    "p.so_dien_thoai AS patient_user_phone, " +
+                    "u.ho_ten AS patient_user_name, " +
+                    "u.email AS patient_user_email, " +
+                    "u.so_dien_thoai AS patient_user_phone, " +
                     "doc.id AS doctor_user_id " +
                     "FROM patients p " +
+                    "JOIN users u ON p.id = u.id " +
                     "LEFT JOIN doctors doc ON p.bac_si_id = doc.id " +
                     "WHERE p.id = ? " +
                     "AND (? IS NULL OR doc.id = ?)";
@@ -77,49 +77,34 @@ public class PatientDAO {
     }
 
     public boolean updatePatient(Patient p) {
-        // ĐÃ SỬA: Chỉ update thông tin y khoa vào bảng patients
-        String sqlPatient = "UPDATE patients SET ngay_sinh=?, loai_tieu_duong=?, ho_ten=?, email=?, so_dien_thoai=? WHERE id=?";
+        String sqlPatient = "UPDATE patients SET ngay_sinh=?, loai_tieu_duong=? WHERE id=?";
+        String sqlUser = "UPDATE users SET ho_ten=?, email=?, so_dien_thoai=?, ngay_cap_nhat=NOW() WHERE id=?";
 
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
 
-            try (PreparedStatement psPat = conn.prepareStatement(sqlPatient)) {
+            try (PreparedStatement psPat = conn.prepareStatement(sqlPatient);
+                 PreparedStatement psUser = conn.prepareStatement(sqlUser)) {
 
                 psPat.setDate(1, p.getNgaySinh());
                 psPat.setString(2, p.getLoaiTieuDuong());
-                psPat.setString(3, p.getTenBenhNhan());
-                psPat.setString(4, p.getEmail());
-                psPat.setString(5, p.getSoDienThoai());
-                psPat.setString(6, p.getId());
+                psPat.setString(3, p.getId());
                 psPat.executeUpdate();
+
+                psUser.setString(1, p.getTenBenhNhan() != null ? p.getTenBenhNhan() : p.getHoTen());
+                psUser.setString(2, p.getEmail());
+                psUser.setString(3, p.getSoDienThoai());
+                psUser.setString(4, p.getId());
+                psUser.executeUpdate();
 
                 conn.commit();
                 return true;
             } catch (Exception ex) {
                 conn.rollback();
                 ex.printStackTrace();
+            } finally {
+                conn.setAutoCommit(true);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public boolean addPatient(Patient p) {
-        String patientId = UUID.randomUUID().toString();
-        String sqlPatient = "INSERT INTO patients (id, ho_ten, email, so_dien_thoai, mat_khau_hash, ngay_sinh, loai_tieu_duong) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement psPat = conn.prepareStatement(sqlPatient)) {
-
-            psPat.setString(1, patientId);
-            psPat.setString(2, p.getTenBenhNhan());
-            psPat.setString(3, p.getEmail());
-            psPat.setString(4, p.getSoDienThoai());
-            psPat.setString(5, UserDAO.getInstance().hashSHA256("123456"));
-            psPat.setDate(6, p.getNgaySinh());
-            psPat.setString(7, p.getLoaiTieuDuong());
-            return psPat.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -159,8 +144,8 @@ public class PatientDAO {
     }
 
     public Patient getPatientByIdAdmin(String id) {
-        // ĐÃ SỬA: JOIN với bảng users để lấy các cột ho_ten, email, so_dien_thoai
-        String sql = "SELECT p.* FROM patients p WHERE p.id = ?";
+        String sql = "SELECT p.*, u.ho_ten, u.email, u.so_dien_thoai, u.anh_dai_dien "
+                + "FROM patients p JOIN users u ON p.id = u.id WHERE p.id = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -172,10 +157,12 @@ public class PatientDAO {
                     Patient p = new Patient();
                     p.setId(rs.getString("id"));
                     p.setUserId(rs.getString("id"));
+                    p.setPatientCode(rs.getString("patient_code"));
                     p.setNgaySinh(rs.getDate("ngay_sinh"));
                     p.setLoaiTieuDuong(rs.getString("loai_tieu_duong"));
 
                     p.setTenBenhNhan(rs.getString("ho_ten"));
+                    p.setHoTen(rs.getString("ho_ten"));
                     p.setSoDienThoai(rs.getString("so_dien_thoai"));
                     p.setEmail(rs.getString("email"));
                     return p;
@@ -189,10 +176,13 @@ public class PatientDAO {
 
     public List<Patient> getAllPatients() {
         List<Patient> list = new ArrayList<>();
-        String sql = "SELECT p.*, p.ho_ten AS ten_benh_nhan, doc.ho_ten AS ten_bac_si " +
-                "FROM patients p " +
-                "LEFT JOIN doctors doc ON p.bac_si_id = doc.id " +
-                "ORDER BY p.ngay_cap_nhat DESC";
+        String sql = "SELECT p.*, u.ho_ten AS ten_benh_nhan, u.email, u.so_dien_thoai, u.anh_dai_dien, "
+                + "du.ho_ten AS ten_bac_si "
+                + "FROM patients p "
+                + "JOIN users u ON p.id = u.id "
+                + "LEFT JOIN doctors doc ON p.bac_si_id = doc.id "
+                + "LEFT JOIN users du ON doc.id = du.id "
+                + "ORDER BY p.ngay_cap_nhat DESC";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -202,6 +192,7 @@ public class PatientDAO {
                 Patient p = new Patient();
                 p.setId(rs.getString("id"));
                 p.setUserId(rs.getString("id"));
+                p.setPatientCode(rs.getString("patient_code"));
                 p.setBacSiId(rs.getString("bac_si_id"));
                 p.setNgaySinh(rs.getDate("ngay_sinh"));
                 p.setGioiTinh(rs.getString("gioi_tinh"));
@@ -218,6 +209,7 @@ public class PatientDAO {
                 p.setHoTen(rs.getString("ten_benh_nhan"));
                 p.setEmail(rs.getString("email"));
                 p.setSoDienThoai(rs.getString("so_dien_thoai"));
+                p.setAnhDaiDien(rs.getString("anh_dai_dien"));
                 p.setTenBacSi(rs.getString("ten_bac_si"));
 
                 list.add(p);
@@ -229,7 +221,8 @@ public class PatientDAO {
     }
 
     public Patient getPatientById(String patientId) {
-        String sql = "SELECT p.* FROM patients p WHERE p.id = ?";
+        String sql = "SELECT p.*, u.ho_ten, u.email, u.so_dien_thoai, u.anh_dai_dien "
+                + "FROM patients p JOIN users u ON p.id = u.id WHERE p.id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, patientId);
@@ -238,6 +231,7 @@ public class PatientDAO {
                 Patient p = new Patient();
                 p.setId(rs.getString("id"));
                 p.setUserId(rs.getString("id"));
+                p.setPatientCode(rs.getString("patient_code"));
                 p.setBacSiId(rs.getString("bac_si_id"));
                 p.setNgaySinh(rs.getDate("ngay_sinh"));
                 p.setGioiTinh(rs.getString("gioi_tinh"));
@@ -251,6 +245,7 @@ public class PatientDAO {
                 p.setNhomMau(rs.getString("nhom_mau"));
                 p.setNgayChanDoanTieuDuong(rs.getDate("ngay_chan_doan_tieu_duong"));
                 p.setHoTen(rs.getString("ho_ten"));
+                p.setTenBenhNhan(rs.getString("ho_ten"));
                 p.setEmail(rs.getString("email"));
                 p.setSoDienThoai(rs.getString("so_dien_thoai"));
                 p.setAnhDaiDien(rs.getString("anh_dai_dien"));
@@ -263,23 +258,37 @@ public class PatientDAO {
     }
 
     public boolean updatePatientProfile(Patient p) {
-        String sql = "UPDATE patients SET ho_ten = ?, email = ?, so_dien_thoai = ?, anh_dai_dien = ?, "
-                + "ngay_sinh = ?, gioi_tinh = ?, dia_chi = ?, loai_tieu_duong = ?, "
+        String sqlMedical = "UPDATE patients SET ngay_sinh = ?, gioi_tinh = ?, dia_chi = ?, loai_tieu_duong = ?, "
                 + "tien_su_benh = ?, di_ung = ? WHERE id = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, p.getHoTen());
-            ps.setString(2, p.getEmail());
-            ps.setString(3, p.getSoDienThoai());
-            ps.setString(4, p.getAnhDaiDien());
-            ps.setDate(5, p.getNgaySinh());
-            ps.setString(6, p.getGioiTinh());
-            ps.setString(7, p.getDiaChi());
-            ps.setString(8, p.getLoaiTieuDuong());
-            ps.setString(9, p.getTienSuBenh());
-            ps.setString(10, p.getDiUng());
-            ps.setString(11, p.getId());
-            return ps.executeUpdate() > 0;
+        String sqlUser = "UPDATE users SET ho_ten = ?, email = ?, so_dien_thoai = ?, anh_dai_dien = ?, ngay_cap_nhat = NOW() WHERE id = ?";
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement psM = conn.prepareStatement(sqlMedical);
+                 PreparedStatement psU = conn.prepareStatement(sqlUser)) {
+                psM.setDate(1, p.getNgaySinh());
+                psM.setString(2, p.getGioiTinh());
+                psM.setString(3, p.getDiaChi());
+                psM.setString(4, p.getLoaiTieuDuong());
+                psM.setString(5, p.getTienSuBenh());
+                psM.setString(6, p.getDiUng());
+                psM.setString(7, p.getId());
+                psM.executeUpdate();
+
+                psU.setString(1, p.getHoTen());
+                psU.setString(2, p.getEmail());
+                psU.setString(3, p.getSoDienThoai());
+                psU.setString(4, p.getAnhDaiDien());
+                psU.setString(5, p.getId());
+                psU.executeUpdate();
+
+                conn.commit();
+                return true;
+            } catch (Exception e) {
+                conn.rollback();
+                e.printStackTrace();
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -319,10 +328,32 @@ public class PatientDAO {
     }
 
     /**
-     * Đảm bảo user bệnh nhân có dòng trong {@code patients}.
-     * Tài khoản đăng ký cũ có thể chỉ có {@code users} → login vào dashboard sẽ lỗi.
+     * Đảm bảo user bệnh nhân có dòng trong {@code patients} (cùng UUID).
      */
     public String ensurePatientProfileForUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        String existing = getPatientIdByUserId(userId);
+        if (existing != null) {
+            return existing;
+        }
+        User account = UserDAO.getInstance().getUserById(userId);
+        if (account == null || !"benh_nhan".equalsIgnoreCase(account.getVaiTro())) {
+            return null;
+        }
+        String sql = "INSERT INTO patients (id, patient_code, ngay_sinh, loai_tieu_duong, ngay_tao) "
+                + "VALUES (?, ?, '2000-01-01', 'Type 2', NOW())";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, userId.trim());
+            ps.setString(2, "BN" + userId.trim().replace("-", "").substring(0, Math.min(8, userId.trim().replace("-", "").length())).toUpperCase());
+            if (ps.executeUpdate() > 0) {
+                return userId.trim();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return getPatientIdByUserId(userId);
     }
 
@@ -697,16 +728,6 @@ public class PatientDAO {
             }
             ps.setString(3, patientId.trim());
             return ps.executeUpdate() > 0;
-        }
-    }
-
-    public boolean updateHeightAndWeight(String patientId, double height, double weight)
-            throws SQLException {
-        try (Connection con = DBContext.getConnection()) {
-            if (con == null) {
-                throw new SQLException("Không thể kết nối database");
-            }
-            return updateHeightAndWeight(con, patientId, height, weight);
         }
     }
 }

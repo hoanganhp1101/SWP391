@@ -20,12 +20,14 @@ public class MedicalEncounterDAO {
             "SELECT me.id AS encounter_id, me.patient_id, me.bac_si_id, me.ngay_kham, me.ly_do_kham, "
                     + "me.qua_trinh_benh_ly, me.kham_lam_sang, me.chan_doan_chinh, me.chan_doan_phu, me.huong_xu_tri, "
                     + "me.ngay_tao, me.encounter_code, "
-                    + "p.patient_code, p.ho_ten AS patient_name, bs.ho_ten AS doctor_name ";
+                    + "p.patient_code, pu.ho_ten AS patient_name, du.ho_ten AS doctor_name ";
 
     private static final String ENCOUNTER_FROM =
             "FROM medical_encounters me " +
                     "JOIN patients p ON me.patient_id = p.id " +
-                    "LEFT JOIN doctors bs ON me.bac_si_id = bs.id ";
+                    "JOIN users pu ON p.id = pu.id " +
+                    "LEFT JOIN doctors bs ON me.bac_si_id = bs.id " +
+                    "LEFT JOIN users du ON bs.id = du.id ";
 
     public List<MedicalEncounter> searchEncounters(
             String scopeDoctorId, String startDate, String endDate,
@@ -45,7 +47,7 @@ public class MedicalEncounterDAO {
             sql.append("AND DATE(me.ngay_kham) BETWEEN ? AND ? ");
         }
         if (hasKeyword) {
-            sql.append("AND (me.encounter_code LIKE ? OR p.patient_code LIKE ? OR p.ho_ten LIKE ? " +
+            sql.append("AND (me.encounter_code LIKE ? OR p.patient_code LIKE ? OR pu.ho_ten LIKE ? " +
                     "OR me.ly_do_kham LIKE ? OR me.chan_doan_chinh LIKE ?) ");
         }
         sql.append("ORDER BY me.ngay_kham DESC, me.ngay_tao DESC, me.id DESC");

@@ -148,6 +148,7 @@
                                     <img src="https://ui-avatars.com/api/?name=${p.patientName}&background=random&color=fff" class="rounded-circle" width="36" height="36" alt="${p.patientName}">
                                     <div>
                                         <div class="fw-bold text-dark" style="font-size:0.9rem;"><c:out value="${p.patientName}"/></div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Mã BN: <c:out value="${p.maBenhNhanDisplay}"/></div>
                                         <div class="text-muted" style="font-size:0.75rem;"><c:out value="${p.diabetesType}" default="Chưa rõ tuýp"/></div>
                                         <div class="text-muted" style="font-size:0.75rem;">
                                             <i class="fas fa-user-md me-1"></i><c:out value="${p.doctorName}" default="Chưa phân công"/>
