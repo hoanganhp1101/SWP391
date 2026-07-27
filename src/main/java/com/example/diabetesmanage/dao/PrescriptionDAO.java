@@ -24,6 +24,12 @@ public class PrescriptionDAO {
                 "INSERT INTO prescriptions (id, patient_id, bac_si_id, chan_doan, ghi_chu) VALUES (?, ?, ?, ?, ?)";
         String insertDetailSQL =
                 "INSERT INTO prescription_details (id, prescription_id, medication_id, lieu_luong, tan_suat) VALUES (?, ?, ?, ?, ?)";
+        // Ghi song song vào bảng medications (nguồn checklist tuân thủ của bệnh nhân)
+        // để đơn kê từ admin đi cùng luồng với đơn của bác sĩ.
+        String insertMedicationSQL =
+                "INSERT INTO medications (id, prescription_id, ten_thuoc, hoat_chat, lieu_luong, don_vi, tan_suat) " +
+                "SELECT ?, ?, mm.ten_thuoc, mm.hoat_chat, ?, mm.don_vi_tinh, ? " +
+                "FROM master_medications mm WHERE mm.id = ?";
 
         try (Connection conn = DBContext.getConnection()) {
             if (conn == null) {
@@ -32,7 +38,8 @@ public class PrescriptionDAO {
             conn.setAutoCommit(false);
 
             try (PreparedStatement psPrescription = conn.prepareStatement(insertPrescriptionSQL);
-                 PreparedStatement psDetail = conn.prepareStatement(insertDetailSQL)) {
+                 PreparedStatement psDetail = conn.prepareStatement(insertDetailSQL);
+                 PreparedStatement psMedication = conn.prepareStatement(insertMedicationSQL)) {
 
                 String prescriptionId = UUID.randomUUID().toString();
                 String chanDoan = prescription.getChanDoan();
@@ -54,9 +61,17 @@ public class PrescriptionDAO {
                     psDetail.setString(4, detail.getLieuLuong());
                     psDetail.setString(5, detail.getTanSuat());
                     psDetail.addBatch();
+
+                    psMedication.setString(1, UUID.randomUUID().toString());
+                    psMedication.setString(2, prescriptionId);
+                    psMedication.setString(3, detail.getLieuLuong());
+                    psMedication.setString(4, detail.getTanSuat());
+                    psMedication.setString(5, detail.getMedicationId());
+                    psMedication.addBatch();
                 }
 
                 psDetail.executeBatch();
+                psMedication.executeBatch();
                 conn.commit();
                 return true;
 

@@ -38,15 +38,16 @@ public class DangerousPatientService {
     private static final int MAX_GEMINI_CANDIDATES = 15;
     private static final int DISPLAY_LIMIT = 20;
 
-    private static final double GLUCOSE_LOW = 70;
-    private static final double GLUCOSE_HIGH = 180;
-    private static final double GLUCOSE_CRITICAL = 250;
-    private static final double HBA1C_HIGH = 7.0;
-    private static final double HBA1C_CRITICAL = 9.0;
-    private static final double BMI_HIGH = 30;
-    private static final int BP_SYSTOLIC_HIGH = 140;
-    private static final int BP_DIASTOLIC_HIGH = 90;
-    private static final int MONITORING_GAP_DAYS = 7;
+    // Ngưỡng lâm sàng lấy từ nguồn dùng chung để đồng bộ với pipeline alerts
+    private static final double GLUCOSE_LOW = ClinicalRiskService.GLUCOSE_LOW_MGDL;
+    private static final double GLUCOSE_HIGH = ClinicalRiskService.GLUCOSE_HIGH_MGDL;
+    private static final double GLUCOSE_CRITICAL = ClinicalRiskService.GLUCOSE_CRITICAL_MGDL;
+    private static final double HBA1C_HIGH = ClinicalRiskService.HBA1C_HIGH;
+    private static final double HBA1C_CRITICAL = ClinicalRiskService.HBA1C_CRITICAL;
+    private static final double BMI_HIGH = ClinicalRiskService.BMI_HIGH;
+    private static final int BP_SYSTOLIC_HIGH = ClinicalRiskService.BP_SYS_WATCH;
+    private static final int BP_DIASTOLIC_HIGH = ClinicalRiskService.BP_DIA_WATCH;
+    private static final int MONITORING_GAP_DAYS = ClinicalRiskService.MONITORING_GAP_DAYS;
     private final HealthRecordDAO healthRecordDAO = new HealthRecordDAO();
     private final LabResultDAO labResultDAO = new LabResultDAO();
 
@@ -405,7 +406,7 @@ public class DangerousPatientService {
 
         profile.setRiskReasons(deduplicateReasons(reasons));
         profile.setRiskScore(score);
-        profile.setCritical(critical || score >= 85);
+        profile.setCritical(critical || score >= ClinicalRiskService.SCORE_DANGER);
     }
 
     private boolean hasRisingGlucoseTrend(List<HealthRecord> sorted) {
@@ -544,10 +545,10 @@ public class DangerousPatientService {
     }
 
     private static String resolveRiskLevel(HighRiskPatientDTO profile) {
-        if (profile.isCritical() || profile.getRiskScore() >= 85) {
+        if (profile.isCritical() || profile.getRiskScore() >= ClinicalRiskService.SCORE_DANGER) {
             return "critical";
         }
-        if (profile.getRiskScore() >= 55) {
+        if (profile.getRiskScore() >= ClinicalRiskService.SCORE_HIGH) {
             return "high";
         }
         return "medium";
@@ -599,7 +600,7 @@ public class DangerousPatientService {
             double glucose = latest.getDuongHuyetMgdl();
             String label = glucose >= GLUCOSE_CRITICAL ? "Đường huyết rất cao"
                     : glucose >= GLUCOSE_HIGH ? "Đường huyết cao"
-                    : glucose < 70 ? "Đường huyết thấp"
+                    : glucose < GLUCOSE_LOW ? "Đường huyết thấp"
                     : "Đường huyết";
             tags.add(metricTag(
                     label,
@@ -628,7 +629,7 @@ public class DangerousPatientService {
             ));
         }
 
-        if (latest.getBmi() != null && latest.getBmi() >= 30) {
+        if (latest.getBmi() != null && latest.getBmi() >= BMI_HIGH) {
             tags.add(metricTag(
                     "BMI cao",
                     String.format("%.1f", latest.getBmi()),

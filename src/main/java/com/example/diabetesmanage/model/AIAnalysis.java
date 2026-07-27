@@ -16,6 +16,11 @@ public class AIAnalysis {
     private String modelVersion;
     private Timestamp thoiGianPhanTich;
     private Integer tokensSuDung;
+    /** Workflow bác sĩ: chua_xem | da_xem | da_ap_dung | bo_qua */
+    private String trangThai;
+    private String ghiChuBs;
+    private String xuLyBoi;
+    private String hoTenBenhNhan;
 
     public AIAnalysis() {}
 
@@ -57,4 +62,16 @@ public class AIAnalysis {
 
     public Integer getTokensSuDung() { return tokensSuDung; }
     public void setTokensSuDung(Integer tokensSuDung) { this.tokensSuDung = tokensSuDung; }
+
+    public String getTrangThai() { return trangThai; }
+    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+
+    public String getGhiChuBs() { return ghiChuBs; }
+    public void setGhiChuBs(String ghiChuBs) { this.ghiChuBs = ghiChuBs; }
+
+    public String getXuLyBoi() { return xuLyBoi; }
+    public void setXuLyBoi(String xuLyBoi) { this.xuLyBoi = xuLyBoi; }
+
+    public String getHoTenBenhNhan() { return hoTenBenhNhan; }
+    public void setHoTenBenhNhan(String hoTenBenhNhan) { this.hoTenBenhNhan = hoTenBenhNhan; }
 }

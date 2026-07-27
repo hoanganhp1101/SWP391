@@ -33,6 +33,18 @@
             <span>Cảnh báo khẩn cấp</span>
         </a>
 
+        <a href="${ctx}/doctor/ai-recommendations"
+           class="menu-item ${activeMenu == 'ai-recommendations' ? 'active' : ''}">
+            <i class="fa-solid fa-robot"></i>
+            <span>Khuyến nghị AI</span>
+        </a>
+
+        <a href="${ctx}/doctor/threshold-settings"
+           class="menu-item ${activeMenu == 'threshold-settings' ? 'active' : ''}">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Ngưỡng giám sát</span>
+        </a>
+
         <a href="${ctx}/doctor/patient-records"
            class="menu-item ${activeMenu == 'records' ? 'active' : ''}">
             <i class="fa-regular fa-clipboard"></i>

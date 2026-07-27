@@ -1,7 +1,10 @@
 package com.example.diabetesmanage.controller.doctor;
 
+import com.example.diabetesmanage.dao.AlertScanDAO;
 import com.example.diabetesmanage.dao.DoctorAlertDAO;
+import com.example.diabetesmanage.dao.ThresholdSettingsDAO;
 import com.example.diabetesmanage.model.DoctorAlert;
+import com.example.diabetesmanage.model.ThresholdSettings;
 import com.example.diabetesmanage.model.User;
 import com.example.diabetesmanage.util.AuthContext;
 import com.example.diabetesmanage.util.DoctorLayoutHelper;
@@ -32,6 +35,14 @@ public class DoctorAlertsController extends HttpServlet {
             return;
         }
         String doctorId = user.getId();
+
+        // Quét bổ sung cảnh báo trước khi đọc danh sách; lỗi quét không chặn trang.
+        try {
+            ThresholdSettings thresholds = new ThresholdSettingsDAO().getForDoctor(doctorId);
+            new AlertScanDAO().scanAndCreateAlerts(doctorId, thresholds);
+        } catch (Exception e) {
+            System.err.println("Không thể quét cảnh báo khi mở trang: " + e.getMessage());
+        }
 
         String severity = getFilterValue(request, "severity");
         String status = getFilterValue(request, "status");

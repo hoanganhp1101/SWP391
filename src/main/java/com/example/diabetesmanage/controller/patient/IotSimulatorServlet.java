@@ -1,13 +1,11 @@
 package com.example.diabetesmanage.controller.patient;
 
-import com.example.diabetesmanage.dao.AIAnalysisDAO;
-import com.example.diabetesmanage.dao.AlertDAO;
 import com.example.diabetesmanage.dao.HealthRecordDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.model.AIAnalysis;
-import com.example.diabetesmanage.model.Alert;
 import com.example.diabetesmanage.model.HealthRecord;
 import com.example.diabetesmanage.model.Patient;
+import com.example.diabetesmanage.service.ClinicalRiskService;
 import com.example.diabetesmanage.service.GeminiService;
 import com.example.diabetesmanage.service.IotSimulatorService;
 import com.example.diabetesmanage.util.PatientPortalAuth;
@@ -28,7 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Trang mô phỏng IoT đo chỉ số + API measure/save/history.
@@ -171,19 +168,8 @@ public class IotSimulatorServlet extends HttpServlet {
                 Patient patient = new PatientDAO().getPatientById(patientId);
                 analysis = new GeminiService().analyzeHealthData(record, patient);
                 if (analysis != null) {
-                    new AIAnalysisDAO().insertAnalysis(analysis);
-                    String muc = analysis.getMucCanhBao();
-                    if ("cao".equals(muc) || "nguy_hiem".equals(muc)) {
-                        Alert alert = new Alert();
-                        alert.setId(UUID.randomUUID().toString());
-                        alert.setPatientId(patientId);
-                        alert.setAiAnalysisId(analysis.getId());
-                        alert.setLoaiCanhBao(resolveAlertType(record));
-                        alert.setMucDo(muc);
-                        alert.setTieuDe("AI phát hiện chỉ số bất thường từ IoT mô phỏng");
-                        alert.setNoiDung(analysis.getPhanTichChiTiet());
-                        new AlertDAO().insertAlert(alert);
-                    }
+                    // Pipeline chung: áp rule động, lưu ai_analysis, tạo alert nếu cần
+                    ClinicalRiskService.applyRulesAndPersist(patientId, record, analysis);
                 }
             } catch (Exception aiEx) {
                 System.err.println("[IotSimulatorServlet] AI analysis skipped: " + aiEx.getMessage());
@@ -269,13 +255,4 @@ public class IotSimulatorServlet extends HttpServlet {
         }
     }
 
-    private static String resolveAlertType(HealthRecord record) {
-        if (record.getDuongHuyetMgdl() != null && record.getDuongHuyetMgdl() > 180) {
-            return "duong_huyet_cao";
-        }
-        if (record.getHuyetApTamThu() != null && record.getHuyetApTamThu() >= 140) {
-            return "xu_huong_tang";
-        }
-        return "xu_huong_tang";
-    }
 }

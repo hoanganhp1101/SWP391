@@ -1,5 +1,6 @@
 package com.example.diabetesmanage.controller.doctor;
 
+import com.example.diabetesmanage.dao.DoctorAlertDAO;
 import com.example.diabetesmanage.dao.DoctorDashboardDAO;
 import com.example.diabetesmanage.dao.PatientDAO;
 import com.example.diabetesmanage.dto.HighRiskPatientDTO;
@@ -25,6 +26,7 @@ import java.util.List;
 public class DoctorDashboardController extends HttpServlet {
 
     private final DoctorDashboardDAO dashboardDAO = new DoctorDashboardDAO();
+    private final DoctorAlertDAO doctorAlertDAO = new DoctorAlertDAO();
     private final DangerousPatientService dangerousPatientService = new DangerousPatientService();
     private final PatientDAO patientDAO = new PatientDAO();
 
@@ -45,18 +47,16 @@ public class DoctorDashboardController extends HttpServlet {
             stats = new DashboardSummaryDTO();
         }
 
+        // KPI cảnh báo đọc từ bảng alerts (cùng nguồn với trang /doctor/alerts)
+        // để dashboard và hộp thư cảnh báo luôn khớp số liệu.
+        stats.setActiveAlerts(doctorAlertDAO.countAlerts(null, "unread", null, null, doctorId));
+        stats.setPriorityLevel1Count(doctorAlertDAO.countAlerts("danger", "unread", null, null, doctorId));
+
+        // Phân tích AI bệnh nhân nguy hiểm chỉ dùng để làm giàu danh sách khẩn cấp,
+        // không ghi đè KPI cảnh báo.
         AnalysisResult analysisResult =
                 dangerousPatientService.analyzeDangerousPatients(doctorId);
-
         List<CriticalPatientAlertDTO> dangerousPatients = analysisResult.getDangerousPatients();
-        long criticalCount = dangerousPatients.stream()
-                .filter(CriticalPatientAlertDTO::isCritical)
-                .count();
-
-        stats.setPriorityLevel1Count((int) criticalCount);
-        if (analysisResult.getTotalDangerousCount() > 0) {
-            stats.setActiveAlerts(analysisResult.getTotalDangerousCount());
-        }
 
         DoctorLayoutHelper.prepare(request, doctor, "dashboard");
         request.setAttribute("stats", stats);

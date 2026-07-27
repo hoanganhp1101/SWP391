@@ -467,7 +467,7 @@
                 </div>
                 <div class="field">
                     <label for="keyword">Tìm kiếm</label>
-                    <input id="keyword" type="search" name="keyword" value="${fn:escapeXml(keyword)}" placeholder="Tên hoặc mã bệnh nhân">
+                    <input id="keyword" type="search" name="keyword" value="${fn:escapeXml(keyword)}" placeholder="Tên, SĐT hoặc mã bệnh nhân">
                 </div>
                 <button class="btn btn-primary" type="submit">Lọc</button>
                 <a class="btn btn-secondary" href="${pageContext.request.contextPath}/doctor/alerts">Xóa lọc</a>

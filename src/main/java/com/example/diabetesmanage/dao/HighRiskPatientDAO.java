@@ -2,6 +2,7 @@ package com.example.diabetesmanage.dao;
 
 import com.example.diabetesmanage.model.HighRiskPatient;
 import com.example.diabetesmanage.context.DBContext;
+import com.example.diabetesmanage.service.ClinicalRiskService;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -97,30 +98,27 @@ public class HighRiskPatientDAO {
     void calculateRisk(HighRiskPatient patient) {
         int score = 0;
 
+        // Ngưỡng lấy từ ClinicalRiskService để đồng bộ với pipeline alerts
+        // và bảng xếp hạng nguy hiểm phía bác sĩ.
         Double glucose = patient.getLatestGlucose();
         if (glucose == null) {
             score += 15;
             patient.getRiskReasons().add("Chưa có dữ liệu đường huyết");
-        } else if (glucose >= 300 || glucose <= 54) {
+        } else if (glucose >= ClinicalRiskService.GLUCOSE_CRITICAL_MGDL
+                || glucose <= ClinicalRiskService.GLUCOSE_LOW_MGDL) {
             score += 50;
             patient.getRiskReasons().add("Đường huyết ở ngưỡng nguy hiểm: " + formatNumber(glucose) + " mg/dL");
-        } else if (glucose >= 250 || glucose <= 70) {
-            score += 35;
-            patient.getRiskReasons().add("Đường huyết bất thường: " + formatNumber(glucose) + " mg/dL");
-        } else if (glucose >= 180) {
+        } else if (glucose >= ClinicalRiskService.GLUCOSE_HIGH_MGDL) {
             score += 20;
             patient.getRiskReasons().add("Đường huyết cao: " + formatNumber(glucose) + " mg/dL");
         }
 
         Double hba1c = patient.getLatestHba1c();
         if (hba1c != null) {
-            if (hba1c >= 9) {
+            if (hba1c >= ClinicalRiskService.HBA1C_CRITICAL) {
                 score += 35;
                 patient.getRiskReasons().add("HbA1c rất cao: " + formatNumber(hba1c) + "%");
-            } else if (hba1c >= 8) {
-                score += 25;
-                patient.getRiskReasons().add("HbA1c cao: " + formatNumber(hba1c) + "%");
-            } else if (hba1c >= 7) {
+            } else if (hba1c >= ClinicalRiskService.HBA1C_HIGH) {
                 score += 15;
                 patient.getRiskReasons().add("HbA1c cần theo dõi: " + formatNumber(hba1c) + "%");
             }
@@ -129,13 +127,12 @@ public class HighRiskPatientDAO {
         Integer systolic = patient.getSystolicBloodPressure();
         Integer diastolic = patient.getDiastolicBloodPressure();
         if (systolic != null && diastolic != null) {
-            if (systolic >= 180 || diastolic >= 120) {
+            if (systolic >= ClinicalRiskService.BP_SYS_DANGER
+                    || diastolic >= ClinicalRiskService.BP_DIA_DANGER) {
                 score += 35;
                 patient.getRiskReasons().add("Huyết áp nguy hiểm: " + systolic + "/" + diastolic + " mmHg");
-            } else if (systolic >= 160 || diastolic >= 100) {
-                score += 25;
-                patient.getRiskReasons().add("Huyết áp cao: " + systolic + "/" + diastolic + " mmHg");
-            } else if (systolic >= 140 || diastolic >= 90) {
+            } else if (systolic >= ClinicalRiskService.BP_SYS_WATCH
+                    || diastolic >= ClinicalRiskService.BP_DIA_WATCH) {
                 score += 15;
                 patient.getRiskReasons().add("Huyết áp cần theo dõi: " + systolic + "/" + diastolic + " mmHg");
             }
@@ -143,10 +140,10 @@ public class HighRiskPatientDAO {
 
         Double bmi = patient.getBmi();
         if (bmi != null) {
-            if (bmi >= 30) {
+            if (bmi >= ClinicalRiskService.BMI_HIGH) {
                 score += 15;
                 patient.getRiskReasons().add("BMI cao: " + formatNumber(bmi));
-            } else if (bmi >= 25) {
+            } else if (bmi >= ClinicalRiskService.BMI_OVERWEIGHT) {
                 score += 8;
                 patient.getRiskReasons().add("BMI vượt chuẩn: " + formatNumber(bmi));
             }
@@ -180,20 +177,12 @@ public class HighRiskPatientDAO {
         }
 
         long days = Duration.between(lastMeasurementTime.toInstant(), Instant.now()).toDays();
-        return days > 7;
+        return days > ClinicalRiskService.MONITORING_GAP_DAYS;
     }
 
     private String resolveRiskLevel(int score) {
-        if (score >= 75) {
-            return "critical";
-        }
-        if (score >= 50) {
-            return "high";
-        }
-        if (score >= 25) {
-            return "medium";
-        }
-        return "low";
+        // Thang chung critical/high/medium/low — khớp với phía bác sĩ
+        return ClinicalRiskService.resolveRiskLevel(score);
     }
 
     private Double getNullableDouble(ResultSet rs, String column) throws Exception {

@@ -38,9 +38,15 @@ public class PrescriptionController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String patientId = request.getParameter("patientId");
 
-        // Cần truyền thông tin bệnh nhân và danh sách thuốc sang giao diện
-        // Patient patient = patientDAO.getPatientById(patientId); // Nếu bạn có hàm này
+        // Đơn thuốc phải gắn với bác sĩ phụ trách (patients.bac_si_id).
+        // Chưa gán bác sĩ thì điều hướng admin sang trang gán trước khi kê đơn.
+        Patient patient = requireAssignedPatient(patientId, response, request);
+        if (patient == null) {
+            return;
+        }
+
         request.setAttribute("patientId", patientId);
+        request.setAttribute("patient", patient);
 
         List<MasterMedication> medList = medicationDAO.getAllMedications();
         request.setAttribute("medList", medList);
@@ -51,27 +57,26 @@ public class PrescriptionController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
+        // Auth đã được AdminSecurityFilter bảo vệ (/admin/*).
+        // Chỉ cần xác nhận có session admin để tránh NPE; redirect thống nhất về "/".
         HttpSession session = request.getSession(false);
-        User loginUser = null;
-        if (session != null) {
-            Object value = session.getAttribute("loginUser");
-            if (!(value instanceof User)) {
-                value = session.getAttribute("adminUser");
-            }
-            if (!(value instanceof User)) {
-                value = session.getAttribute("user");
-            }
-            if (value instanceof User) {
-                loginUser = (User) value;
-            }
-        }
-        if (loginUser == null) {
-            response.sendRedirect(request.getContextPath() + "/admin/login");
+        if (session == null
+                || (!(session.getAttribute("adminUser") instanceof User)
+                && !(session.getAttribute("loginUser") instanceof User)
+                && !(session.getAttribute("user") instanceof User))) {
+            response.sendRedirect(request.getContextPath() + "/");
             return;
         }
 
         String patientId = request.getParameter("patientId");
         String ghiChu = request.getParameter("ghiChu");
+
+        // Đơn thuốc luôn đứng tên bác sĩ phụ trách để bác sĩ và bệnh nhân
+        // nhìn thấy cùng một luồng kê đơn (không dùng id của admin).
+        Patient patient = requireAssignedPatient(patientId, response, request);
+        if (patient == null) {
+            return;
+        }
 
         // Nhận mảng dữ liệu từ form do người dùng có thể thêm nhiều loại thuốc
         String[] medicationIds = request.getParameterValues("medicationId[]");
@@ -81,7 +86,7 @@ public class PrescriptionController extends HttpServlet {
         if (medicationIds != null && medicationIds.length > 0) {
             Prescription prescription = new Prescription();
             prescription.setPatientId(patientId);
-            prescription.setBacSiId(loginUser.getId());
+            prescription.setBacSiId(patient.getBacSiId());
             if (ghiChu != null) {
                 prescription.setGhiChu(ghiChu.trim());
             }
@@ -94,6 +99,27 @@ public class PrescriptionController extends HttpServlet {
 
         // Kê xong thì quay lại danh sách bệnh nhân
         response.sendRedirect(request.getContextPath() + "/patient-manager");
+    }
+
+    /**
+     * Trả về bệnh nhân nếu đã có bác sĩ phụ trách; ngược lại điều hướng:
+     * không tìm thấy bệnh nhân → danh sách bệnh nhân, chưa gán bác sĩ → trang gán bác sĩ.
+     */
+    private Patient requireAssignedPatient(String patientId, HttpServletResponse response,
+                                           HttpServletRequest request) throws IOException {
+        Patient patient = (patientId == null || patientId.isBlank())
+                ? null
+                : patientDAO.getPatientById(patientId);
+        if (patient == null) {
+            response.sendRedirect(request.getContextPath() + "/patient-manager");
+            return null;
+        }
+        if (patient.getBacSiId() == null || patient.getBacSiId().isBlank()) {
+            response.sendRedirect(request.getContextPath()
+                    + "/admin/patient-assignments?missingDoctor=" + patientId);
+            return null;
+        }
+        return patient;
     }
 
     /**

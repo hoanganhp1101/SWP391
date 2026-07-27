@@ -107,40 +107,17 @@ public class PatientMobileApiServlet extends HttpServlet {
                 
                 if (latestAI == null && comprehensiveRecord != null && comprehensiveRecord.getThoiGianDo() != null) {
                     try {
-                        com.example.diabetesmanage.service.GeminiService geminiService = new com.example.diabetesmanage.service.GeminiService();
+                        com.example.diabetesmanage.service.GeminiService geminiService =
+                                new com.example.diabetesmanage.service.GeminiService();
                         latestAI = geminiService.analyzeHealthData(comprehensiveRecord, patientInfo);
                         if (latestAI != null && !latestAI.getModelVersion().startsWith("ERROR")) {
                             latestAI.setHealthRecordId(null); // aggregate comprehensive analysis
-                            aiAnalysisDAO.insertAnalysis(latestAI);
-                            
-                            // If the warning level is high, also insert an Alert
-                            String mucCanhBao = latestAI.getMucCanhBao();
-                            if ("cao".equals(mucCanhBao) || "nguy_hiem".equals(mucCanhBao)) {
-                                com.example.diabetesmanage.model.Alert alert = new com.example.diabetesmanage.model.Alert();
-                                alert.setId(java.util.UUID.randomUUID().toString());
-                                alert.setPatientId(patientId);
-                                alert.setAiAnalysisId(latestAI.getId());
-                                
-                                String loaiCanhBao = "xu_huong_tang";
-                                if (comprehensiveRecord.getDuongHuyetMgdl() != null && comprehensiveRecord.getDuongHuyetMgdl() > 180) {
-                                    loaiCanhBao = "duong_huyet_cao";
-                                }
-                                alert.setLoaiCanhBao(loaiCanhBao);
-                                alert.setMucDo(mucCanhBao);
-                                
-                                if ("nguy_hiem".equals(mucCanhBao)) {
-                                    alert.setTieuDe("🚨 [RED FLAG] CẢNH BÁO Y TẾ KHẨN CẤP");
-                                } else {
-                                    alert.setTieuDe("⚠️ AI phát hiện chỉ số bất thường");
-                                }
-                                alert.setNoiDung(latestAI.getPhanTichChiTiet());
-                                
-                                alertDAO.insertAlert(alert);
-                                
-                                // Re-fetch recent alerts to include the new one
-                                recentAlerts = alertDAO.getRecentAlerts(patientId);
-                                responseData.put("recentAlerts", recentAlerts);
-                            }
+                            // Pipeline chung: áp ngưỡng bác sĩ + tạo alert nếu cần
+                            com.example.diabetesmanage.service.ClinicalRiskService
+                                    .applyRulesAndPersist(patientId, comprehensiveRecord, latestAI);
+
+                            recentAlerts = alertDAO.getRecentAlerts(patientId);
+                            responseData.put("recentAlerts", recentAlerts);
                         }
                     } catch (Exception e) {
                         System.err.println("[PatientMobileApiServlet] Failed to run on-the-fly AI analysis: " + e.getMessage());

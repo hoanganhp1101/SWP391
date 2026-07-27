@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS medications;
 DROP TABLE IF EXISTS prescriptions;
 DROP TABLE IF EXISTS alerts;
 DROP TABLE IF EXISTS ai_analysis;
+DROP TABLE IF EXISTS threshold_settings;
 DROP TABLE IF EXISTS health_records;
 DROP TABLE IF EXISTS lab_results;
 DROP TABLE IF EXISTS medical_encounters;
@@ -213,9 +214,33 @@ CREATE TABLE ai_analysis (
     model_version           VARCHAR(50)     DEFAULT 'claude-sonnet-4-20250514',
     thoi_gian_phan_tich     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     tokens_su_dung          INT             DEFAULT NULL,
+    trang_thai              VARCHAR(30)     NOT NULL DEFAULT 'chua_xem'
+                            COMMENT 'chua_xem|da_xem|da_ap_dung|bo_qua — workflow bác sĩ',
+    ghi_chu_bs              TEXT            DEFAULT NULL,
+    xu_ly_boi               CHAR(36)        DEFAULT NULL,
     PRIMARY KEY (id),
+    INDEX idx_ai_patient_time (patient_id, thoi_gian_phan_tich),
+    INDEX idx_ai_status (trang_thai),
     CONSTRAINT fk_ai_patient    FOREIGN KEY (patient_id)       REFERENCES patients(id)      ON DELETE CASCADE,
-    CONSTRAINT fk_ai_hr         FOREIGN KEY (health_record_id) REFERENCES health_records(id) ON DELETE SET NULL
+    CONSTRAINT fk_ai_hr         FOREIGN KEY (health_record_id) REFERENCES health_records(id) ON DELETE SET NULL,
+    CONSTRAINT fk_ai_xu_ly      FOREIGN KEY (xu_ly_boi)        REFERENCES users(id)         ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Ngưỡng giám sát riêng theo bác sĩ (port từ doctor-alert)
+CREATE TABLE threshold_settings (
+    id               CHAR(36)        NOT NULL DEFAULT (UUID()),
+    bac_si_id        CHAR(36)        NOT NULL,
+    glucose_low      INT             NOT NULL DEFAULT 70,
+    glucose_high     INT             NOT NULL DEFAULT 180,
+    glucose_danger   INT             NOT NULL DEFAULT 250,
+    hba1c_target     DECIMAL(4,2)    NOT NULL DEFAULT 7.00,
+    hba1c_poor       DECIMAL(4,2)    NOT NULL DEFAULT 9.00,
+    days_no_measure  INT             NOT NULL DEFAULT 7,
+    ngay_cap_nhat    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_threshold_bac_si (bac_si_id),
+    CONSTRAINT fk_threshold_bac_si FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

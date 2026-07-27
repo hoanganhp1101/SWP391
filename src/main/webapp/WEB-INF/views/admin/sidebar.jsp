@@ -29,6 +29,7 @@
         <li><a href="${pageContext.request.contextPath}/dashboard" class="${param.activeMenu == 'dashboard' ? 'active' : ''}"><i class="fas fa-th-large"></i> Tổng quan</a></li>
         <li><a href="${pageContext.request.contextPath}/admin/users" class="${param.activeMenu == 'users' ? 'active' : ''}"><i class="fas fa-users-cog"></i> Quản lý người dùng</a></li>
         <li><a href="${pageContext.request.contextPath}/patient-manager" class="${param.activeMenu == 'patients' ? 'active' : ''}"><i class="fas fa-user-injured"></i> Danh sách bệnh nhân</a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/patient-assignments" class="${param.activeMenu == 'assignments' ? 'active' : ''}"><i class="fas fa-user-md"></i> Gán bác sĩ phụ trách</a></li>
         <li><a href="${pageContext.request.contextPath}/admin/high-risk-patients" class="${param.activeMenu == 'high-risk-patients' ? 'active' : ''}"><i class="fas fa-triangle-exclamation"></i> Bệnh nhân nguy cơ cao</a></li>
         <li><a href="${pageContext.request.contextPath}/admin/reports" class="${param.activeMenu == 'reports' ? 'active' : ''}"><i class="fas fa-chart-line"></i> Báo cáo hệ thống</a></li>
         <li><a href="${pageContext.request.contextPath}/admin/core-medical-data" class="${param.activeMenu == 'core-medical-data' ? 'active' : ''}"><i class="fas fa-database"></i> Dữ liệu y khoa lõi</a></li>

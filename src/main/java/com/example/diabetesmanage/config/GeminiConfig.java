@@ -17,16 +17,16 @@ public class GeminiConfig {
         Properties props = loadProperties();
         propertiesFileFound = props.getProperty("_loaded", "false").equals("true");
 
-        String envKey = firstNonBlank(
+        String envKey = sanitizeApiKey(firstNonBlank(
                 System.getenv("GEMINI_API_KEY"),
                 System.getenv("GOOGLE_API_KEY")
-        );
-        String fileKey = props.getProperty("gemini.api.key", "").trim();
+        ));
+        String fileKey = sanitizeApiKey(props.getProperty("gemini.api.key", ""));
 
         if (envKey != null) {
             apiKey = envKey;
             configSource = "environment";
-        } else if (!fileKey.isBlank()) {
+        } else if (fileKey != null) {
             apiKey = fileKey;
             configSource = "gemini.properties";
         } else {
@@ -35,7 +35,27 @@ public class GeminiConfig {
         }
 
         model = props.getProperty("gemini.model", "gemini-flash-lite-latest").trim();
-        configured = !apiKey.isBlank() && !apiKey.equals("YOUR_API_KEY_HERE");
+        configured = !apiKey.isBlank();
+    }
+
+    /**
+     * Bỏ khoảng trắng / dấu ngoặc; từ chối placeholder hoặc key dính
+     * "YOUR_API_KEY_HERE..." (thường xảy ra khi paste đè lên mẫu).
+     */
+    static String sanitizeApiKey(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String key = raw.trim();
+        if (key.isBlank() || "YOUR_API_KEY_HERE".equals(key)) {
+            return null;
+        }
+        if (key.startsWith("YOUR_API_KEY_HERE")) {
+            System.err.println("[GeminiConfig] API key vẫn dính placeholder YOUR_API_KEY_HERE — "
+                    + "hãy thay toàn bộ dòng bằng key thật, không ghép thêm vào sau placeholder.");
+            return null;
+        }
+        return key;
     }
 
     public static GeminiConfig load() {

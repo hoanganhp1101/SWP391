@@ -82,7 +82,14 @@
                             <td>
                                 <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle rounded-pill px-2">${p.loaiTieuDuong}</span>
                             </td>
-                            <td>${not empty p.tenBacSi ? p.tenBacSi : '<span class="text-warning fst-italic">Chưa xếp</span>'}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${not empty p.tenBacSi}">${p.tenBacSi}</c:when>
+                                    <c:otherwise>
+                                        <a href="${pageContext.request.contextPath}/admin/patient-assignments" class="text-warning fst-italic" title="Gán bác sĩ phụ trách cho bệnh nhân này">Chưa xếp — gán ngay</a>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
                             <td class="text-end pe-4">
                                 <div class="action-btns">
                                     <a href="${pageContext.request.contextPath}/admin/prescribe?patientId=${p.id}" class="btn btn-light text-success" title="Kê đơn thuốc điều trị">

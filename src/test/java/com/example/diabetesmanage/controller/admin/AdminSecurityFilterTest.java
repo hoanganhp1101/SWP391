@@ -60,7 +60,8 @@ class AdminSecurityFilterTest {
 
         filter.doFilter(request, response, chain);
 
-        verify(response).sendRedirect("/diabcare/admin/login?required=1");
+        // Login đã hợp nhất tại "/" — filter đưa phiên không phải admin về trang chủ
+        verify(response).sendRedirect("/diabcare/");
         verifyNoInteractions(chain);
     }
 }

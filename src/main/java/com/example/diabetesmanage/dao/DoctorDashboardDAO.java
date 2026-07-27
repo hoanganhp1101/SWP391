@@ -55,10 +55,8 @@ public class DoctorDashboardDAO {
 
         stats.setTodayHealthRecords(countEncounters(doctorId, startDate, endDate, hasDate));
 
-        if (stats.getActiveAlerts() == 0) {
-            stats.setActiveAlerts(stats.getRiskHigh() + stats.getRiskCritical());
-        }
-
+        // activeAlerts được controller ghi đè từ DoctorAlertDAO.countAlerts (bảng alerts)
+        // — không tự suy diễn từ băng rủi ro để tránh lệch số với trang cảnh báo.
         return stats;
     }
 
