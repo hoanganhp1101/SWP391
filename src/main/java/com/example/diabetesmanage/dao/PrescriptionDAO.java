@@ -88,7 +88,7 @@ public class PrescriptionDAO {
     public Prescription getNextAppointment(String patientId) {
         String sql = "SELECT p.*, u.ho_ten as bac_si_name " +
                      "FROM prescriptions p " +
-                     "JOIN users u ON p.bac_si_id = u.id " +
+                     "JOIN doctors u ON p.bac_si_id = u.id " +
                      "WHERE p.patient_id = ? AND p.ngay_tai_kham >= CURRENT_DATE " +
                      "ORDER BY p.ngay_tai_kham ASC LIMIT 1";
         try (Connection conn = DBContext.getConnection();
@@ -114,7 +114,7 @@ public class PrescriptionDAO {
     public Prescription getLatestPrescription(String patientId) {
         String sql = "SELECT p.*, u.ho_ten as bac_si_name " +
                      "FROM prescriptions p " +
-                     "JOIN users u ON p.bac_si_id = u.id " +
+                     "JOIN doctors u ON p.bac_si_id = u.id " +
                      "WHERE p.patient_id = ? " +
                      "ORDER BY p.ngay_ke_don DESC LIMIT 1";
         
@@ -174,7 +174,7 @@ public class PrescriptionDAO {
         List<Prescription> list = new ArrayList<>();
         String sql = "SELECT p.*, u.ho_ten as bac_si_name " +
                      "FROM prescriptions p " +
-                     "JOIN users u ON p.bac_si_id = u.id " +
+                     "JOIN doctors u ON p.bac_si_id = u.id " +
                      "WHERE p.patient_id = ? " +
                      "ORDER BY p.ngay_ke_don DESC";
         try (Connection conn = DBContext.getConnection();

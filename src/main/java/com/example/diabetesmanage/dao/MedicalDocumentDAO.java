@@ -15,7 +15,7 @@ import java.util.Map;
 public class MedicalDocumentDAO {
     public List<MedicalDocument> getRecentDocuments(String patientId) {
         String sql = "SELECT d.*, u.ho_ten AS bac_si_name " +
-                "FROM medical_documents d LEFT JOIN users u ON d.bac_si_id = u.id " +
+                "FROM medical_documents d LEFT JOIN doctors u ON d.bac_si_id = u.id " +
                 "WHERE d.patient_id = ? ORDER BY d.ngay_thuc_hien DESC, d.ngay_tao DESC LIMIT 5";
         List<MedicalDocument> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
@@ -57,7 +57,7 @@ public class MedicalDocumentDAO {
 
     public List<MedicalDocument> getAllDocumentsByPatient(String patientId) {
         String sql = "SELECT d.*, u.ho_ten AS bac_si_name " +
-                "FROM medical_documents d LEFT JOIN users u ON d.bac_si_id = u.id " +
+                "FROM medical_documents d LEFT JOIN doctors u ON d.bac_si_id = u.id " +
                 "WHERE d.patient_id = ? ORDER BY d.ngay_tao DESC, d.ngay_thuc_hien DESC";
         List<MedicalDocument> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
@@ -75,7 +75,7 @@ public class MedicalDocumentDAO {
 
     public List<MedicalDocument> getDocumentsByPatient(String patientId, int offset, int limit) {
         String sql = "SELECT d.*, u.ho_ten AS bac_si_name " +
-                "FROM medical_documents d LEFT JOIN users u ON d.bac_si_id = u.id " +
+                "FROM medical_documents d LEFT JOIN doctors u ON d.bac_si_id = u.id " +
                 "WHERE d.patient_id = ? ORDER BY d.ngay_tao DESC, d.ngay_thuc_hien DESC LIMIT ? OFFSET ?";
         List<MedicalDocument> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();

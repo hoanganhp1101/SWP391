@@ -19,7 +19,6 @@ public class DoctorAIRecommendationDAO {
     private static final String FROM_JOIN = """
             FROM ai_analysis a
             JOIN patients p ON a.patient_id = p.id
-            LEFT JOIN users u ON p.user_id = u.id
             """;
 
     /**
@@ -49,7 +48,7 @@ public class DoctorAIRecommendationDAO {
             String doctorId, String level, String status, String keyword) {
         Filter filter = buildSqlFilter(doctorId, keyword);
         String sql = """
-                SELECT a.*, u.ho_ten AS ho_ten_benh_nhan
+                SELECT a.*, p.ho_ten AS ho_ten_benh_nhan
                 """ + FROM_JOIN + filter.where + """
                  ORDER BY a.thoi_gian_phan_tich DESC
                 """;
@@ -121,10 +120,9 @@ public class DoctorAIRecommendationDAO {
             return null;
         }
         String sql = """
-                SELECT a.*, u.ho_ten AS ho_ten_benh_nhan
+                SELECT a.*, p.ho_ten AS ho_ten_benh_nhan
                 FROM ai_analysis a
                 JOIN patients p ON a.patient_id = p.id
-                LEFT JOIN users u ON p.user_id = u.id
                 WHERE a.id = ? AND p.bac_si_id = ?
                 """;
         try (Connection connection = DBContext.getConnection();
@@ -332,7 +330,7 @@ public class DoctorAIRecommendationDAO {
         if (keyword != null && !keyword.trim().isEmpty()) {
             String value = "%" + keyword.trim() + "%";
             filter.where.append("""
-                    AND (u.ho_ten LIKE ?
+                    AND (p.ho_ten LIKE ?
                          OR JSON_UNQUOTE(a.khuyen_nghi) LIKE ?
                          OR JSON_UNQUOTE(a.yeu_to_nguy_co) LIKE ?)
                     """);

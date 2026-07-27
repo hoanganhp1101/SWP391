@@ -12,32 +12,47 @@ import java.util.UUID;
 
 public class AIAnalysisDAO {
 
-    public void insertAnalysis(AIAnalysis analysis) {
+    public boolean insertAnalysis(AIAnalysis analysis) {
         String sql = "INSERT INTO ai_analysis (id, patient_id, health_record_id, diem_nguy_co, muc_canh_bao, " +
                      "do_tin_cay, phan_tich_chi_tiet, yeu_to_nguy_co, khuyen_nghi, du_lieu_dau_vao, " +
                      "model_version, tokens_su_dung) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String id = analysis.getId() != null ? analysis.getId() : UUID.randomUUID().toString();
+            String mucCanhBao = analysis.getMucCanhBao();
+            if (mucCanhBao == null || mucCanhBao.isBlank()) {
+                mucCanhBao = "trung_binh";
+            }
+            String phanTich = analysis.getPhanTichChiTiet();
+            if (phanTich == null || phanTich.isBlank()) {
+                phanTich = "Đã phân tích chỉ số sức khỏe.";
+            }
             ps.setString(1, id);
             ps.setString(2, analysis.getPatientId());
             ps.setString(3, analysis.getHealthRecordId());
             ps.setDouble(4, analysis.getDiemNguyCo());
-            ps.setString(5, analysis.getMucCanhBao());
+            ps.setString(5, mucCanhBao);
             if (analysis.getDoTinCay() != null) ps.setDouble(6, analysis.getDoTinCay());
             else ps.setNull(6, java.sql.Types.DECIMAL);
-            ps.setString(7, analysis.getPhanTichChiTiet());
+            ps.setString(7, phanTich);
             ps.setString(8, analysis.getYeuToNguyCo());
             ps.setString(9, analysis.getKhuyenNghi());
             ps.setString(10, analysis.getDuLieuDauVao());
             ps.setString(11, analysis.getModelVersion());
             if (analysis.getTokensSuDung() != null) ps.setInt(12, analysis.getTokensSuDung());
             else ps.setNull(12, java.sql.Types.INTEGER);
-            ps.executeUpdate();
-            analysis.setId(id);
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                analysis.setId(id);
+                analysis.setMucCanhBao(mucCanhBao);
+                analysis.setPhanTichChiTiet(phanTich);
+                return true;
+            }
         } catch (Exception e) {
+            System.err.println("[AIAnalysisDAO] insertAnalysis failed: " + e.getMessage());
             e.printStackTrace();
         }
+        return false;
     }
 
     public AIAnalysis getLatestAnalysis(String patientId) {

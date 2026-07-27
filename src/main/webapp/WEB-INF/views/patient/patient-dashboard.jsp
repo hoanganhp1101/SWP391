@@ -449,6 +449,18 @@
                     border-bottom: 1px solid var(--border);
                 }
 
+                .alert-item.severe {
+                    background: #fef2f2;
+                    border-left: 4px solid var(--danger);
+                    padding: 0.75rem 0.75rem 0.75rem 1rem;
+                    border-radius: 8px;
+                    margin-bottom: 0.75rem;
+                }
+
+                .alert-item.severe .alert-content p {
+                    color: #b91c1c;
+                }
+
                 .alert-item:last-child {
                     margin-bottom: 0;
                     padding-bottom: 0;
@@ -461,6 +473,14 @@
 
                 .alert-icon.danger {
                     color: var(--danger);
+                }
+
+                .alert-icon.warning {
+                    color: #d97706;
+                }
+
+                .alert-icon.success {
+                    color: #16a34a;
                 }
 
                 .alert-icon.muted {
@@ -1333,11 +1353,11 @@
                             <c:choose>
                                 <c:when test="${not empty alerts}">
                                     <c:forEach var="alert" items="${alerts}">
-                                        <div class="alert-item">
+                                        <div class="alert-item ${alert.mucDo == 'nguy_hiem' || alert.mucDo == 'cao' ? 'severe' : ''}">
                                             <div
-                                                class="alert-icon ${alert.mucDo == 'nguy_hiem' || alert.mucDo == 'cao' ? 'danger' : 'muted'}">
+                                                class="alert-icon ${alert.mucDo == 'nguy_hiem' || alert.mucDo == 'cao' ? 'danger' : (alert.mucDo == 'trung_binh' ? 'warning' : 'success')}">
                                                 <i
-                                                    class="fas ${alert.mucDo == 'nguy_hiem' || alert.mucDo == 'cao' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                                                    class="fas ${alert.mucDo == 'nguy_hiem' || alert.mucDo == 'cao' ? 'fa-exclamation-triangle' : (alert.mucDo == 'trung_binh' ? 'fa-exclamation-circle' : 'fa-check-circle')}"></i>
                                             </div>
                                             <div class="alert-content">
                                                 <p>${alert.tieuDe}</p>
@@ -1383,9 +1403,7 @@
                                     </div>
                                     <div style="display:flex;justify-content:space-between;margin-top:0.75rem">
                                         <span class="ai-risk-label ${riskClass}">
-                                            ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao ==
-                                            'trung_binh' ? 'TRUNG BÌNH' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY CƠ
-                                            CAO' : 'NGUY HIỂM'))}
+                                            ${aiAnalysis.mucCanhBao == 'an_toan' ? 'AN TOÀN' : (aiAnalysis.mucCanhBao == 'trung_binh' ? 'CẦN THEO DÕI' : (aiAnalysis.mucCanhBao == 'cao' ? 'NGUY HIỂM — CAN THIỆP' : 'KHẨN CẤP'))}
                                         </span>
                                         <!-- <c:if test="${aiAnalysis.doTinCay != null}">
                                             <span style="font-size:0.8rem;color:#94a3b8;font-weight:500;">Độ tin cậy:
@@ -1405,6 +1423,25 @@
                             <div class="ai-disclaimer"><i class="fas fa-exclamation-triangle"
                                     style="color: #fbbf24;"></i> Kết quả phân tích chỉ mang tính tham khảo. Mọi quyết
                                 định y tế cần được bác sĩ xác nhận.</div>
+                        </div>
+                    </c:if>
+                    <c:if test="${empty aiAnalysis}">
+                        <div class="ai-card" style="margin-bottom: 2rem; border-style: dashed; opacity: 0.92;">
+                            <div class="ai-card-header">
+                                <div class="ai-icon"><i class="fas fa-sparkles"></i></div>
+                                <div>
+                                    <h3>AI Phân tích sức khỏe</h3>
+                                    <span>Chưa có dữ liệu phân tích cho tài khoản này</span>
+                                </div>
+                            </div>
+                            <p style="color: #cbd5e1; margin: 0.75rem 0 1rem; line-height: 1.6;">
+                                Phần này chỉ hiển thị sau khi hệ thống lưu kết quả vào bảng <code>ai_analysis</code>
+                                (đo IoT, thêm bản ghi mới, hoặc import seed trong <code>newdb.sql</code>).
+                            </p>
+                            <a href="${pageContext.request.contextPath}/patient-iot"
+                                style="display:inline-flex;align-items:center;gap:0.5rem;color:#a78bfa;font-weight:600;text-decoration:none;">
+                                <i class="fas fa-broadcast-tower"></i> Đi tới IoT mô phỏng để tạo phân tích
+                            </a>
                         </div>
                     </c:if>
 

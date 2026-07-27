@@ -80,6 +80,13 @@ public class GeminiService {
     // ==================== CHỨC NĂNG 1: PHÂN TÍCH SỨC KHỎE ====================
 
     /**
+     * Phân tích rule-based nhanh (không gọi mạng) — dùng cho IoT simulator.
+     */
+    public AIAnalysis analyzeHealthDataRuleBased(HealthRecord record, Patient patient) {
+        return createFallbackAnalysis(record, patient, "iot-rule-based");
+    }
+
+    /**
      * Phân tích chỉ số sức khỏe của bệnh nhân và trả về đánh giá nguy cơ.
      * Gọi sau khi bệnh nhân nhập dữ liệu sức khỏe mới.
      */
@@ -237,11 +244,12 @@ public class GeminiService {
         // Rule-based: Huyết áp
         if (record.getHuyetApTamThu() != null) {
             int sys = record.getHuyetApTamThu();
-            if (sys >= 180) {
+            int dia = record.getHuyetApTamTruong() != null ? record.getHuyetApTamTruong() : 0;
+            if (sys >= 180 || dia >= 110) {
                 score += 30;
                 riskFactors.append("\"Huyết áp rất cao\",");
                 recommendations.append("\"Cần kiểm soát huyết áp khẩn cấp\",");
-            } else if (sys >= 140) {
+            } else if (sys >= 140 || dia >= 90) {
                 score += 15;
                 riskFactors.append("\"Huyết áp tăng\",");
             }
@@ -256,11 +264,11 @@ public class GeminiService {
             }
         }
 
-        // Xác định mức cảnh báo
+        // Xác định mức cảnh báo (ngưỡng nghiêm hơn)
         String mucCanhBao;
-        if (score >= 60) mucCanhBao = "nguy_hiem";
-        else if (score >= 35) mucCanhBao = "cao";
-        else if (score >= 15) mucCanhBao = "trung_binh";
+        if (score >= 45) mucCanhBao = "nguy_hiem";
+        else if (score >= 25) mucCanhBao = "cao";
+        else if (score >= 10) mucCanhBao = "trung_binh";
         else mucCanhBao = "an_toan";
 
         if (details.length() == 0) {

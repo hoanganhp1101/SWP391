@@ -1,6 +1,7 @@
 -- ============================================================
 -- PROJECT: DIABCARE — HỆ THỐNG QUẢN LÝ BỆNH ÁN TIỂU ĐƯỜNG
 -- NGUỒN CHÍNH (single source of truth) cho MySQL schema + seed.
+-- Vai trò tách bảng: doctors | admins | patients (không còn bảng users).
 -- Chỉ cần chạy file này khi setup / reset DB:
 --   mysql -u root -p < newdb.sql
 -- Các file SQL khác trong /scripts chỉ là migration/legacy tùy chọn.
@@ -32,21 +33,41 @@ DROP TABLE IF EXISTS health_records;
 DROP TABLE IF EXISTS lab_results;
 DROP TABLE IF EXISTS medical_encounters;
 DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS doctors;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS master_medications;
 DROP TABLE IF EXISTS master_foods;
-DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- 1. CẤU TRÚC BẢNG (TABLE SCHEMA)
 -- ============================================================
 
-CREATE TABLE users (
+-- Bác sĩ (tài khoản + hồ sơ riêng)
+CREATE TABLE doctors (
     id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
     ho_ten              VARCHAR(150)    NOT NULL,
     email               VARCHAR(255)    NOT NULL,
     so_dien_thoai       VARCHAR(20)     DEFAULT NULL,
-    vai_tro             ENUM('benh_nhan','bac_si','quan_tri_vien') NOT NULL DEFAULT 'benh_nhan',
+    mat_khau_hash       TEXT            NOT NULL,
+    anh_dai_dien        TEXT            DEFAULT NULL,
+    chuyen_khoa         VARCHAR(100)    DEFAULT NULL,
+    kich_hoat           TINYINT(1)      NOT NULL DEFAULT 1,
+    ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    lan_dang_nhap_cuoi  DATETIME        DEFAULT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_doctors_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Quản trị viên (tài khoản riêng)
+CREATE TABLE admins (
+    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
+    ho_ten              VARCHAR(150)    NOT NULL,
+    email               VARCHAR(255)    NOT NULL,
+    so_dien_thoai       VARCHAR(20)     DEFAULT NULL,
     mat_khau_hash       TEXT            NOT NULL,
     anh_dai_dien        TEXT            DEFAULT NULL,
     kich_hoat           TINYINT(1)      NOT NULL DEFAULT 1,
@@ -54,35 +75,42 @@ CREATE TABLE users (
     ngay_cap_nhat       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     lan_dang_nhap_cuoi  DATETIME        DEFAULT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_users_email (email)
+    UNIQUE KEY uq_admins_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+-- Bệnh nhân (tài khoản + hồ sơ y khoa trong cùng bảng)
 CREATE TABLE patients (
-                          id                          CHAR(36)        NOT NULL DEFAULT (UUID()),
-                          patient_code                VARCHAR(32)     DEFAULT NULL,
-                          user_id                     CHAR(36)        NOT NULL,
-                          bac_si_id                   CHAR(36)        DEFAULT NULL,
-                          ngay_sinh                   DATE            NOT NULL,
-                          gioi_tinh                   ENUM('nam','nu','khac') DEFAULT NULL,
-                          chieu_cao_cm                DECIMAL(5,1)    DEFAULT NULL,
-                          can_nang_kg                 DECIMAL(5,1)    DEFAULT NULL, -- Trường bổ sung để tính BMI
-                          dia_chi                     TEXT            DEFAULT NULL,
-                          nghe_nghiep                 VARCHAR(100)    DEFAULT NULL,
-                          bao_hiem_y_te               VARCHAR(50)     DEFAULT NULL,
-                          tien_su_benh                TEXT            DEFAULT NULL,
-                          tien_su_gia_dinh            TEXT            DEFAULT NULL,
-                          di_ung                      TEXT            DEFAULT NULL,
-                          nhom_mau                    VARCHAR(5)      DEFAULT NULL,
-                          ngay_chan_doan_tieu_duong   DATE            DEFAULT NULL,
-                          loai_tieu_duong             VARCHAR(30)     DEFAULT NULL,
-                          ngay_tao                    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          ngay_cap_nhat               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                          PRIMARY KEY (id),
-                          UNIQUE KEY uq_patients_code (patient_code),
-                          CONSTRAINT fk_patients_user   FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
-                          CONSTRAINT fk_patients_bac_si FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=UTF8MB4_UNICODE_CI;
+    id                          CHAR(36)        NOT NULL DEFAULT (UUID()),
+    patient_code                VARCHAR(32)     DEFAULT NULL,
+    ho_ten                      VARCHAR(150)    NOT NULL,
+    email                       VARCHAR(255)    NOT NULL,
+    so_dien_thoai               VARCHAR(20)     DEFAULT NULL,
+    mat_khau_hash               TEXT            NOT NULL,
+    anh_dai_dien                TEXT            DEFAULT NULL,
+    kich_hoat                   TINYINT(1)      NOT NULL DEFAULT 1,
+    lan_dang_nhap_cuoi          DATETIME        DEFAULT NULL,
+    bac_si_id                   CHAR(36)        DEFAULT NULL,
+    ngay_sinh                   DATE            NOT NULL,
+    gioi_tinh                   ENUM('nam','nu','khac') DEFAULT NULL,
+    chieu_cao_cm                DECIMAL(5,1)    DEFAULT NULL,
+    can_nang_kg                 DECIMAL(5,1)    DEFAULT NULL,
+    dia_chi                     TEXT            DEFAULT NULL,
+    nghe_nghiep                 VARCHAR(100)    DEFAULT NULL,
+    bao_hiem_y_te               VARCHAR(50)     DEFAULT NULL,
+    tien_su_benh                TEXT            DEFAULT NULL,
+    tien_su_gia_dinh            TEXT            DEFAULT NULL,
+    di_ung                      TEXT            DEFAULT NULL,
+    nhom_mau                    VARCHAR(5)      DEFAULT NULL,
+    ngay_chan_doan_tieu_duong   DATE            DEFAULT NULL,
+    loai_tieu_duong             VARCHAR(30)     DEFAULT NULL,
+    ngay_tao                    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_patients_code (patient_code),
+    UNIQUE KEY uq_patients_email (email),
+    CONSTRAINT fk_patients_bac_si FOREIGN KEY (bac_si_id) REFERENCES doctors(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE medical_encounters (
@@ -100,7 +128,7 @@ CREATE TABLE medical_encounters (
     ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_enc_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_enc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE RESTRICT
+    CONSTRAINT fk_enc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES doctors(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -195,7 +223,7 @@ CREATE TABLE health_records (
     ngay_cap_nhat           DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_hr_patient    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_hr_nhap_boi   FOREIGN KEY (nhap_boi)   REFERENCES users(id)    ON DELETE SET NULL,
+    CONSTRAINT fk_hr_nhap_boi   FOREIGN KEY (nhap_boi)   REFERENCES patients(id) ON DELETE SET NULL,
     CONSTRAINT fk_hr_encounter  FOREIGN KEY (encounter_id) REFERENCES medical_encounters(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -223,7 +251,7 @@ CREATE TABLE ai_analysis (
     INDEX idx_ai_status (trang_thai),
     CONSTRAINT fk_ai_patient    FOREIGN KEY (patient_id)       REFERENCES patients(id)      ON DELETE CASCADE,
     CONSTRAINT fk_ai_hr         FOREIGN KEY (health_record_id) REFERENCES health_records(id) ON DELETE SET NULL,
-    CONSTRAINT fk_ai_xu_ly      FOREIGN KEY (xu_ly_boi)        REFERENCES users(id)         ON DELETE SET NULL
+    CONSTRAINT fk_ai_xu_ly      FOREIGN KEY (xu_ly_boi)        REFERENCES doctors(id)         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -240,7 +268,7 @@ CREATE TABLE threshold_settings (
     ngay_cap_nhat    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_threshold_bac_si (bac_si_id),
-    CONSTRAINT fk_threshold_bac_si FOREIGN KEY (bac_si_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_threshold_bac_si FOREIGN KEY (bac_si_id) REFERENCES doctors(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -261,7 +289,7 @@ CREATE TABLE alerts (
     PRIMARY KEY (id),
     CONSTRAINT fk_alerts_patient    FOREIGN KEY (patient_id)     REFERENCES patients(id)    ON DELETE CASCADE,
     CONSTRAINT fk_alerts_ai         FOREIGN KEY (ai_analysis_id) REFERENCES ai_analysis(id) ON DELETE SET NULL,
-    CONSTRAINT fk_alerts_xu_ly      FOREIGN KEY (xu_ly_boi)      REFERENCES users(id)       ON DELETE SET NULL
+    CONSTRAINT fk_alerts_xu_ly      FOREIGN KEY (xu_ly_boi)      REFERENCES doctors(id)       ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -280,7 +308,7 @@ CREATE TABLE prescriptions (
     ngay_tao            DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_rx_patient    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_rx_bac_si     FOREIGN KEY (bac_si_id)  REFERENCES users(id)    ON DELETE RESTRICT,
+    CONSTRAINT fk_rx_bac_si     FOREIGN KEY (bac_si_id)  REFERENCES doctors(id)    ON DELETE RESTRICT,
     CONSTRAINT fk_rx_encounter  FOREIGN KEY (encounter_id) REFERENCES medical_encounters(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -329,8 +357,7 @@ CREATE TABLE notifications (
     thoi_gian_doc   DATETIME        DEFAULT NULL,
     ma_loi          TEXT            DEFAULT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT fk_notif_alert       FOREIGN KEY (alert_id)      REFERENCES alerts(id) ON DELETE SET NULL,
-    CONSTRAINT fk_notif_nguoi_nhan  FOREIGN KEY (nguoi_nhan_id) REFERENCES users(id)  ON DELETE CASCADE
+    CONSTRAINT fk_notif_alert       FOREIGN KEY (alert_id)      REFERENCES alerts(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -347,7 +374,7 @@ CREATE TABLE appointments (
     INDEX idx_app_patient_time (patient_id, thoi_gian_hen),
     INDEX idx_app_patient_status_time (patient_id, trang_thai, thoi_gian_hen),
     CONSTRAINT fk_app_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_app_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_app_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES doctors(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -363,7 +390,7 @@ CREATE TABLE medical_documents (
     PRIMARY KEY (id),
     INDEX idx_doc_patient_created (patient_id, ngay_tao, ngay_thuc_hien),
     CONSTRAINT fk_doc_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_doc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_doc_bac_si  FOREIGN KEY (bac_si_id)  REFERENCES doctors(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 1. Bảng Từ điển Thuốc
@@ -403,7 +430,7 @@ CREATE TABLE patient_assignments (
     PRIMARY KEY (id),
     INDEX idx_pa_patient_active (patient_id, trang_thai),
     CONSTRAINT fk_pa_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE,
-    CONSTRAINT fk_pa_doctor  FOREIGN KEY (doctor_id)  REFERENCES users(id) ON DELETE RESTRICT
+    CONSTRAINT fk_pa_doctor  FOREIGN KEY (doctor_id)  REFERENCES doctors(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. Thực đơn dinh dưỡng
@@ -464,9 +491,9 @@ CREATE TABLE educational_contents (
 CREATE OR REPLACE VIEW v_patient_summary AS
 SELECT
     p.id                    AS patient_id,
-    u.ho_ten,
-    u.email,
-    u.so_dien_thoai,
+    p.ho_ten,
+    p.email,
+    p.so_dien_thoai,
     p.ngay_sinh,
     TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS tuoi,
     p.gioi_tinh,
@@ -481,7 +508,6 @@ SELECT
     aa.diem_nguy_co,
     (SELECT COUNT(*) FROM alerts al WHERE al.patient_id = p.id AND al.da_doc_bs = 0) AS canh_bao_chua_doc
 FROM patients p
-JOIN users u ON p.user_id = u.id
 LEFT JOIN health_records hr ON hr.id = (
     SELECT id FROM health_records WHERE patient_id = p.id ORDER BY thoi_gian_do DESC LIMIT 1
 )
@@ -512,9 +538,10 @@ TRUNCATE TABLE health_records;
 TRUNCATE TABLE lab_results;
 TRUNCATE TABLE medical_encounters;
 TRUNCATE TABLE patients;
+TRUNCATE TABLE admins;
+TRUNCATE TABLE doctors;
 TRUNCATE TABLE master_medications;
 TRUNCATE TABLE master_foods;
-TRUNCATE TABLE users;
 
 -- 3. Bật lại tính năng kiểm tra khóa ngoại
 SET FOREIGN_KEY_CHECKS = 1;
@@ -526,26 +553,28 @@ USE diabcare_db;
 -- ============================================================
 SET @admin_id = UUID();
 SET @doctor_id = UUID();
-SET @patient_user_id = UUID();
 SET @patient_profile_id = UUID();
 SET @encounter_id = UUID();
 SET @prescription_id = UUID();
 
 -- ============================================================
--- 2. TẠO TÀI KHOẢN NGƯỜI DÙNG (ADMIN, BÁC SĨ & BỆNH NHÂN)
+-- 2. TẠO TÀI KHOẢN (BÁC SĨ, ADMIN, BỆNH NHÂN — bảng riêng)
 -- ============================================================
-INSERT INTO users (id, ho_ten, email, so_dien_thoai, vai_tro, mat_khau_hash, anh_dai_dien) VALUES
-(@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', 'bac_si', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Bac+Si+Tran+Thi+B&background=0D8ABC&color=fff'),
-(@patient_user_id, 'Đỗ Thị L.', 'dothil@example.com', '0988777666', 'benh_nhan', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Do+Thi+L&background=0D8ABC&color=fff'),
-(@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', 'quan_tri_vien', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff');
+INSERT INTO doctors (id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien) VALUES
+(@doctor_id, 'Bác sĩ Trần Thị B', 'bacsi@diabcare.vn', '0912345678', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Bac+Si+Tran+Thi+B&background=0D8ABC&color=fff');
+
+INSERT INTO admins (id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien) VALUES
+(@admin_id, 'Admin Hệ thống', 'admin@diabcare.vn', '0934567890', SHA2('123456', 256), 'https://ui-avatars.com/api/?name=Admin&background=1e293b&color=fff');
 
 -- ============================================================
 -- 3. HỒ SƠ BỆNH NHÂN (Từ Bệnh án PDF)
 -- ============================================================
-INSERT INTO patients (id, patient_code, user_id, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, dia_chi, nghe_nghiep, tien_su_benh, ngay_chan_doan_tieu_duong, loai_tieu_duong) 
+INSERT INTO patients (id, patient_code, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, bac_si_id, ngay_sinh, gioi_tinh, chieu_cao_cm, dia_chi, nghe_nghiep, tien_su_benh, ngay_chan_doan_tieu_duong, loai_tieu_duong)
 VALUES (
-    @patient_profile_id, 'BN0001', @patient_user_id, @doctor_id, '1960-01-01', 'nu', 158.0, 
-    'Thị xã Núi Thành, Quảng Nam', 'Nội trợ', 
+    @patient_profile_id, 'BN0001', 'Đỗ Thị L.', 'dothil@example.com', '0988777666', SHA2('123456', 256),
+    'https://ui-avatars.com/api/?name=Do+Thi+L&background=0D8ABC&color=fff',
+    @doctor_id, '1960-01-01', 'nu', 158.0,
+    'Thị xã Núi Thành, Quảng Nam', 'Nội trợ',
     'Đái tháo đường type 2 (3 năm), Tăng huyết áp (1 năm)', '2018-06-01', 'Type 2'
 );
 
@@ -602,6 +631,54 @@ INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, thoi_diem_do_duong
 (UUID(), @patient_profile_id, 125.5, 'luc_doi', 18, 'Insulin Lantus', 140.0, 78, 122, 76, DATE_SUB(CURDATE(), INTERVAL 2 DAY) + INTERVAL 7 HOUR),
 (UUID(), @patient_profile_id, 110.0, 'luc_doi', 18, 'Insulin Lantus', 135.0, 76, 120, 75, DATE_SUB(CURDATE(), INTERVAL 1 DAY) + INTERVAL 7 HOUR),
 (UUID(), @patient_profile_id, 100.0, 'luc_doi', 18, 'Insulin Lantus', 135.0, 74, 118, 74, CURDATE() + INTERVAL 7 HOUR);
+
+-- ============================================================
+-- 6b. PHÂN TÍCH AI MẪU (Dashboard: chỉ hiện khi có dòng ai_analysis)
+-- health_records có seed nhưng AI chỉ chạy khi lưu chỉ số mới + gọi Gemini
+-- ============================================================
+SET @seed_ai_id = UUID();
+SET @seed_hr_id = (
+    SELECT id FROM health_records
+    WHERE patient_id = @patient_profile_id
+    ORDER BY thoi_gian_do DESC
+    LIMIT 1
+);
+
+INSERT INTO ai_analysis (
+    id, patient_id, health_record_id,
+    diem_nguy_co, muc_canh_bao, do_tin_cay,
+    phan_tich_chi_tiet, khuyen_nghi,
+    model_version, thoi_gian_phan_tich, trang_thai
+) VALUES (
+    @seed_ai_id,
+    @patient_profile_id,
+    @seed_hr_id,
+    15.00,
+    'an_toan',
+    0.880,
+    'Chỉ số đường huyết hiện tại 100 mg/dL đang trong khoảng mục tiêu điều trị. Huyết áp 118/74 mmHg và nhịp tim 74 bpm ở mức bình thường. Tuy nhiên mức này khá sát ngưỡng dưới nên cần chú ý theo dõi để tránh nguy cơ hạ đường huyết. Tình trạng sức khỏe chung và các bệnh lý nền đều đang được kiểm soát ổn định.',
+    JSON_ARRAY(
+        'Duy trì theo đúng phác đồ điều trị, chế độ ăn và tập luyện do bác sĩ chỉ định.',
+        'Theo dõi các biểu hiện hạ đường huyết như vã mồ hôi, run tay, đói cồn cào, chóng mặt; mang theo kẹo hoặc nước ngọt khi ra ngoài.',
+        'Không tự ý dùng thuốc nam, nước lá chưa được kiểm chứng vì có thể tương tác thuốc và làm hại gan.'
+    ),
+    'gemini-flash-latest',
+    CURDATE() + INTERVAL 7 HOUR,
+    'chua_xem'
+);
+
+INSERT INTO alerts (
+    id, patient_id, ai_analysis_id, loai_canh_bao, muc_do, tieu_de, noi_dung, thoi_gian_tao
+) VALUES (
+    UUID(),
+    @patient_profile_id,
+    @seed_ai_id,
+    'xu_huong_tang',
+    'an_toan',
+    'Theo dõi đường huyết',
+    'Chỉ số gần ngưỡng dưới. Tiếp tục theo dõi và báo bác sĩ nếu có triệu chứng hạ đường huyết.',
+    CURDATE() + INTERVAL 7 HOUR
+);
 
 -- ============================================================
 -- 7. LỊCH HẸN KHÁM & TÀI LIỆU Y TẾ
@@ -661,3 +738,97 @@ VALUES
      'Các điểm cần nhớ khi bảo quản và sử dụng insulin.',
      'Insulin cần được dùng đúng loại, đúng liều, đúng thời điểm theo chỉ định. Không tự ý thay đổi liều. Kiểm tra hạn dùng, cách bảo quản và vị trí tiêm để giảm nguy cơ sai liều hoặc kích ứng.',
      'benh_nhan', 3, 1);
+
+-- ============================================================
+-- 11. SỬA VIEW SAU MIGRATION (chạy an toàn nhiều lần)
+-- Fix lỗi IDE/MySQL: Error 1146 Table 'diabcare_db.users' doesn't exist
+-- Nguyên nhân: view v_patient_summary cũ vẫn JOIN bảng users đã xóa.
+-- ============================================================
+DROP VIEW IF EXISTS v_patient_summary;
+
+CREATE OR REPLACE VIEW v_patient_summary AS
+SELECT
+    p.id                    AS patient_id,
+    p.ho_ten,
+    p.email,
+    p.so_dien_thoai,
+    p.ngay_sinh,
+    TIMESTAMPDIFF(YEAR, p.ngay_sinh, CURDATE()) AS tuoi,
+    p.gioi_tinh,
+    p.loai_tieu_duong,
+    hr.duong_huyet_mgdl     AS duong_huyet_gan_nhat,
+    hr.bmi                  AS bmi_gan_nhat,
+    hr.hba1c_percent        AS hba1c_gan_nhat,
+    hr.huyet_ap_tam_thu     AS huyet_ap_tam_thu,
+    hr.huyet_ap_tam_truong  AS huyet_ap_tam_truong,
+    hr.thoi_gian_do         AS lan_do_cuoi,
+    aa.muc_canh_bao         AS muc_nguy_co,
+    aa.diem_nguy_co,
+    (SELECT COUNT(*) FROM alerts al WHERE al.patient_id = p.id AND al.da_doc_bs = 0) AS canh_bao_chua_doc
+FROM patients p
+LEFT JOIN health_records hr ON hr.id = (
+    SELECT id FROM health_records WHERE patient_id = p.id ORDER BY thoi_gian_do DESC LIMIT 1
+)
+LEFT JOIN ai_analysis aa ON aa.id = (
+    SELECT id FROM ai_analysis WHERE patient_id = p.id ORDER BY thoi_gian_phan_tich DESC LIMIT 1
+);
+
+-- ============================================================
+-- 10. MIGRATION: users → doctors / admins / patients (DB cũ)
+-- Chỉ chạy khi DB đã có dữ liệu và bảng users cũ còn tồn tại.
+-- KHÔNG chạy sau phần DROP/TRUNCATE ở trên (setup mới).
+-- Giữ nguyên UUID → các FK lâm sàng (health_records, alerts, …) không đổi.
+-- ============================================================
+/*
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS doctors LIKE users;
+ALTER TABLE doctors
+    ADD COLUMN IF NOT EXISTS chuyen_khoa VARCHAR(100) DEFAULT NULL AFTER anh_dai_dien;
+ALTER TABLE doctors DROP COLUMN IF EXISTS vai_tro;
+
+CREATE TABLE IF NOT EXISTS admins LIKE users;
+ALTER TABLE admins DROP COLUMN IF EXISTS vai_tro;
+
+INSERT IGNORE INTO doctors (id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi)
+SELECT id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi
+FROM users WHERE vai_tro = 'bac_si';
+
+INSERT IGNORE INTO admins (id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi)
+SELECT id, ho_ten, email, so_dien_thoai, mat_khau_hash, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi
+FROM users WHERE vai_tro = 'quan_tri_vien';
+
+ALTER TABLE patients
+    ADD COLUMN IF NOT EXISTS ho_ten VARCHAR(150) NULL AFTER patient_code,
+    ADD COLUMN IF NOT EXISTS email VARCHAR(255) NULL AFTER ho_ten,
+    ADD COLUMN IF NOT EXISTS so_dien_thoai VARCHAR(20) NULL AFTER email,
+    ADD COLUMN IF NOT EXISTS mat_khau_hash TEXT NULL AFTER so_dien_thoai,
+    ADD COLUMN IF NOT EXISTS anh_dai_dien TEXT NULL AFTER mat_khau_hash,
+    ADD COLUMN IF NOT EXISTS kich_hoat TINYINT(1) NOT NULL DEFAULT 1 AFTER anh_dai_dien,
+    ADD COLUMN IF NOT EXISTS lan_dang_nhap_cuoi DATETIME NULL AFTER kich_hoat;
+
+UPDATE patients p
+JOIN users u ON p.user_id = u.id
+SET p.ho_ten = u.ho_ten,
+    p.email = u.email,
+    p.so_dien_thoai = u.so_dien_thoai,
+    p.mat_khau_hash = u.mat_khau_hash,
+    p.anh_dai_dien = u.anh_dai_dien,
+    p.kich_hoat = u.kich_hoat,
+    p.lan_dang_nhap_cuoi = u.lan_dang_nhap_cuoi
+WHERE p.ho_ten IS NULL OR p.email IS NULL;
+
+ALTER TABLE patients DROP FOREIGN KEY IF EXISTS fk_patients_user;
+ALTER TABLE patients DROP COLUMN IF EXISTS user_id;
+ALTER TABLE patients MODIFY ho_ten VARCHAR(150) NOT NULL;
+ALTER TABLE patients MODIFY email VARCHAR(255) NOT NULL;
+ALTER TABLE patients MODIFY mat_khau_hash TEXT NOT NULL;
+ALTER TABLE patients ADD UNIQUE KEY IF NOT EXISTS uq_patients_email (email);
+
+-- Cập nhật FK bac_si_id và các bảng lâm sàng trỏ sang doctors (cùng UUID)
+-- (Chạy ALTER từng bảng tương tự schema mới ở trên nếu cần)
+
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
+*/

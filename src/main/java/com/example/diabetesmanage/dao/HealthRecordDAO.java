@@ -24,7 +24,7 @@ public class HealthRecordDAO {
                 "SELECT hr.*, " +
                         "p.patient_code, " +
                         "p.loai_tieu_duong, " +
-                        "pu.ho_ten AS patient_ho_ten, " +
+                        "p.ho_ten AS patient_ho_ten, " +
                         "nu.ho_ten AS nhap_boi_ho_ten " +
                         "FROM health_records hr " +
                         "INNER JOIN ( " +
@@ -39,9 +39,8 @@ public class HealthRecordDAO {
                         "    GROUP BY patient_id " +
                         ") hr_latest ON hr.id = hr_latest.latest_id " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "LEFT JOIN users pu ON p.user_id = pu.id " +
-                        "LEFT JOIN users doc ON p.bac_si_id = doc.id " +
-                        "LEFT JOIN users nu ON hr.nhap_boi = nu.id " +
+                        "LEFT JOIN doctors doc ON p.bac_si_id = doc.id " +
+                        "LEFT JOIN patients nu ON hr.nhap_boi = nu.id " +
                         "WHERE (? IS NULL OR doc.id = ?) " +
                         "ORDER BY COALESCE(hr.thoi_gian_do, hr.ngay_tao) DESC";
 
@@ -79,15 +78,14 @@ public class HealthRecordDAO {
         String sql =
                 "SELECT hr.*, " +
                         "p.patient_code, p.loai_tieu_duong, p.tien_su_benh, p.chieu_cao_cm, " +
-                        "pu.ho_ten AS patient_name, " +
+                        "p.ho_ten AS patient_name, " +
                         "nu.ho_ten AS nhap_boi_name, " +
                         "me.ly_do_kham, me.qua_trinh_benh_ly, me.kham_lam_sang, " +
                         "me.chan_doan_chinh, me.chan_doan_phu, me.huong_xu_tri, " +
                         "rx.huong_dieu_tri, rx.che_do_an, rx.luyen_tap, rx.ghi_chu AS rx_ghi_chu " +
                         "FROM health_records hr " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "JOIN users pu ON p.user_id = pu.id " +
-                        "LEFT JOIN users nu ON hr.nhap_boi = nu.id " +
+                        "LEFT JOIN patients nu ON hr.nhap_boi = nu.id " +
                         "LEFT JOIN medical_encounters me ON hr.encounter_id = me.id " +
                         "LEFT JOIN prescriptions rx ON rx.encounter_id = me.id " +
                         "WHERE hr.encounter_id = ? " +
@@ -176,12 +174,11 @@ public class HealthRecordDAO {
         String sql =
                 "SELECT hr.*, " +
                         "p.patient_code, p.loai_tieu_duong, p.tien_su_benh, p.chieu_cao_cm, " +
-                        "pu.ho_ten AS patient_name, " +
+                        "p.ho_ten AS patient_name, " +
                         "nu.ho_ten AS nhap_boi_name " +
                         "FROM health_records hr " +
                         "JOIN patients p ON hr.patient_id = p.id " +
-                        "LEFT JOIN users pu ON p.user_id = pu.id " +
-                        "LEFT JOIN users nu ON hr.nhap_boi = nu.id " +
+                        "LEFT JOIN patients nu ON hr.nhap_boi = nu.id " +
                         "WHERE hr.patient_id = ? " +
                         "ORDER BY hr.ngay_tao DESC " +
                         "LIMIT 1";
@@ -403,50 +400,58 @@ public class HealthRecordDAO {
 
     // ---- Patient portal methods (from main) ----
 
-    public void insertHealthRecord(HealthRecord record) {
-        String sql = "INSERT INTO health_records (id, patient_id, duong_huyet_mgdl, carbs_g, ghi_chu, lieu_luong_insulin_ui, nhip_tim, huyet_ap_tam_thu, huyet_ap_tam_truong, thoi_diem_do_duong, chest_pain, dizziness, fatigue, thoi_gian_do) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+    public boolean insertHealthRecord(HealthRecord record) {
+        String sql = "INSERT INTO health_records (id, patient_id, nhap_boi, duong_huyet_mgdl, carbs_g, ghi_chu, lieu_luong_insulin_ui, nhip_tim, huyet_ap_tam_thu, huyet_ap_tam_truong, thoi_diem_do_duong, chest_pain, dizziness, fatigue, thoi_gian_do) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, java.util.UUID.randomUUID().toString());
-            ps.setString(2, record.getPatientId());
-            if (record.getDuongHuyetMgdl() != null) {
-                ps.setDouble(3, record.getDuongHuyetMgdl());
-            } else {
-                ps.setNull(3, Types.DECIMAL);
+            if (conn == null) {
+                throw new IllegalStateException("Không kết nối được MySQL.");
             }
-            if (record.getCarbsG() != null) {
-                ps.setDouble(4, record.getCarbsG());
+            String recordId = java.util.UUID.randomUUID().toString();
+            record.setId(recordId);
+            ps.setString(1, recordId);
+            ps.setString(2, record.getPatientId());
+            String nhapBoi = record.getNhapBoi() != null ? record.getNhapBoi().getId() : record.getPatientId();
+            ps.setString(3, nhapBoi);
+            if (record.getDuongHuyetMgdl() != null) {
+                ps.setDouble(4, record.getDuongHuyetMgdl());
             } else {
                 ps.setNull(4, Types.DECIMAL);
             }
-            ps.setString(5, record.getGhiChu());
-            if (record.getLieuLuongInsulinUi() != null) {
-                ps.setInt(6, record.getLieuLuongInsulinUi());
+            if (record.getCarbsG() != null) {
+                ps.setDouble(5, record.getCarbsG());
             } else {
-                ps.setNull(6, Types.INTEGER);
+                ps.setNull(5, Types.DECIMAL);
             }
-            if (record.getNhipTim() != null) {
-                ps.setInt(7, record.getNhipTim());
+            ps.setString(6, record.getGhiChu());
+            if (record.getLieuLuongInsulinUi() != null) {
+                ps.setInt(7, record.getLieuLuongInsulinUi());
             } else {
                 ps.setNull(7, Types.INTEGER);
             }
-            if (record.getHuyetApTamThu() != null) {
-                ps.setInt(8, record.getHuyetApTamThu());
+            if (record.getNhipTim() != null) {
+                ps.setInt(8, record.getNhipTim());
             } else {
                 ps.setNull(8, Types.INTEGER);
             }
-            if (record.getHuyetApTamTruong() != null) {
-                ps.setInt(9, record.getHuyetApTamTruong());
+            if (record.getHuyetApTamThu() != null) {
+                ps.setInt(9, record.getHuyetApTamThu());
             } else {
                 ps.setNull(9, Types.INTEGER);
             }
-            ps.setString(10, record.getThoiDiemDoDuong());
-            ps.setInt(11, record.getChestPain() != null ? record.getChestPain() : 0);
-            ps.setInt(12, record.getDizziness() != null ? record.getDizziness() : 0);
-            ps.setInt(13, record.getFatigue() != null ? record.getFatigue() : 0);
-            ps.executeUpdate();
+            if (record.getHuyetApTamTruong() != null) {
+                ps.setInt(10, record.getHuyetApTamTruong());
+            } else {
+                ps.setNull(10, Types.INTEGER);
+            }
+            ps.setString(11, record.getThoiDiemDoDuong());
+            ps.setInt(12, record.getChestPain() != null ? record.getChestPain() : 0);
+            ps.setInt(13, record.getDizziness() != null ? record.getDizziness() : 0);
+            ps.setInt(14, record.getFatigue() != null ? record.getFatigue() : 0);
+            return ps.executeUpdate() > 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "insertHealthRecord failed", e);
+            return false;
         }
     }
 

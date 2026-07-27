@@ -1,0 +1,97 @@
+@startuml DiabCare_Chen_ERD_Summary
+title DiabCare - Chen ERD (Tom tat / Core)
+
+hide empty members
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+entity "DOCTOR" as doctor {
+  * id <<PK>>
+  --
+  ho_ten
+  email
+  chuyen_khoa
+}
+
+entity "PATIENT" as patient {
+  * id <<PK>>
+  --
+  ho_ten
+  email
+  bac_si_id <<FK>>
+  loai_tieu_duong
+}
+
+entity "HEALTH_RECORD" as record {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  duong_huyet_mgdl
+  huyet_ap_tam_thu
+  nhip_tim
+  thoi_gian_do
+}
+
+entity "AI_ANALYSIS" as ai {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  health_record_id <<FK>>
+  muc_canh_bao
+  diem_nguy_co
+}
+
+entity "ALERT" as alert {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  ai_analysis_id <<FK>>
+  muc_do
+  tieu_de
+}
+
+entity "PRESCRIPTION" as rx {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  bac_si_id <<FK>>
+  chan_doan
+  ngay_ke_don
+}
+
+entity "APPOINTMENT" as appt {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  bac_si_id <<FK>>
+  thoi_gian_hen
+  trang_thai
+}
+
+' Quan he Chen (nhan tren mui ten = hinh thoi)
+
+doctor ||--o{ patient : <<DIEU_TRI>>\n1 : N
+patient ||--o{ record : <<GHI_CHI_SO>>\n1 : N
+patient ||--o{ ai : <<PHAN_TICH>>\n1 : N
+record ||--o{ ai : <<DUA_VAO>>\n0 : N
+ai ||--o| alert : <<SINH_CANH_BAO>>\n0 : 1
+patient ||--o{ alert : <<NHAN_CANH_BAO>>\n1 : N
+doctor ||--o{ rx : <<KE_DON>>\n1 : N
+patient ||--o{ rx : <<CO_DON>>\n1 : N
+doctor ||--o{ appt : <<HEN_KHAM>>\n1 : N
+patient ||--o{ appt : <<DAT_LICH>>\n1 : N
+
+note as N1
+  Tom tat tu newdb.sql (22 bang)
+  ---
+  Gop / bo qua:
+  ADMIN, MASTER_MEDICATION, MASTER_FOOD,
+  MEDICATION, MEDICATION_LOG, LAB_RESULT,
+  MEDICAL_DOCUMENT, DIET_PLAN, NOTIFICATION,
+  THRESHOLD_SETTING, PATIENT_ASSIGNMENT, ...
+end note
+
+@enduml

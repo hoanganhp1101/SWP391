@@ -15,7 +15,6 @@ public class DoctorAlertDAO {
     private static final String FROM_JOIN = """
             FROM alerts a
             LEFT JOIN patients p ON a.patient_id = p.id
-            LEFT JOIN users u ON p.user_id = u.id
             """;
 
     public List<DoctorAlert> getAllAlerts() {
@@ -60,7 +59,7 @@ public class DoctorAlertDAO {
         int offset = (safePage - 1) * safePageSize;
 
         String sql = """
-                SELECT a.*, u.ho_ten AS ho_ten_benh_nhan, u.so_dien_thoai AS so_dien_thoai_benh_nhan
+                SELECT a.*, p.ho_ten AS ho_ten_benh_nhan, p.so_dien_thoai AS so_dien_thoai_benh_nhan
                 """ + FROM_JOIN + filter.where + """
                  ORDER BY
                     CASE
@@ -262,8 +261,8 @@ public class DoctorAlertDAO {
 
         String searchValue = "%" + keyword.trim() + "%";
         sql.append("AND (");
-        sql.append("u.ho_ten LIKE ? ");
-        sql.append("OR u.so_dien_thoai LIKE ? ");
+        sql.append("p.ho_ten LIKE ? ");
+        sql.append("OR p.so_dien_thoai LIKE ? ");
         sql.append("OR CAST(p.id AS CHAR) LIKE ? ");
         sql.append("OR CAST(a.patient_id AS CHAR) LIKE ? ");
         sql.append(") ");

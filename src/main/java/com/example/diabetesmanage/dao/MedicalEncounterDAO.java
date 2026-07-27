@@ -20,13 +20,12 @@ public class MedicalEncounterDAO {
             "SELECT me.id AS encounter_id, me.patient_id, me.bac_si_id, me.ngay_kham, me.ly_do_kham, "
                     + "me.qua_trinh_benh_ly, me.kham_lam_sang, me.chan_doan_chinh, me.chan_doan_phu, me.huong_xu_tri, "
                     + "me.ngay_tao, me.encounter_code, "
-                    + "p.patient_code, u.ho_ten AS patient_name, bs.ho_ten AS doctor_name ";
+                    + "p.patient_code, p.ho_ten AS patient_name, bs.ho_ten AS doctor_name ";
 
     private static final String ENCOUNTER_FROM =
             "FROM medical_encounters me " +
                     "JOIN patients p ON me.patient_id = p.id " +
-                    "JOIN users u ON p.user_id = u.id " +
-                    "LEFT JOIN users bs ON me.bac_si_id = bs.id ";
+                    "LEFT JOIN doctors bs ON me.bac_si_id = bs.id ";
 
     public List<MedicalEncounter> searchEncounters(
             String scopeDoctorId, String startDate, String endDate,
@@ -46,7 +45,7 @@ public class MedicalEncounterDAO {
             sql.append("AND DATE(me.ngay_kham) BETWEEN ? AND ? ");
         }
         if (hasKeyword) {
-            sql.append("AND (me.encounter_code LIKE ? OR p.patient_code LIKE ? OR u.ho_ten LIKE ? " +
+            sql.append("AND (me.encounter_code LIKE ? OR p.patient_code LIKE ? OR p.ho_ten LIKE ? " +
                     "OR me.ly_do_kham LIKE ? OR me.chan_doan_chinh LIKE ?) ");
         }
         sql.append("ORDER BY me.ngay_kham DESC, me.ngay_tao DESC, me.id DESC");
@@ -299,7 +298,7 @@ public class MedicalEncounterDAO {
             throw new SQLException("patient_id does not exist in patients table: " + patientId);
         }
         if (!userExists(bacSiId)) {
-            throw new SQLException("bac_si_id does not exist in users table: " + bacSiId);
+            throw new SQLException("bac_si_id does not exist in doctors table: " + bacSiId);
         }
         String chanDoanChinh = resolveChanDoanChinh(form);
         if (chanDoanChinh == null || chanDoanChinh.isBlank()) {
@@ -422,7 +421,7 @@ public class MedicalEncounterDAO {
     }
 
     private boolean userExists(String userId) throws SQLException {
-        String sql = "SELECT 1 FROM users WHERE id = ? LIMIT 1";
+        String sql = "SELECT 1 FROM doctors WHERE id = ? LIMIT 1";
         try (
                 Connection con = DBContext.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)

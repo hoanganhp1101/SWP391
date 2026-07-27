@@ -11,21 +11,31 @@ import java.util.UUID;
 
 public class ThresholdSettingsDAO {
 
+    private static final String SQL_GET_FOR_DOCTOR =
+            "SELECT id, bac_si_id, glucose_low, glucose_high, glucose_danger, "
+            + "hba1c_target, hba1c_poor, days_no_measure, ngay_cap_nhat "
+            + "FROM threshold_settings WHERE bac_si_id = ?";
+
+    private static final String SQL_UPDATE =
+            "UPDATE threshold_settings "
+            + "SET glucose_low = ?, glucose_high = ?, glucose_danger = ?, "
+            + "hba1c_target = ?, hba1c_poor = ?, days_no_measure = ?, "
+            + "ngay_cap_nhat = NOW() WHERE bac_si_id = ?";
+
+    private static final String SQL_INSERT =
+            "INSERT INTO threshold_settings ("
+            + "id, bac_si_id, glucose_low, glucose_high, glucose_danger, "
+            + "hba1c_target, hba1c_poor, days_no_measure"
+            + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
     public ThresholdSettings getForDoctor(String doctorId) {
         if (doctorId == null || doctorId.isBlank()) {
             return ThresholdSettings.defaults(null);
         }
         String bacSiId = doctorId.trim();
 
-        String sql = """
-                SELECT id, bac_si_id, glucose_low, glucose_high, glucose_danger,
-                       hba1c_target, hba1c_poor, days_no_measure, ngay_cap_nhat
-                FROM threshold_settings
-                WHERE bac_si_id = ?
-                """;
-
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_GET_FOR_DOCTOR)) {
             ps.setString(1, bacSiId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -43,23 +53,8 @@ public class ThresholdSettingsDAO {
             return false;
         }
 
-        String updateSql = """
-                UPDATE threshold_settings
-                SET glucose_low = ?, glucose_high = ?, glucose_danger = ?,
-                    hba1c_target = ?, hba1c_poor = ?, days_no_measure = ?,
-                    ngay_cap_nhat = NOW()
-                WHERE bac_si_id = ?
-                """;
-
-        String insertSql = """
-                INSERT INTO threshold_settings (
-                    id, bac_si_id, glucose_low, glucose_high, glucose_danger,
-                    hba1c_target, hba1c_poor, days_no_measure
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
-
         try (Connection conn = DBContext.getConnection()) {
-            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+            try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
                 bindSettings(ps, settings);
                 ps.setString(7, settings.getBacSiId());
                 if (ps.executeUpdate() > 0) {
@@ -67,7 +62,7 @@ public class ThresholdSettingsDAO {
                 }
             }
 
-            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+            try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
                 ps.setString(1, UUID.randomUUID().toString());
                 ps.setString(2, settings.getBacSiId());
                 ps.setInt(3, settings.getGlucoseLow());

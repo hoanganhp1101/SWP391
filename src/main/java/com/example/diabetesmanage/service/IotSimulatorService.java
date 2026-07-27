@@ -108,10 +108,10 @@ public class IotSimulatorService {
             return "Cảnh báo: đường huyết thấp";
         }
         if (glucose > 180 || sys >= 140 || dia >= 90) {
-            return "Cảnh báo: chỉ số cao hơn ngưỡng theo dõi";
+            return "Cảnh báo: chỉ số bất thường — cần theo dõi sát";
         }
         if (hr > 100) {
-            return "Nhịp tim hơi nhanh — nên nghỉ và đo lại";
+            return "Nhịp tim nhanh — nên nghỉ và đo lại";
         }
         return "Trong ngưỡng theo dõi thường gặp";
     }

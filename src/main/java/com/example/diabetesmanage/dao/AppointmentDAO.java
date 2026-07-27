@@ -18,7 +18,7 @@ public class AppointmentDAO {
 
     public List<Appointment> getUpcomingAppointments(String patientId) {
         String sql = "SELECT a.*, u.ho_ten AS bac_si_name " +
-                "FROM appointments a LEFT JOIN users u ON a.bac_si_id = u.id " +
+                "FROM appointments a LEFT JOIN doctors u ON a.bac_si_id = u.id " +
                 "WHERE a.patient_id = ? AND a.trang_thai = 'cho_kham' " +
                 "ORDER BY a.thoi_gian_hen ASC LIMIT 5";
         List<Appointment> list = new ArrayList<>();
@@ -37,7 +37,7 @@ public class AppointmentDAO {
 
     public List<Appointment> getAppointmentsByPatient(String patientId) {
         String sql = "SELECT a.*, u.ho_ten AS bac_si_name " +
-                "FROM appointments a LEFT JOIN users u ON a.bac_si_id = u.id " +
+                "FROM appointments a LEFT JOIN doctors u ON a.bac_si_id = u.id " +
                 "WHERE a.patient_id = ? ORDER BY a.thoi_gian_hen DESC";
         List<Appointment> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
@@ -90,8 +90,8 @@ public class AppointmentDAO {
     }
 
     public List<User> getAvailableDoctors() {
-        String sql = "SELECT id, ho_ten, email, so_dien_thoai, vai_tro, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi " +
-                "FROM users WHERE vai_tro = 'bac_si' AND kich_hoat = 1 ORDER BY ho_ten";
+        String sql = "SELECT id, ho_ten, email, so_dien_thoai, anh_dai_dien, kich_hoat, ngay_tao, ngay_cap_nhat, lan_dang_nhap_cuoi, 'bac_si' AS vai_tro " +
+                "FROM doctors WHERE kich_hoat = 1 ORDER BY ho_ten";
         List<User> doctors = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -135,13 +135,12 @@ public class AppointmentDAO {
     private static final String SELECT_BASE =
             "SELECT a.*, " +
                     "COALESCE(p.patient_code, LEFT(p.id, 8)) AS patient_code, " +
-                    "u.ho_ten AS patient_name, " +
+                    "p.ho_ten AS patient_name, " +
                     "bs.ho_ten AS doctor_name, " +
                     "a.tieu_de AS noi_dung_kham " +
                     "FROM appointments a " +
                     "JOIN patients p ON a.patient_id = p.id " +
-                    "JOIN users u ON p.user_id = u.id " +
-                    "LEFT JOIN users bs ON a.bac_si_id = bs.id " +
+                    "LEFT JOIN doctors bs ON a.bac_si_id = bs.id " +
                     "WHERE 1=1 ";
 
     public List<Appointment> findAll(
@@ -165,7 +164,7 @@ public class AppointmentDAO {
         }
         if (hasKeyword) {
             sql.append("AND (a.tieu_de LIKE ? " +
-                    "OR u.ho_ten LIKE ? " +
+                    "OR p.ho_ten LIKE ? " +
                     "OR COALESCE(p.patient_code, LEFT(p.id, 8)) LIKE ?) ");
         }
         sql.append("ORDER BY a.thoi_gian_hen DESC");

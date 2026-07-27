@@ -259,6 +259,12 @@
         statusBar.className = 'status-bar' + (type ? ' ' + type : '');
     }
 
+    function alertStatusType(mucCanhBao) {
+        if (mucCanhBao === 'nguy_hiem' || mucCanhBao === 'cao') return 'err';
+        if (mucCanhBao === 'trung_binh') return 'warn';
+        return 'ok';
+    }
+
     function setOnline(online) {
         ['cardGlu', 'cardBp', 'cardHr'].forEach(function (id) {
             const el = document.getElementById(id);
@@ -311,10 +317,10 @@
     async function loadHistory() {
         try {
             var q = historySource === 'all' ? '?source=all' : '';
-            var res = await fetch(ctx + '/api/iot/history' + q, { method: 'GET' });
-            var data = await res.json();
-            if (res.ok && data.status === 'success') {
-                renderHistory(data.history || []);
+            var res = await fetch(ctx + '/api/iot/history' + q, { method: 'GET', credentials: 'same-origin' });
+            var parsed = await parseJsonResponse(res);
+            if (parsed.ok && parsed.data && parsed.data.status === 'success') {
+                renderHistory(parsed.data.history || []);
             } else {
                 renderHistory([]);
             }
@@ -362,6 +368,46 @@
         });
     }
 
+    function parseJsonResponse(res) {
+        return res.text().then(function (text) {
+            var trimmed = (text || '').trim();
+            if (trimmed.charAt(0) === '{' || trimmed.charAt(0) === '[') {
+                try {
+                    return { ok: res.ok, status: res.status, data: JSON.parse(trimmed) };
+                } catch (e) { /* fall through */ }
+            }
+            var lower = trimmed.toLowerCase();
+            if (res.status === 401 || res.status === 403) {
+                throw new Error('Phiên đăng nhập hết hạn. Hãy đăng xuất rồi đăng nhập lại bằng tài khoản bệnh nhân.');
+            }
+            if (lower.indexOf('<!doctype') >= 0 || lower.indexOf('<html') >= 0) {
+                throw new Error('Server trả về HTML thay vì JSON (HTTP ' + res.status + '). Hãy đăng xuất → đăng nhập lại, hoặc rebuild/redeploy ứng dụng.');
+            }
+            throw new Error('Phản hồi không hợp lệ từ server (HTTP ' + res.status + ').');
+        });
+    }
+
+    async function saveReading(reading) {
+        const res = await fetch(ctx + '/api/iot/save', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                duongHuyet: reading.duongHuyet,
+                huyetApTamThu: reading.huyetApTamThu,
+                huyetApTamTruong: reading.huyetApTamTruong,
+                nhipTim: reading.nhipTim,
+                thoiDiemDoDuong: reading.thoiDiemDoDuong,
+                deviceId: reading.deviceId
+            })
+        });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.ok || !parsed.data || parsed.data.status !== 'success') {
+            throw new Error((parsed.data && parsed.data.message) || 'Lưu thất bại');
+        }
+        return parsed.data;
+    }
+
     btnMeasure.addEventListener('click', async function () {
         if (measuring) return;
         measuring = true;
@@ -374,22 +420,37 @@
             await animateProgress(1600);
             const res = await fetch(ctx + '/api/iot/measure', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     scenario: document.getElementById('scenario').value,
                     thoiDiemDoDuong: document.getElementById('timing').value
                 })
             });
-            const data = await res.json();
-            if (!res.ok || data.status !== 'success') {
-                throw new Error(data.message || 'Không đo được chỉ số');
+            const parsed = await parseJsonResponse(res);
+            if (!parsed.ok || !parsed.data || parsed.data.status !== 'success') {
+                throw new Error((parsed.data && parsed.data.message) || 'Không đo được chỉ số');
             }
-            latestReading = data.reading;
+            latestReading = parsed.data.reading;
             renderReading(latestReading);
-            btnSave.disabled = false;
+            setStatus('Đo xong. Đang lưu vào hồ sơ...', '');
+
+            // Tự động lưu vào database sau khi đo
+            const saved = await saveReading(latestReading);
+            var msg = saved.message || 'Đã lưu chỉ số IoT vào hồ sơ';
+            if (saved.analysis && saved.analysis.alertCreated) {
+                setStatus(msg + ' ' + (saved.analysis.alertTitle || 'Đã tạo cảnh báo') + '.',
+                    alertStatusType(saved.analysis.mucCanhBao));
+            } else {
+                setStatus(msg, 'ok');
+            }
+            loadHistory();
+            btnSave.disabled = true;
         } catch (err) {
-            setStatus(err.message || 'Lỗi mô phỏng', 'err');
-            latestReading = null;
+            setStatus(err.message || 'Lỗi mô phỏng / lưu hồ sơ', 'err');
+            if (latestReading) {
+                btnSave.disabled = false;
+            }
         } finally {
             progressWrap.classList.remove('active');
             progressBar.style.width = '0%';
@@ -403,28 +464,15 @@
         btnSave.disabled = true;
         setStatus('Đang lưu chỉ số vào hồ sơ...', '');
         try {
-            const res = await fetch(ctx + '/api/iot/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    duongHuyet: latestReading.duongHuyet,
-                    huyetApTamThu: latestReading.huyetApTamThu,
-                    huyetApTamTruong: latestReading.huyetApTamTruong,
-                    nhipTim: latestReading.nhipTim,
-                    thoiDiemDoDuong: latestReading.thoiDiemDoDuong,
-                    deviceId: latestReading.deviceId
-                })
-            });
-            const data = await res.json();
-            if (!res.ok || data.status !== 'success') {
-                throw new Error(data.message || 'Lưu thất bại');
-            }
-            setStatus(data.message + ' Đã cập nhật lịch sử đo.', 'ok');
-            if (historySource === 'iot' && data.history) {
-                renderHistory(data.history);
+            const saved = await saveReading(latestReading);
+            var msg = saved.message || 'Đã lưu';
+            if (saved.analysis && saved.analysis.alertCreated) {
+                setStatus(msg + ' ' + (saved.analysis.alertTitle || 'Đã tạo cảnh báo') + '.',
+                    alertStatusType(saved.analysis.mucCanhBao));
             } else {
-                loadHistory();
+                setStatus(msg, 'ok');
             }
+            loadHistory();
         } catch (err) {
             setStatus(err.message || 'Lỗi lưu hồ sơ', 'err');
             btnSave.disabled = false;

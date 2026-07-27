@@ -1,0 +1,176 @@
+@startuml DiabCare_Chen_ERD_Overview
+title DiabCare - Chen Notation ERD Overview (newdb.sql)
+
+' Compatible with PlantUML 1.2026.x
+' Do NOT use: skinparam rectangle, diamond, note bottom of
+' Use entity blocks + relationship labels instead
+
+hide empty members
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+entity "DOCTOR" as E_DOC {
+  * id <<PK>>
+  --
+  ho_ten
+  email
+  chuyen_khoa
+}
+
+entity "ADMIN" as E_ADM {
+  * id <<PK>>
+  --
+  ho_ten
+  email
+}
+
+entity "PATIENT" as E_PAT {
+  * id <<PK>>
+  --
+  patient_code
+  ho_ten
+  email
+  bac_si_id <<FK>>
+  loai_tieu_duong
+}
+
+entity "PATIENT_ASSIGNMENT" as E_PA {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  doctor_id <<FK>>
+  trang_thai
+}
+
+entity "THRESHOLD_SETTING" as E_THR {
+  * id <<PK>>
+  --
+  bac_si_id <<FK,UK>>
+  glucose_high
+  hba1c_poor
+}
+
+entity "MEDICAL_ENCOUNTER" as E_ENC {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  bac_si_id <<FK>>
+  chan_doan_chinh
+}
+
+entity "HEALTH_RECORD" as E_HR {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  encounter_id <<FK>>
+  nhap_boi <<FK>>
+  duong_huyet_mgdl
+  thoi_gian_do
+}
+
+entity "LAB_RESULT" as E_LAB {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  encounter_id <<FK>>
+  hba1c
+}
+
+entity "AI_ANALYSIS" as E_AI {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  health_record_id <<FK>>
+  muc_canh_bao
+  xu_ly_boi <<FK>>
+}
+
+entity "ALERT" as E_ALT {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  ai_analysis_id <<FK>>
+  muc_do
+  xu_ly_boi <<FK>>
+}
+
+entity "PRESCRIPTION" as E_RX {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  bac_si_id <<FK>>
+  encounter_id <<FK>>
+}
+
+entity "MEDICATION" as E_MED {
+  * id <<PK>>
+  --
+  prescription_id <<FK>>
+  ten_thuoc
+}
+
+entity "APPOINTMENT" as E_APP {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+  bac_si_id <<FK>>
+  thoi_gian_hen
+}
+
+entity "DIET_PLAN" as E_DIET {
+  * id <<PK>>
+  --
+  patient_id <<FK>>
+}
+
+entity "EDUCATIONAL_CONTENT" as E_EDU {
+  * id <<PK>>
+  --
+  title
+  category
+}
+
+' --- Relationships (Chen diamond = label on link) ---
+
+E_DOC ||--o{ E_PAT : <<TREATS>>\n1 : N
+E_DOC ||--o{ E_PA : <<ASSIGNS>>\n1 : N
+E_PAT ||--o{ E_PA : <<ASSIGNED_IN>>\n1 : N
+E_DOC ||--|| E_THR : <<CONFIGURES>>\n1 : 1
+
+E_PAT ||--o{ E_ENC : <<HAS>>\n1 : N
+E_DOC ||--o{ E_ENC : <<PERFORMS>>\n1 : N
+
+E_PAT ||--o{ E_HR : <<HAS>>\n1 : N
+E_PAT ||--o{ E_HR : <<ENTERS>>\n1 : N
+E_ENC ||--o{ E_HR : <<LINKS>>\n1 : N
+
+E_PAT ||--o{ E_LAB : <<HAS>>\n1 : N
+E_ENC ||--o{ E_LAB : <<HAS>>\n0 : N
+
+E_PAT ||--o{ E_AI : <<HAS>>\n1 : N
+E_HR ||--o{ E_AI : <<BASED_ON>>\n0 : N
+E_DOC ||--o{ E_AI : <<PROCESSES>>\n0 : N
+
+E_PAT ||--o{ E_ALT : <<HAS>>\n1 : N
+E_AI ||--o| E_ALT : <<GENERATES>>\n0 : 1
+E_DOC ||--o{ E_ALT : <<HANDLES>>\n0 : N
+
+E_PAT ||--o{ E_RX : <<HAS>>\n1 : N
+E_DOC ||--o{ E_RX : <<PRESCRIBES>>\n1 : N
+E_ENC ||--o{ E_RX : <<LINKS>>\n0 : N
+E_RX ||--o{ E_MED : <<CONTAINS>>\n1 : N
+
+E_PAT ||--o{ E_APP : <<SCHEDULES>>\n1 : N
+E_DOC ||--o{ E_APP : <<ATTENDS>>\n0 : N
+
+E_PAT ||--o{ E_DIET : <<HAS>>\n1 : N
+
+note as N1
+  ADMIN and EDUCATIONAL_CONTENT
+  are standalone entities (no FK)
+end note
+
+@enduml

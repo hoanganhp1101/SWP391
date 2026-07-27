@@ -21,6 +21,29 @@ import java.util.UUID;
  */
 public final class ClinicalRiskService {
 
+    public static final class PersistResult {
+        private final boolean analysisSaved;
+        private final boolean alertCreated;
+        private final String alertTitle;
+        private final String mucCanhBao;
+
+        public PersistResult(boolean analysisSaved, boolean alertCreated, String alertTitle, String mucCanhBao) {
+            this.analysisSaved = analysisSaved;
+            this.alertCreated = alertCreated;
+            this.alertTitle = alertTitle;
+            this.mucCanhBao = mucCanhBao;
+        }
+
+        public boolean isAnalysisSaved() { return analysisSaved; }
+        public boolean isAlertCreated() { return alertCreated; }
+        public String getAlertTitle() { return alertTitle; }
+        public String getMucCanhBao() { return mucCanhBao; }
+
+        public static PersistResult failed() {
+            return new PersistResult(false, false, null, null);
+        }
+    }
+
     // ==== Ngưỡng đường huyết (mg/dL) — khớp ThresholdSettings.defaults ====
     public static final double GLUCOSE_LOW_MGDL = 70;
     public static final double GLUCOSE_HIGH_MGDL = 180;
@@ -47,10 +70,10 @@ public final class ClinicalRiskService {
     // ==== Theo dõi định kỳ ====
     public static final int MONITORING_GAP_DAYS = 7;
 
-    // ==== Thang điểm rủi ro 0-100 → mức cảnh báo ====
-    public static final double SCORE_DANGER = 80.0;
-    public static final double SCORE_HIGH = 50.0;
-    public static final double SCORE_MEDIUM = 20.0;
+    // ==== Thang điểm rủi ro 0-100 → mức cảnh báo (ngưỡng nghiêm hơn) ====
+    public static final double SCORE_DANGER = 65.0;
+    public static final double SCORE_HIGH = 30.0;
+    public static final double SCORE_MEDIUM = 12.0;
 
     private ClinicalRiskService() {
     }
@@ -77,37 +100,94 @@ public final class ClinicalRiskService {
      * Pipeline chuẩn sau khi AI phân tích một bản ghi vitals:
      * áp quy tắc động (theo ngưỡng bác sĩ nếu có) → lưu ai_analysis → tạo alert.
      */
-    public static void applyRulesAndPersist(String patientId, HealthRecord record, AIAnalysis analysis) {
+    public static PersistResult applyRulesAndPersist(String patientId, HealthRecord record, AIAnalysis analysis) {
         ThresholdSettings thresholds = resolveThresholdsForPatient(patientId);
-        applyRulesAndPersist(patientId, record, analysis, thresholds);
+        return applyRulesAndPersist(patientId, record, analysis, thresholds);
     }
 
-    public static void applyRulesAndPersist(
+    public static PersistResult applyRulesAndPersist(
             String patientId, HealthRecord record, AIAnalysis analysis, ThresholdSettings thresholds) {
-        if (thresholds == null) {
-            thresholds = ThresholdSettings.defaults(null);
-        }
-        boolean redFlag = finalizeAnalysis(record, analysis, thresholds);
-
-        new AIAnalysisDAO().insertAnalysis(analysis);
-
-        String mucCanhBao = analysis.getMucCanhBao();
-        if ("cao".equals(mucCanhBao) || "nguy_hiem".equals(mucCanhBao)) {
-            Alert alert = new Alert();
-            alert.setId(UUID.randomUUID().toString());
-            alert.setPatientId(patientId);
-            alert.setAiAnalysisId(analysis.getId());
-            alert.setLoaiCanhBao(determineAlertType(record, thresholds));
-            alert.setMucDo(mucCanhBao);
-            if (redFlag) {
-                alert.setTieuDe("🚨 CẢNH BÁO Y TẾ KHẨN CẤP");
-            } else {
-                alert.setTieuDe("⚠️ AI phát hiện chỉ số bất thường");
+        try {
+            if (analysis == null) {
+                return PersistResult.failed();
             }
-            alert.setNoiDung(analysis.getPhanTichChiTiet());
+            if (thresholds == null) {
+                thresholds = ThresholdSettings.defaults(null);
+            }
+            if (record != null && record.getId() != null) {
+                analysis.setHealthRecordId(record.getId());
+            }
+            analysis.setPatientId(patientId);
 
-            new AlertDAO().insertAlert(alert);
+            boolean redFlag = finalizeAnalysis(record, analysis, thresholds);
+            boolean analysisSaved = new AIAnalysisDAO().insertAnalysis(analysis);
+            if (!analysisSaved) {
+                return new PersistResult(false, false, null, analysis.getMucCanhBao());
+            }
+
+            String mucCanhBao = analysis.getMucCanhBao();
+            Alert alert = buildPatientAlert(patientId, record, analysis, thresholds, redFlag);
+            boolean alertCreated = new AlertDAO().insertAlert(alert);
+            return new PersistResult(true, alertCreated, alert.getTieuDe(), mucCanhBao);
+        } catch (Exception e) {
+            System.err.println("[ClinicalRiskService] applyRulesAndPersist failed: " + e.getMessage());
+            e.printStackTrace();
+            return PersistResult.failed();
         }
+    }
+
+    /**
+     * Tạo cảnh báo sau mỗi lần phân tích — kể cả chỉ số an toàn (ghi nhận đo mới).
+     */
+    private static Alert buildPatientAlert(
+            String patientId,
+            HealthRecord record,
+            AIAnalysis analysis,
+            ThresholdSettings thresholds,
+            boolean redFlag) {
+        Alert alert = new Alert();
+        alert.setId(UUID.randomUUID().toString());
+        alert.setPatientId(patientId);
+        alert.setAiAnalysisId(analysis.getId());
+        alert.setLoaiCanhBao(determineAlertType(record, thresholds));
+
+        String mucCanhBao = analysis.getMucCanhBao() != null ? analysis.getMucCanhBao() : "an_toan";
+        alert.setMucDo(mucCanhBao);
+
+        if (redFlag || "nguy_hiem".equals(mucCanhBao)) {
+            alert.setTieuDe("🚨 CẢNH BÁO Y TẾ KHẨN CẤP");
+            alert.setMucDo("nguy_hiem");
+        } else if ("cao".equals(mucCanhBao)) {
+            alert.setTieuDe("🚨 [RED FLAG] Chỉ số bất thường — cần can thiệp y tế");
+            alert.setMucDo("cao");
+        } else if ("trung_binh".equals(mucCanhBao)) {
+            alert.setTieuDe("⚠️ Cảnh báo: chỉ số lệch ngưỡng — theo dõi sát");
+            alert.setMucDo("trung_binh");
+        } else {
+            alert.setTieuDe("✓ Ghi nhận chỉ số mới");
+            alert.setMucDo("an_toan");
+        }
+
+        String noiDung = analysis.getPhanTichChiTiet();
+        if (noiDung == null || noiDung.isBlank()) {
+            noiDung = "Hệ thống đã ghi nhận lần đo mới vào hồ sơ sức khỏe.";
+        }
+        noiDung = prependUrgencyNotice(mucCanhBao, redFlag, noiDung);
+        alert.setNoiDung(noiDung);
+        return alert;
+    }
+
+    private static String prependUrgencyNotice(String mucCanhBao, boolean redFlag, String noiDung) {
+        if (redFlag || "nguy_hiem".equals(mucCanhBao)) {
+            return "⛔ Liên hệ cơ sở y tế / bác sĩ NGAY LẬP TỨC. Không tự ý thay đổi liều thuốc.\n\n" + noiDung;
+        }
+        if ("cao".equals(mucCanhBao)) {
+            return "⚠️ Chỉ số bất thường — cần báo bác sĩ trong thời gian sớm nhất và theo dõi sát.\n\n" + noiDung;
+        }
+        if ("trung_binh".equals(mucCanhBao)) {
+            return "ℹ️ Chỉ số hơi lệch ngưỡng — nên đo lại sau 2 giờ và ghi chú triệu chứng.\n\n" + noiDung;
+        }
+        return noiDung;
     }
 
     /**
@@ -182,9 +262,7 @@ public final class ClinicalRiskService {
 
         if (redFlag) {
             analysis.setMucCanhBao("nguy_hiem");
-            analysis.setPhanTichChiTiet(
-                    "🚨 Chỉ số của bạn rơi vào mức NGUY HIỂM. Vui lòng liên hệ y tế ngay lập tức!\n\n"
-                            + analysis.getPhanTichChiTiet());
+            analysis.setPhanTichChiTiet(buildEmergencySummary(record));
         } else {
             analysis.setMucCanhBao(resolveMucCanhBao(totalRisk));
         }
@@ -230,6 +308,9 @@ public final class ClinicalRiskService {
         if (record.getHuyetApTamThu() != null && record.getHuyetApTamThu() >= BP_SYS_WATCH) {
             return "xu_huong_tang";
         }
+        if (record.getHuyetApTamTruong() != null && record.getHuyetApTamTruong() >= BP_DIA_WATCH) {
+            return "xu_huong_tang";
+        }
         if (record.getDuongHuyetMgdl() != null) {
             return "duong_huyet_cao";
         }
@@ -237,6 +318,28 @@ public final class ClinicalRiskService {
     }
 
     private static boolean isFastingMeasurement(String thoiDiemDo) {
+        if (thoiDiemDo == null || thoiDiemDo.isBlank()) {
+            return true;
+        }
         return "luc_doi".equals(thoiDiemDo) || thoiDiemDo.contains("đói");
+    }
+
+    private static String buildEmergencySummary(HealthRecord record) {
+        StringBuilder sb = new StringBuilder(
+                "🚨 Chỉ số của bạn rơi vào mức NGUY HIỂM. Vui lòng liên hệ y tế ngay lập tức!");
+        if (record == null) {
+            return sb.toString();
+        }
+        if (record.getDuongHuyetMgdl() != null) {
+            sb.append("\n- Đường huyết: ").append(record.getDuongHuyetMgdl()).append(" mg/dL");
+        }
+        if (record.getHuyetApTamThu() != null && record.getHuyetApTamTruong() != null) {
+            sb.append("\n- Huyết áp: ").append(record.getHuyetApTamThu())
+                    .append("/").append(record.getHuyetApTamTruong()).append(" mmHg");
+        }
+        if (record.getNhipTim() != null) {
+            sb.append("\n- Nhịp tim: ").append(record.getNhipTim()).append(" BPM");
+        }
+        return sb.toString();
     }
 }
